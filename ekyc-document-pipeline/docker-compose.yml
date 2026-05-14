@@ -1,0 +1,5 @@
+services:
+  ekycpipe:
+    build: .
+    image: ekyc-document-pipeline:latest
+    command: ["info"]

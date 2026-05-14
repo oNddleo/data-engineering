@@ -1,0 +1,40 @@
+name: ekyc-document-pipeline
+
+on:
+  push:
+    branches: [main]
+    paths: ["ekyc-document-pipeline/**", ".github/workflows/ekycpipe.yml"]
+  pull_request:
+    paths: ["ekyc-document-pipeline/**", ".github/workflows/ekycpipe.yml"]
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: ekyc-document-pipeline
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: pip install --upgrade pip && pip install -e ".[dev]"
+      - run: python -m ruff check src tests
+      - run: python -m ruff format --check src tests
+      - run: python -m mypy src
+      - run: python -m pytest tests -q
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t ekycpipe:ci ekyc-document-pipeline
+      - run: docker run --rm ekycpipe:ci info
