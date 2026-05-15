@@ -1,0 +1,5 @@
+services:
+  multiprice:
+    build: .
+    image: multi-platform-price-tracker:latest
+    command: ["info"]
