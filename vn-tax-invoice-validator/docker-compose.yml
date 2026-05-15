@@ -1,0 +1,5 @@
+services:
+  vntax:
+    build: .
+    image: vn-tax-invoice-validator:latest
+    command: ["info"]
