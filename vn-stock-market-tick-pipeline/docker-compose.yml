@@ -1,0 +1,5 @@
+services:
+  vntick:
+    build: .
+    image: vn-stock-market-tick-pipeline:latest
+    command: ["info"]
