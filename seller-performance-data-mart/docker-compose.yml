@@ -1,0 +1,5 @@
+services:
+  sellermart:
+    build: .
+    image: seller-performance-data-mart:latest
+    command: ["info"]
