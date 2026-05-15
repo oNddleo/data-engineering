@@ -1,0 +1,5 @@
+services:
+  sentvn:
+    build: .
+    image: review-sentiment-vietnamese:latest
+    command: ["info"]
