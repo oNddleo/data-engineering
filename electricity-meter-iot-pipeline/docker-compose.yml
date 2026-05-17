@@ -1,0 +1,5 @@
+services:
+  evnmeter:
+    build: .
+    image: electricity-meter-iot-pipeline:latest
+    command: ["info"]
