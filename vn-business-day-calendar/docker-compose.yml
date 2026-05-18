@@ -1,0 +1,5 @@
+services:
+  vncal:
+    build: .
+    image: vn-business-day-calendar:latest
+    command: ["info"]
