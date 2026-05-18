@@ -1,0 +1,5 @@
+services:
+  mappev:
+    build: .
+    image: mobile-app-event-pipeline:latest
+    command: ["info"]
