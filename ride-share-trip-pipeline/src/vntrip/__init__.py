@@ -1,0 +1,184 @@
+"""ride-share-trip-pipeline — trip state machine + fare + analytics + fraud."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+__version__ = "0.1.0"
+
+if TYPE_CHECKING:
+    from vntrip.analytics import (
+        driver_shifts,
+        eta_accuracy_pct,
+        eta_accuracy_summary,
+        surge_windows,
+    )
+    from vntrip.districts import District, all_codes, by_city, is_valid, lookup
+    from vntrip.fare import DEFAULT_RATE_CARD, FareRate, compute_fare
+    from vntrip.fraud import (
+        FraudFinding,
+        FraudKind,
+        find_cancel_abuse,
+        find_phantom_trips,
+    )
+    from vntrip.io_jsonl import (
+        dump_events,
+        dump_fares,
+        dump_frauds,
+        dump_shifts,
+        dump_surges,
+        dump_trips,
+        event_from_dict,
+        event_to_dict,
+        fare_from_dict,
+        fare_to_dict,
+        fraud_from_dict,
+        fraud_to_dict,
+        load_events,
+        load_fares,
+        load_frauds,
+        load_shifts,
+        load_surges,
+        load_trips,
+        shift_from_dict,
+        shift_to_dict,
+        surge_from_dict,
+        surge_to_dict,
+        trip_from_dict,
+        trip_to_dict,
+    )
+    from vntrip.schema import (
+        VN_TZ,
+        CancelBy,
+        DriverShift,
+        FareBreakdown,
+        SurgeWindow,
+        Trip,
+        TripEvent,
+        TripEventKind,
+        VehicleClass,
+    )
+    from vntrip.simulator import generate
+    from vntrip.state import stitch, validate_trip_events
+
+
+_LAZY: dict[str, tuple[str, str]] = {
+    "CancelBy": ("vntrip.schema", "CancelBy"),
+    "DEFAULT_RATE_CARD": ("vntrip.fare", "DEFAULT_RATE_CARD"),
+    "District": ("vntrip.districts", "District"),
+    "DriverShift": ("vntrip.schema", "DriverShift"),
+    "FareBreakdown": ("vntrip.schema", "FareBreakdown"),
+    "FareRate": ("vntrip.fare", "FareRate"),
+    "FraudFinding": ("vntrip.fraud", "FraudFinding"),
+    "FraudKind": ("vntrip.fraud", "FraudKind"),
+    "SurgeWindow": ("vntrip.schema", "SurgeWindow"),
+    "Trip": ("vntrip.schema", "Trip"),
+    "TripEvent": ("vntrip.schema", "TripEvent"),
+    "TripEventKind": ("vntrip.schema", "TripEventKind"),
+    "VN_TZ": ("vntrip.schema", "VN_TZ"),
+    "VehicleClass": ("vntrip.schema", "VehicleClass"),
+    "all_codes": ("vntrip.districts", "all_codes"),
+    "by_city": ("vntrip.districts", "by_city"),
+    "compute_fare": ("vntrip.fare", "compute_fare"),
+    "driver_shifts": ("vntrip.analytics", "driver_shifts"),
+    "dump_events": ("vntrip.io_jsonl", "dump_events"),
+    "dump_fares": ("vntrip.io_jsonl", "dump_fares"),
+    "dump_frauds": ("vntrip.io_jsonl", "dump_frauds"),
+    "dump_shifts": ("vntrip.io_jsonl", "dump_shifts"),
+    "dump_surges": ("vntrip.io_jsonl", "dump_surges"),
+    "dump_trips": ("vntrip.io_jsonl", "dump_trips"),
+    "eta_accuracy_pct": ("vntrip.analytics", "eta_accuracy_pct"),
+    "eta_accuracy_summary": ("vntrip.analytics", "eta_accuracy_summary"),
+    "event_from_dict": ("vntrip.io_jsonl", "event_from_dict"),
+    "event_to_dict": ("vntrip.io_jsonl", "event_to_dict"),
+    "fare_from_dict": ("vntrip.io_jsonl", "fare_from_dict"),
+    "fare_to_dict": ("vntrip.io_jsonl", "fare_to_dict"),
+    "find_cancel_abuse": ("vntrip.fraud", "find_cancel_abuse"),
+    "find_phantom_trips": ("vntrip.fraud", "find_phantom_trips"),
+    "fraud_from_dict": ("vntrip.io_jsonl", "fraud_from_dict"),
+    "fraud_to_dict": ("vntrip.io_jsonl", "fraud_to_dict"),
+    "generate": ("vntrip.simulator", "generate"),
+    "is_valid": ("vntrip.districts", "is_valid"),
+    "load_events": ("vntrip.io_jsonl", "load_events"),
+    "load_fares": ("vntrip.io_jsonl", "load_fares"),
+    "load_frauds": ("vntrip.io_jsonl", "load_frauds"),
+    "load_shifts": ("vntrip.io_jsonl", "load_shifts"),
+    "load_surges": ("vntrip.io_jsonl", "load_surges"),
+    "load_trips": ("vntrip.io_jsonl", "load_trips"),
+    "lookup": ("vntrip.districts", "lookup"),
+    "shift_from_dict": ("vntrip.io_jsonl", "shift_from_dict"),
+    "shift_to_dict": ("vntrip.io_jsonl", "shift_to_dict"),
+    "stitch": ("vntrip.state", "stitch"),
+    "surge_from_dict": ("vntrip.io_jsonl", "surge_from_dict"),
+    "surge_to_dict": ("vntrip.io_jsonl", "surge_to_dict"),
+    "surge_windows": ("vntrip.analytics", "surge_windows"),
+    "trip_from_dict": ("vntrip.io_jsonl", "trip_from_dict"),
+    "trip_to_dict": ("vntrip.io_jsonl", "trip_to_dict"),
+    "validate_trip_events": ("vntrip.state", "validate_trip_events"),
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name in _LAZY:
+        from importlib import import_module
+
+        m, attr = _LAZY[name]
+        return getattr(import_module(m), attr)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+__all__ = [
+    "CancelBy",
+    "DEFAULT_RATE_CARD",
+    "District",
+    "DriverShift",
+    "FareBreakdown",
+    "FareRate",
+    "FraudFinding",
+    "FraudKind",
+    "SurgeWindow",
+    "Trip",
+    "TripEvent",
+    "TripEventKind",
+    "VN_TZ",
+    "VehicleClass",
+    "__version__",
+    "all_codes",
+    "by_city",
+    "compute_fare",
+    "driver_shifts",
+    "dump_events",
+    "dump_fares",
+    "dump_frauds",
+    "dump_shifts",
+    "dump_surges",
+    "dump_trips",
+    "eta_accuracy_pct",
+    "eta_accuracy_summary",
+    "event_from_dict",
+    "event_to_dict",
+    "fare_from_dict",
+    "fare_to_dict",
+    "find_cancel_abuse",
+    "find_phantom_trips",
+    "fraud_from_dict",
+    "fraud_to_dict",
+    "generate",
+    "is_valid",
+    "load_events",
+    "load_fares",
+    "load_frauds",
+    "load_shifts",
+    "load_surges",
+    "load_trips",
+    "lookup",
+    "shift_from_dict",
+    "shift_to_dict",
+    "stitch",
+    "surge_from_dict",
+    "surge_to_dict",
+    "surge_windows",
+    "trip_from_dict",
+    "trip_to_dict",
+    "validate_trip_events",
+]
