@@ -1,0 +1,5 @@
+services:
+  csvinf:
+    build: .
+    image: csv-schema-inference-toolkit:latest
+    command: ["info"]

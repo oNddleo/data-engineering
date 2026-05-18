@@ -1,0 +1,212 @@
+"""Emit an ``InferredSchema`` as Avro, JSON Schema, or a Python dataclass.
+
+All emitters produce **deterministic** output for a given schema
+(field order is preserved, no random elements). The Python dataclass
+emitter renders ``frozen=True, slots=True`` consistent with the rest
+of the catalogue.
+
+Type projections:
+
+| ColumnType | Avro                              | JSON Schema       | Python                  |
+| ---------- | --------------------------------- | ----------------- | ----------------------- |
+| INT        | ``"long"``                        | ``"integer"``     | ``int``                 |
+| FLOAT      | ``"double"``                      | ``"number"``      | ``float``               |
+| DECIMAL    | bytes + decimal logical type      | ``"string"``      | ``str`` (or Decimal)    |
+| BOOL       | ``"boolean"``                     | ``"boolean"``     | ``bool``                |
+| DATE       | int + date logical type           | ``"string"``+fmt  | ``datetime.date``       |
+| DATETIME   | long + timestamp-millis logical   | ``"string"``+fmt  | ``datetime.datetime``   |
+| STRING     | ``"string"``                      | ``"string"``      | ``str``                 |
+
+Nullable columns are unioned with ``null`` in Avro and given
+``"null"`` in the JSON Schema ``type`` array. Python dataclass
+nullable fields use ``T | None`` and default to ``None`` to allow
+order-independent construction.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+from typing import TYPE_CHECKING
+
+from csvinf.schema import ColumnType
+
+if TYPE_CHECKING:
+    from csvinf.schema import InferredSchema
+
+
+_AVRO_TYPE: dict[ColumnType, object] = {
+    ColumnType.INT: "long",
+    ColumnType.FLOAT: "double",
+    ColumnType.BOOL: "boolean",
+    ColumnType.STRING: "string",
+    ColumnType.DATE: {"type": "int", "logicalType": "date"},
+    ColumnType.DATETIME: {"type": "long", "logicalType": "timestamp-millis"},
+    ColumnType.DECIMAL: {
+        "type": "bytes",
+        "logicalType": "decimal",
+        "precision": 18,
+        "scale": 4,
+    },
+}
+
+_JSON_SCHEMA_TYPE: dict[ColumnType, str] = {
+    ColumnType.INT: "integer",
+    ColumnType.FLOAT: "number",
+    ColumnType.BOOL: "boolean",
+    ColumnType.STRING: "string",
+    ColumnType.DECIMAL: "string",
+    ColumnType.DATE: "string",
+    ColumnType.DATETIME: "string",
+}
+
+_JSON_SCHEMA_FORMAT: dict[ColumnType, str] = {
+    ColumnType.DATE: "date",
+    ColumnType.DATETIME: "date-time",
+}
+
+_PYTHON_TYPE: dict[ColumnType, str] = {
+    ColumnType.INT: "int",
+    ColumnType.FLOAT: "float",
+    ColumnType.BOOL: "bool",
+    ColumnType.STRING: "str",
+    ColumnType.DECIMAL: "str",  # caller picks Decimal vs str
+    ColumnType.DATE: "date",
+    ColumnType.DATETIME: "datetime",
+}
+
+
+def emit_avro(schema: InferredSchema, *, record_name: str = "Row") -> str:
+    """Emit a single Avro record schema (JSON-serialised, pretty)."""
+    fields: list[dict[str, object]] = []
+    for col in schema.columns:
+        avro_t = _AVRO_TYPE[col.type]
+        if col.nullable:
+            field_type: object = ["null", avro_t]
+            default: object | None = None
+        else:
+            field_type = avro_t
+            default = _NOT_SET
+        field: dict[str, object] = {
+            "name": _sanitize(col.name),
+            "type": field_type,
+        }
+        if default is None and col.nullable:
+            field["default"] = None
+        fields.append(field)
+    payload = {
+        "type": "record",
+        "name": record_name,
+        "fields": fields,
+    }
+    return json.dumps(payload, indent=2)
+
+
+def emit_json_schema(
+    schema: InferredSchema,
+    *,
+    title: str = "Row",
+) -> str:
+    """Emit a JSON-Schema draft-07 object schema."""
+    properties: dict[str, dict[str, object]] = {}
+    required: list[str] = []
+    for col in schema.columns:
+        prop: dict[str, object] = {}
+        json_t = _JSON_SCHEMA_TYPE[col.type]
+        if col.nullable:
+            prop["type"] = [json_t, "null"]
+        else:
+            prop["type"] = json_t
+        if col.type in _JSON_SCHEMA_FORMAT:
+            prop["format"] = _JSON_SCHEMA_FORMAT[col.type]
+        if col.examples:
+            prop["examples"] = list(col.examples[:3])
+        properties[col.name] = prop
+        if not col.nullable:
+            required.append(col.name)
+    payload: dict[str, object] = {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": title,
+        "type": "object",
+        "properties": properties,
+    }
+    if required:
+        payload["required"] = required
+    return json.dumps(payload, indent=2)
+
+
+def emit_dataclass(
+    schema: InferredSchema,
+    *,
+    class_name: str = "Row",
+) -> str:
+    """Emit Python ``@dataclass(frozen=True, slots=True)`` source code."""
+    imports: set[str] = set()
+    lines: list[str] = [
+        '"""Auto-generated by csvinf.emit.emit_dataclass."""',
+        "",
+        "from __future__ import annotations",
+        "",
+    ]
+    field_lines: list[str] = []
+    for col in schema.columns:
+        py_t = _PYTHON_TYPE[col.type]
+        if col.type is ColumnType.DATE:
+            imports.add("from datetime import date")
+        elif col.type is ColumnType.DATETIME:
+            imports.add("from datetime import datetime")
+        annotation = f"{py_t} | None" if col.nullable else py_t
+        if col.nullable:
+            field_lines.append(f"    {_sanitize(col.name)}: {annotation} = None")
+        else:
+            field_lines.append(f"    {_sanitize(col.name)}: {annotation}")
+    if imports:
+        lines.extend(sorted(imports))
+        lines.append("")
+    lines.extend(
+        [
+            "from dataclasses import dataclass",
+            "",
+            "",
+            "@dataclass(frozen=True, slots=True)",
+            f"class {class_name}:",
+            '    """One row, schema inferred by csvinf."""',
+            "",
+        ]
+    )
+    # Required fields first, nullable last (to satisfy positional init).
+    required_fields = [
+        line for line, col in zip(field_lines, schema.columns, strict=False) if not col.nullable
+    ]
+    nullable_fields = [
+        line for line, col in zip(field_lines, schema.columns, strict=False) if col.nullable
+    ]
+    if not required_fields and not nullable_fields:
+        lines.append("    pass")
+    else:
+        lines.extend(required_fields)
+        lines.extend(nullable_fields)
+    return "\n".join(lines) + "\n"
+
+
+_NOT_SET: object = object()
+
+
+_SANITIZE_RE = re.compile(r"[^A-Za-z0-9_]")
+
+
+def _sanitize(name: str) -> str:
+    """Coerce ``name`` into a valid Python / Avro identifier.
+
+    Replaces invalid characters with ``_`` and prefixes a leading
+    digit with ``_``.
+    """
+    s = _SANITIZE_RE.sub("_", name)
+    if not s:
+        return "_"
+    if s[0].isdigit():
+        s = "_" + s
+    return s
+
+
+__all__ = ["emit_avro", "emit_dataclass", "emit_json_schema"]
