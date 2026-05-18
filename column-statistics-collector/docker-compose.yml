@@ -1,0 +1,5 @@
+services:
+  colstats:
+    build: .
+    image: column-statistics-collector:latest
+    command: ["info"]
