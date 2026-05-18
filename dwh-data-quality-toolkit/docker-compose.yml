@@ -1,0 +1,5 @@
+services:
+  dqkit:
+    build: .
+    image: dwh-data-quality-toolkit:latest
+    command: ["info"]
