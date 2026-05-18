@@ -1,0 +1,5 @@
+services:
+  schemaev:
+    build: .
+    image: schema-registry-evolution:latest
+    command: ["info"]
