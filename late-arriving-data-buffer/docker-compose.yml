@@ -1,0 +1,5 @@
+services:
+  latebuf:
+    build: .
+    image: late-arriving-data-buffer:latest
+    command: ["info"]
