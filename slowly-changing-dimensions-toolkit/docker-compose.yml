@@ -1,0 +1,5 @@
+services:
+  scdkit:
+    build: .
+    image: slowly-changing-dimensions-toolkit:latest
+    command: ["info"]
