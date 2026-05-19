@@ -1,0 +1,5 @@
+services:
+  cms:
+    build: .
+    image: count-min-sketch:latest
+    command: ["info"]
