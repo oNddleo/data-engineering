@@ -1,0 +1,5 @@
+services:
+  tdigest:
+    build: .
+    image: t-digest:latest
+    command: ["info"]
