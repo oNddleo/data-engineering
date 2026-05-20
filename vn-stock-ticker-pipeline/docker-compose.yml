@@ -1,0 +1,5 @@
+services:
+  vnstock:
+    build: .
+    image: vn-stock-ticker-pipeline:latest
+    command: ["info"]
