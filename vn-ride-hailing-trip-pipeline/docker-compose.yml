@@ -1,0 +1,5 @@
+services:
+  vnride:
+    build: .
+    image: vn-ride-hailing-trip-pipeline:latest
+    command: ["info"]
