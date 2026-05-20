@@ -1,0 +1,5 @@
+services:
+  payroll:
+    build: .
+    image: vn-payroll-pipeline:latest
+    command: ["info"]
