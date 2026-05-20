@@ -1,0 +1,5 @@
+services:
+  ratelimit:
+    build: .
+    image: rate-limiter-toolkit:latest
+    command: ["info"]
