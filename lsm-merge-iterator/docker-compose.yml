@@ -1,0 +1,5 @@
+services:
+  lsmmerge:
+    build: .
+    image: lsm-merge-iterator:latest
+    command: ["info"]
