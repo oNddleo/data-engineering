@@ -1,77 +1,113 @@
-"""Sliding-window-log tests."""
+"""Tests for SlidingWindowCounter rate limiter."""
 
 from __future__ import annotations
 
 import pytest
 
-from ratelimit.schema import SlidingWindowLog
-from ratelimit.sliding_window import allow, current_count
+from ratelimiter.sliding_window import SlidingWindowCounter
+from ratelimiter.token_bucket import RateLimitExceeded
 
 
-def test_admits_up_to_capacity() -> None:
-    sw = SlidingWindowLog(capacity=3, window_ms=1_000)
-    assert allow(sw, "k1", 0) is True
-    assert allow(sw, "k1", 100) is True
-    assert allow(sw, "k1", 200) is True
-    assert allow(sw, "k1", 300) is False
+class FakeClock:
+    def __init__(self, t: float = 0.0) -> None:
+        self.t = t
+
+    def __call__(self) -> float:
+        return self.t
+
+    def advance(self, dt: float) -> None:
+        self.t += dt
 
 
-def test_evicts_old_entries() -> None:
-    sw = SlidingWindowLog(capacity=3, window_ms=1_000)
-    for ts in (0, 100, 200):
-        allow(sw, "k1", ts)
-    # At t=1001, the entry at t=0 falls outside the window.
-    assert allow(sw, "k1", 1_001) is True
+class TestBasic:
+    def test_starts_empty(self) -> None:
+        clock = FakeClock()
+        sw = SlidingWindowCounter(limit=5, window_s=1.0, _clock=clock)
+        assert sw.current_count == 0
+
+    def test_acquire_increments_count(self) -> None:
+        clock = FakeClock()
+        sw = SlidingWindowCounter(limit=5, window_s=1.0, _clock=clock)
+        sw.acquire()
+        sw.acquire()
+        assert sw.current_count == 2
+
+    def test_acquire_fails_at_limit(self) -> None:
+        clock = FakeClock()
+        sw = SlidingWindowCounter(limit=3, window_s=1.0, _clock=clock)
+        for _ in range(3):
+            assert sw.acquire()
+        assert not sw.acquire()
+
+    def test_acquire_or_raise_raises(self) -> None:
+        clock = FakeClock()
+        sw = SlidingWindowCounter(limit=2, window_s=1.0, _clock=clock)
+        sw.acquire()
+        sw.acquire()
+        with pytest.raises(RateLimitExceeded):
+            sw.acquire_or_raise()
+
+    def test_invalid_limit_raises(self) -> None:
+        with pytest.raises(ValueError):
+            SlidingWindowCounter(limit=0, window_s=1.0)
+
+    def test_invalid_window_raises(self) -> None:
+        with pytest.raises(ValueError):
+            SlidingWindowCounter(limit=5, window_s=0.0)
 
 
-def test_per_key_isolation() -> None:
-    sw = SlidingWindowLog(capacity=2, window_ms=500)
-    for _ in range(2):
-        allow(sw, "k1", 0)
-    assert allow(sw, "k1", 0) is False
-    # k2 starts fresh.
-    assert allow(sw, "k2", 0) is True
+class TestEviction:
+    def test_old_events_evicted(self) -> None:
+        clock = FakeClock()
+        sw = SlidingWindowCounter(limit=5, window_s=1.0, _clock=clock)
+        for _ in range(5):
+            sw.acquire()
+        assert sw.current_count == 5
+        clock.advance(1.01)  # window expired
+        assert sw.current_count == 0
+        assert sw.acquire()  # now allowed
+
+    def test_partial_eviction(self) -> None:
+        clock = FakeClock()
+        sw = SlidingWindowCounter(limit=5, window_s=1.0, _clock=clock)
+        sw.acquire()  # t=0
+        clock.advance(0.5)
+        sw.acquire()  # t=0.5
+        clock.advance(0.6)  # t=1.1 → first event (t=0) evicted
+        assert sw.current_count == 1
+
+    def test_allows_again_after_window(self) -> None:
+        clock = FakeClock()
+        sw = SlidingWindowCounter(limit=3, window_s=1.0, _clock=clock)
+        for _ in range(3):
+            sw.acquire()
+        assert not sw.acquire()
+        clock.advance(1.01)
+        assert sw.acquire()  # slot freed
 
 
-def test_current_count() -> None:
-    sw = SlidingWindowLog(capacity=5, window_ms=500)
-    for ts in (0, 100, 200, 300):
-        allow(sw, "k1", ts)
-    assert current_count(sw, "k1", 400) == 4
-    # Window slides past the first two entries.
-    assert current_count(sw, "k1", 601) == 2
+class TestTimeToNextSlot:
+    def test_slot_available_immediately(self) -> None:
+        clock = FakeClock()
+        sw = SlidingWindowCounter(limit=5, window_s=1.0, _clock=clock)
+        assert sw.time_to_next_slot() == 0.0
+
+    def test_wait_when_at_limit(self) -> None:
+        clock = FakeClock()
+        sw = SlidingWindowCounter(limit=1, window_s=1.0, _clock=clock)
+        sw.acquire()  # fills at t=0
+        clock.advance(0.3)
+        wait = sw.time_to_next_slot()
+        # oldest at t=0, window=1s → slot frees at t=1 → wait = 0.7
+        assert abs(wait - 0.7) < 1e-6
 
 
-def test_rejects_empty_key() -> None:
-    sw = SlidingWindowLog(capacity=3, window_ms=1_000)
-    with pytest.raises(ValueError, match="key"):
-        allow(sw, "", 0)
-
-
-def test_invalid_capacity() -> None:
-    with pytest.raises(ValueError):
-        SlidingWindowLog(capacity=0, window_ms=1_000)
-
-
-def test_invalid_window() -> None:
-    with pytest.raises(ValueError):
-        SlidingWindowLog(capacity=10, window_ms=0)
-
-
-def test_no_boundary_artifact() -> None:
-    """Sliding window doesn't admit 2×capacity around a fixed-window boundary."""
-    sw = SlidingWindowLog(capacity=5, window_ms=1_000)
-    # 5 requests at t=999 fill the bucket; nothing in t=1000-1499 can pass.
-    for _ in range(5):
-        allow(sw, "k1", 999)
-    # At t=1000 the t=999 entries are still in window. Should refuse.
-    assert allow(sw, "k1", 1_000) is False
-
-
-def test_long_idle_clears_log() -> None:
-    sw = SlidingWindowLog(capacity=3, window_ms=1_000)
-    for _ in range(3):
-        allow(sw, "k1", 0)
-    # Long idle clears the log.
-    assert allow(sw, "k1", 10_000) is True
-    assert current_count(sw, "k1", 10_000) == 1
+class TestSnapshot:
+    def test_snapshot_keys(self) -> None:
+        clock = FakeClock()
+        sw = SlidingWindowCounter(limit=10, window_s=60.0, name="api", _clock=clock)
+        snap = sw.snapshot()
+        assert snap["name"] == "api"
+        assert snap["limit"] == 10
+        assert snap["window_s"] == 60.0
+        assert snap["current_count"] == 0

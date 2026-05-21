@@ -1,95 +1,105 @@
-"""Token bucket tests."""
+"""Tests for TokenBucket rate limiter."""
 
 from __future__ import annotations
 
 import pytest
 
-from ratelimit.schema import TokenBucket
-from ratelimit.token_bucket import allow, remaining
+from ratelimiter.token_bucket import RateLimitExceeded, TokenBucket
 
 
-def test_initial_capacity_full() -> None:
-    """A fresh bucket starts at full capacity."""
-    tb = TokenBucket(capacity=10, rate_per_sec=1.0)
-    assert remaining(tb, "k1", 0) == 10.0
+class FakeClock:
+    def __init__(self, t: float = 0.0) -> None:
+        self.t = t
+
+    def __call__(self) -> float:
+        return self.t
+
+    def advance(self, dt: float) -> None:
+        self.t += dt
 
 
-def test_consume_one_token() -> None:
-    tb = TokenBucket(capacity=5, rate_per_sec=1.0)
-    assert allow(tb, "k1", 0) is True
-    assert remaining(tb, "k1", 0) == 4.0
+class TestBasic:
+    def test_starts_full(self) -> None:
+        clock = FakeClock()
+        tb = TokenBucket(capacity=10.0, refill_rate=1.0, _clock=clock)
+        assert tb.tokens == 10.0
+
+    def test_acquire_reduces_tokens(self) -> None:
+        clock = FakeClock()
+        tb = TokenBucket(capacity=10.0, refill_rate=1.0, _clock=clock)
+        assert tb.acquire(3)
+        assert abs(tb.tokens - 7.0) < 1e-9
+
+    def test_acquire_fails_if_not_enough(self) -> None:
+        clock = FakeClock()
+        tb = TokenBucket(capacity=5.0, refill_rate=1.0, _clock=clock)
+        assert not tb.acquire(6)
+
+    def test_acquire_or_raise_raises(self) -> None:
+        clock = FakeClock()
+        tb = TokenBucket(capacity=3.0, refill_rate=1.0, _clock=clock)
+        tb.acquire(3)
+        with pytest.raises(RateLimitExceeded):
+            tb.acquire_or_raise(1)
+
+    def test_invalid_capacity_raises(self) -> None:
+        with pytest.raises(ValueError):
+            TokenBucket(capacity=0.0, refill_rate=1.0)
+
+    def test_invalid_refill_rate_raises(self) -> None:
+        with pytest.raises(ValueError):
+            TokenBucket(capacity=1.0, refill_rate=0.0)
+
+    def test_invalid_n_raises(self) -> None:
+        clock = FakeClock()
+        tb = TokenBucket(capacity=10.0, refill_rate=1.0, _clock=clock)
+        with pytest.raises(ValueError):
+            tb.acquire(0)
 
 
-def test_throttles_when_empty() -> None:
-    """Once the bucket is empty, further requests at t=0 are denied."""
-    tb = TokenBucket(capacity=2, rate_per_sec=1.0)
-    assert allow(tb, "k1", 0) is True
-    assert allow(tb, "k1", 0) is True
-    assert allow(tb, "k1", 0) is False
+class TestRefill:
+    def test_refills_over_time(self) -> None:
+        clock = FakeClock()
+        tb = TokenBucket(capacity=10.0, refill_rate=5.0, _clock=clock)
+        tb.acquire(10)  # drain
+        assert tb.tokens < 1.0
+        clock.advance(1.0)  # +5 tokens
+        assert abs(tb.tokens - 5.0) < 1e-6
+
+    def test_refill_capped_at_capacity(self) -> None:
+        clock = FakeClock()
+        tb = TokenBucket(capacity=10.0, refill_rate=5.0, _clock=clock)
+        clock.advance(100.0)  # would add 500 tokens
+        assert tb.tokens == 10.0
+
+    def test_partial_refill(self) -> None:
+        clock = FakeClock()
+        tb = TokenBucket(capacity=10.0, refill_rate=2.0, _clock=clock)
+        tb.acquire(10)
+        clock.advance(0.5)  # +1 token
+        assert abs(tb.tokens - 1.0) < 1e-6
 
 
-def test_refill_over_time() -> None:
-    """After 1 second at 1/s rate, 1 token is restored."""
-    tb = TokenBucket(capacity=5, rate_per_sec=1.0)
-    for _ in range(5):
-        allow(tb, "k1", 0)
-    assert allow(tb, "k1", 0) is False
-    # 1 full second passes → 1 token restored.
-    assert allow(tb, "k1", 1_000) is True
+class TestTimeToTokens:
+    def test_available_immediately(self) -> None:
+        clock = FakeClock()
+        tb = TokenBucket(capacity=10.0, refill_rate=5.0, _clock=clock)
+        assert tb.time_to_tokens(5) == 0.0
+
+    def test_wait_time_calculation(self) -> None:
+        clock = FakeClock()
+        tb = TokenBucket(capacity=10.0, refill_rate=5.0, _clock=clock)
+        tb.acquire(10)  # drain
+        wait = tb.time_to_tokens(5)
+        assert abs(wait - 1.0) < 1e-6  # 5 tokens / 5 per sec = 1s
 
 
-def test_refill_caps_at_capacity() -> None:
-    """Long idle period doesn't exceed capacity."""
-    tb = TokenBucket(capacity=5, rate_per_sec=10.0)
-    # Wait 10 seconds → would refill 100 tokens, but cap is 5.
-    for _ in range(5):
-        assert allow(tb, "k1", 10_000) is True
-    assert allow(tb, "k1", 10_000) is False
-
-
-def test_per_key_isolation() -> None:
-    """Two keys have independent buckets."""
-    tb = TokenBucket(capacity=2, rate_per_sec=1.0)
-    assert allow(tb, "k1", 0) is True
-    assert allow(tb, "k1", 0) is True
-    assert allow(tb, "k1", 0) is False
-    # k2 should still be at full capacity.
-    assert allow(tb, "k2", 0) is True
-
-
-def test_rejects_negative_now() -> None:
-    tb = TokenBucket(capacity=2, rate_per_sec=1.0)
-    with pytest.raises(ValueError, match="now_ms"):
-        allow(tb, "k1", -1)
-
-
-def test_rejects_backwards_now() -> None:
-    """now_ms must be monotonic per key."""
-    tb = TokenBucket(capacity=5, rate_per_sec=1.0)
-    allow(tb, "k1", 100)
-    with pytest.raises(ValueError, match="earlier"):
-        allow(tb, "k1", 50)
-
-
-def test_rejects_empty_key() -> None:
-    tb = TokenBucket(capacity=5, rate_per_sec=1.0)
-    with pytest.raises(ValueError, match="key"):
-        allow(tb, "", 0)
-
-
-def test_invalid_capacity() -> None:
-    with pytest.raises(ValueError):
-        TokenBucket(capacity=0, rate_per_sec=1.0)
-
-
-def test_invalid_rate() -> None:
-    with pytest.raises(ValueError):
-        TokenBucket(capacity=10, rate_per_sec=0.0)
-
-
-def test_long_run_admit_rate() -> None:
-    """At 10/s rate and 100/s incoming, long-run admit rate ≈ 10%."""
-    tb = TokenBucket(capacity=10, rate_per_sec=10.0)
-    admitted = sum(1 for i in range(1_000) if allow(tb, "k1", i * 10))
-    # 10 burst + 10/s × 10s = 110 admits expected; allow ±20% slack.
-    assert 80 <= admitted <= 140
+class TestSnapshot:
+    def test_snapshot_keys(self) -> None:
+        clock = FakeClock()
+        tb = TokenBucket(capacity=10.0, refill_rate=2.0, name="api", _clock=clock)
+        snap = tb.snapshot()
+        assert snap["name"] == "api"
+        assert snap["capacity"] == 10.0
+        assert snap["refill_rate"] == 2.0
+        assert "tokens" in snap
