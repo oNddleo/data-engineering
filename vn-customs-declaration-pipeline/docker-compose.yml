@@ -1,0 +1,5 @@
+services:
+  vncustoms:
+    build: .
+    image: vn-customs-declaration-pipeline:latest
+    command: ["info"]
