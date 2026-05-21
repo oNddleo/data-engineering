@@ -140,16 +140,25 @@ def _write_dod(bw: BitWriter, dod: int) -> None:
     if dod == 0:
         bw.write_bit(0)
     elif -63 <= dod <= 64:
-        bw.write_bit(1); bw.write_bit(0)
+        bw.write_bit(1)
+        bw.write_bit(0)
         bw.write_bits(dod + 63, 7)   # offset 63 → range [0,127]
     elif -255 <= dod <= 256:
-        bw.write_bit(1); bw.write_bit(1); bw.write_bit(0)
+        bw.write_bit(1)
+        bw.write_bit(1)
+        bw.write_bit(0)
         bw.write_bits(dod + 255, 9)  # offset 255 → range [0,511]
     elif -2047 <= dod <= 2048:
-        bw.write_bit(1); bw.write_bit(1); bw.write_bit(1); bw.write_bit(0)
+        bw.write_bit(1)
+        bw.write_bit(1)
+        bw.write_bit(1)
+        bw.write_bit(0)
         bw.write_bits(dod + 2047, 12)
     else:
-        bw.write_bit(1); bw.write_bit(1); bw.write_bit(1); bw.write_bit(1)
+        bw.write_bit(1)
+        bw.write_bit(1)
+        bw.write_bit(1)
+        bw.write_bit(1)
         bw.write_bits(dod & 0xFFFF_FFFF_FFFF_FFFF, 64)
 
 

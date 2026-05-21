@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -76,24 +76,24 @@ class TestSplitWindow:
 class TestTimeWindowContains:
     def test_contains_inside(self):
         w = TimeWindow(
-            start=datetime(2024, 3, 14, tzinfo=timezone.utc),
-            end=datetime(2024, 3, 15, tzinfo=timezone.utc),
+            start=datetime(2024, 3, 14, tzinfo=UTC),
+            end=datetime(2024, 3, 15, tzinfo=UTC),
         )
-        ts = datetime(2024, 3, 14, 12, 0, tzinfo=timezone.utc)
+        ts = datetime(2024, 3, 14, 12, 0, tzinfo=UTC)
         assert w.contains(ts)
 
     def test_contains_exclusive_boundary(self):
         w = TimeWindow(
-            start=datetime(2024, 3, 14, tzinfo=timezone.utc),
-            end=datetime(2024, 3, 15, tzinfo=timezone.utc),
+            start=datetime(2024, 3, 14, tzinfo=UTC),
+            end=datetime(2024, 3, 15, tzinfo=UTC),
         )
         assert w.contains(w.start)
         assert w.contains(w.end)
 
     def test_does_not_contain_outside(self):
         w = TimeWindow(
-            start=datetime(2024, 3, 14, tzinfo=timezone.utc),
-            end=datetime(2024, 3, 15, tzinfo=timezone.utc),
+            start=datetime(2024, 3, 14, tzinfo=UTC),
+            end=datetime(2024, 3, 15, tzinfo=UTC),
         )
-        assert not w.contains(datetime(2024, 3, 13, tzinfo=timezone.utc))
-        assert not w.contains(datetime(2024, 3, 16, tzinfo=timezone.utc))
+        assert not w.contains(datetime(2024, 3, 13, tzinfo=UTC))
+        assert not w.contains(datetime(2024, 3, 16, tzinfo=UTC))

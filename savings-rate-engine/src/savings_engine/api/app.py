@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from savings_engine.storage.database import init_db
-from .routes import banks, rates, analysis
+
+from .routes import analysis, banks, rates
 
 
 @asynccontextmanager

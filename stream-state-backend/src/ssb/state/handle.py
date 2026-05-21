@@ -21,13 +21,12 @@ key without deserializing a potentially huge blob.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Generic, Iterable, Iterator, TypeVar
+from typing import Any, Callable, Generic, Iterable, TypeVar
 
 from ..backend.base import StorageBackend
 from .descriptor import StateDescriptor, TTLConfig
 from .serializer import (
     TOMBSTONE,
-    decode_key,
     decode_map_suffix,
     decode_value,
     encode_key,

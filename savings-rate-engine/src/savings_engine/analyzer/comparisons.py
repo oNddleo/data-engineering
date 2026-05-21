@@ -1,4 +1,4 @@
-from savings_engine.models.db_models import RateRecord, Bank
+from savings_engine.models.db_models import RateRecord
 from savings_engine.models.schemas import BankComparison
 from savings_engine.storage.repository import RateRepository
 

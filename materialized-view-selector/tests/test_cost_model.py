@@ -1,12 +1,10 @@
 """Tests for cost model and calibration."""
 
-import pytest
-from pathlib import Path
-import tempfile
 
-from mv_selector.cost_model import CalibrationStore, CostModel, PricingConfig
-from mv_selector.models import CandidateView, MaterializedView, Warehouse
-from datetime import datetime, timezone
+import pytest
+
+from mv_selector.cost_model import CalibrationStore, CostModel
+from mv_selector.models import CandidateView, Warehouse
 
 
 def _candidate(view_id: str = "abc", storage_bytes: int = 10 * 1024**3) -> CandidateView:

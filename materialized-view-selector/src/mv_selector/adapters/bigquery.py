@@ -7,16 +7,14 @@ Requires:  google-cloud-bigquery >= 3.0
 
 from __future__ import annotations
 
-import re
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from ..models import CandidateView, MaterializedView, QueryRecord, Warehouse
 from .base import BaseAdapter
 
 try:
     from google.cloud import bigquery
-    from google.cloud.bigquery import QueryJobConfig
+    from google.cloud.bigquery import QueryJobConfig  # noqa: F401
     _BQ_AVAILABLE = True
 except ImportError:
     _BQ_AVAILABLE = False
@@ -46,10 +44,10 @@ class BigQueryAdapter(BaseAdapter):
         _require_bq()
         self.project = project
         self.location = location
-        self._client: Optional["bigquery.Client"] = None
+        self._client: bigquery.Client | None = None
 
     @property
-    def client(self) -> "bigquery.Client":
+    def client(self) -> bigquery.Client:
         if self._client is None:
             self._client = bigquery.Client(
                 project=self.project, location=self.location
@@ -95,7 +93,7 @@ class BigQueryAdapter(BaseAdapter):
                     query_id=row.job_id,
                     sql=row.query or "",
                     warehouse=Warehouse.BIGQUERY,
-                    executed_at=row.creation_time.replace(tzinfo=timezone.utc),
+                    executed_at=row.creation_time.replace(tzinfo=UTC),
                     duration_ms=int(row.total_slot_ms or 0),
                     bytes_processed=int(row.total_bytes_processed or 0),
                     cost_usd=float(row.cost_usd or 0.0),
@@ -121,7 +119,7 @@ class BigQueryAdapter(BaseAdapter):
         return MaterializedView(
             candidate=candidate,
             warehouse=Warehouse.BIGQUERY,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
             fqn=fqn,
         )
 
@@ -132,7 +130,7 @@ class BigQueryAdapter(BaseAdapter):
             f"{view.candidate.sql}"
         )
         self.client.query(ddl).result()
-        view.last_refreshed_at = datetime.now(timezone.utc)
+        view.last_refreshed_at = datetime.now(UTC)
         view.refresh_count += 1
         return view
 

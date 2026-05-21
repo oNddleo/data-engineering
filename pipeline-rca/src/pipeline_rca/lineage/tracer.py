@@ -132,7 +132,7 @@ def _extract_tables_from_sql(sql: str) -> list[str]:
     for m in matches:
         clean = m.strip('`"[]{}')
         # Skip obvious non-tables: subquery aliases, CTEs with no dot
-        if clean and not clean.upper() in ("SELECT", "WHERE", "GROUP", "ORDER"):
+        if clean and clean.upper() not in ("SELECT", "WHERE", "GROUP", "ORDER"):
             seen[clean] = None
     return list(seen)
 

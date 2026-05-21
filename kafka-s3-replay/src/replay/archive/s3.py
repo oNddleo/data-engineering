@@ -7,7 +7,7 @@ import io
 import json
 import logging
 from collections.abc import AsyncIterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 import anyio
@@ -56,7 +56,7 @@ class S3ArchiveReader:
                 key: str = obj["Key"]
                 last_modified: datetime = obj["LastModified"]
                 if last_modified.tzinfo is None:
-                    last_modified = last_modified.replace(tzinfo=timezone.utc)
+                    last_modified = last_modified.replace(tzinfo=UTC)
                 # Pre-filter: skip objects whose last-modified date is before window start
                 # (files modified before the window can't contain events inside it)
                 if last_modified < window.start:
@@ -218,20 +218,20 @@ class S3ArchiveReader:
             if raw is None:
                 continue
             try:
-                if isinstance(raw, (int, float)):
+                if isinstance(raw, int | float):
                     # epoch millis
                     if raw > 1e12:
                         raw = raw / 1000
-                    return datetime.fromtimestamp(raw, tz=timezone.utc)
+                    return datetime.fromtimestamp(raw, tz=UTC)
                 if isinstance(raw, str):
                     from dateutil.parser import parse
                     dt = parse(raw)
                     if dt.tzinfo is None:
-                        dt = dt.replace(tzinfo=timezone.utc)
+                        dt = dt.replace(tzinfo=UTC)
                     return dt
                 if isinstance(raw, datetime):
                     if raw.tzinfo is None:
-                        return raw.replace(tzinfo=timezone.utc)
+                        return raw.replace(tzinfo=UTC)
                     return raw
             except Exception:
                 continue

@@ -18,8 +18,6 @@ from .expressions import (
     IsNullExpr,
     Literal,
     UnaryExpr,
-    conjuncts_to_expr,
-    split_conjuncts,
 )
 from .logical_plan import (
     Aggregate,

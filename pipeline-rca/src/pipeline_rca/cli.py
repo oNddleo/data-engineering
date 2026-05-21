@@ -16,7 +16,7 @@ from rich.table import Table
 
 from pipeline_rca.attribution.root_cause import RootCauseAttributor
 from pipeline_rca.lineage.tracer import LineageTracer
-from pipeline_rca.models import DegradationKind, MetricDegradation, MetricPoint
+from pipeline_rca.models import MetricPoint
 from pipeline_rca.monitors.metric_monitor import MetricMonitor, build_synthetic_degradation
 from pipeline_rca.monitors.schema_monitor import SchemaStore
 from pipeline_rca.reporting.generator import ReportGenerator
@@ -87,7 +87,7 @@ def demo(drop_pct: float, baseline_days: int, output_dir: str, save: bool) -> No
 
     # 3. Seed schema store with a synthetic schema change
     store = SchemaStore(":memory:")
-    from pipeline_rca.models import ChangeCategoryKind, SchemaChange
+    from pipeline_rca.models import ChangeCategoryKind
 
     intervention_time = series[baseline_days].timestamp - timedelta(hours=6)
     store.record_pipeline_event(
@@ -215,7 +215,6 @@ def run(config_path: str, metric: tuple[str, ...], output_dir: str, save: bool) 
 # ------------------------------------------------------------------
 
 def _display_report_summary(report: "RootCauseReport") -> None:  # noqa: F821
-    from pipeline_rca.models import RootCauseReport
 
     pct = abs(report.degradation.relative_change * 100)
     panel = Panel(

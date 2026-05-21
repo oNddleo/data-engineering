@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from io import StringIO
 from pathlib import Path
 
@@ -22,7 +22,7 @@ def _sample_event(offset: int = 1) -> Event:
         offset=offset,
         key=b"order-001",
         value=json.dumps({"order_id": "order-001", "amount": 99.99}).encode(),
-        timestamp=datetime(2024, 3, 14, 10, 0, tzinfo=timezone.utc),
+        timestamp=datetime(2024, 3, 14, 10, 0, tzinfo=UTC),
         headers={"source": b"replay-test"},
     )
 
@@ -95,7 +95,8 @@ class TestFileTarget:
 
     @pytest.mark.asyncio
     async def test_writes_avro(self, tmp_path):
-        import fastavro, io
+
+        import fastavro
         path = str(tmp_path / "out.avro")
         target = FileTarget(FileTargetConfig(path=path, format=ArchiveFormat.AVRO))
         await target.open()

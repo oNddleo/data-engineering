@@ -1,7 +1,6 @@
 """Tests for the what-if simulator."""
-import pytest
-from src import Event, FixedLagWatermark, DynamicPerKeyWatermark, TumblingWindow
-from src.policies import DropPolicy, RestatePolicy, SideOutputPolicy
+from src import Event, FixedLagWatermark, TumblingWindow
+from src.policies import DropPolicy
 from src.simulator import StreamReplay, ReplayConfig, WhatIfComparator
 
 

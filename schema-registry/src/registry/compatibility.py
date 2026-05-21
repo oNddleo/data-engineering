@@ -135,7 +135,7 @@ class CompatibilityChecker:
         old_props = _get_properties(old)
         new_props = _get_properties(new)
         old_req = _get_required(old)
-        new_req = _get_required(new)
+        _new_req = _get_required(new)  # noqa: F841
 
         # Fields removed from new schema that were required in old
         for field in old_req - set(new_props.keys()):

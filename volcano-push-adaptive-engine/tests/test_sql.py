@@ -1,10 +1,10 @@
 """Tests for the SQL frontend (lexer, parser, planner)."""
 import pytest
 from adaptive_engine import Catalog, AdaptiveEngine
-from adaptive_engine.sql import Parser, Planner, LexError, ParseError, PlanError
+from adaptive_engine.sql import Parser, Planner, LexError, ParseError
 from adaptive_engine.sql.lexer import tokenize, TT
 from adaptive_engine.plan import (
-    AggregateNode, FilterNode, HashJoinNode, LimitNode,
+    LimitNode,
     ProjectNode, ScanNode, SortNode,
 )
 

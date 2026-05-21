@@ -67,7 +67,8 @@ class SchemaRegistry:
         existing = await self.storage.get_all_schema_versions(subject)
 
         # Idempotency: same hash → return existing version
-        import hashlib, json
+        import hashlib
+        import json
         canonical = json.dumps(schema_definition, sort_keys=True)
         new_hash = hashlib.sha256(canonical.encode()).hexdigest()[:16]
         for ev in existing:

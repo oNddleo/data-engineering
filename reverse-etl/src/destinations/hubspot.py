@@ -60,7 +60,7 @@ class HubSpotDestination(BaseDestination):
             try:
                 ok = self._upsert_batch(batch)
                 synced += ok
-            except ApiException as e:
+            except Exception as e:
                 logger.error(f"HubSpotDestination: batch {i//self._batch_size + 1} failed: {e}")
 
         logger.info(f"HubSpotDestination: synced {synced}/{len(records)} to {self._object_type}")

@@ -7,7 +7,6 @@ TTL:         Per-group from feature registry
 """
 from __future__ import annotations
 
-import struct
 import time
 from typing import Any
 

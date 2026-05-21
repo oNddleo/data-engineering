@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass
@@ -25,7 +24,7 @@ class SchedulerConfig:
 
 @dataclass
 class HPAConfig:
-    kubeconfig_path: Optional[str] = None   # None = in-cluster
+    kubeconfig_path: str | None = None   # None = in-cluster
     namespace: str = "default"
     scale_down_cooldown_seconds: int = 300
     scale_up_cooldown_seconds: int = 60

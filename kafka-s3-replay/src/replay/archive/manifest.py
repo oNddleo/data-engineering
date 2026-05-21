@@ -7,8 +7,8 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from replay.models import S3ArchiveConfig, TimeWindow
 from replay.archive.s3 import S3ArchiveReader
+from replay.models import S3ArchiveConfig, TimeWindow
 
 logger = logging.getLogger(__name__)
 

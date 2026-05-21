@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import random
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from dqp.cost.statistics import ColumnStats, Histogram, StatsRegistry, TableStats

@@ -8,7 +8,7 @@ Usage:
 """
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal
 
 import pyarrow as pa
 import pyarrow.compute as pc
@@ -28,15 +28,7 @@ from .logical_plan import (
 from .optimizer import Optimizer
 from .parser import parse
 from .physical_plan import (
-    BATCH_SIZE,
-    FilterOp,
-    HashAggOp,
-    HashJoinOp,
-    LimitOp,
-    PhysicalOp,
-    ProjectOp,
     SequentialScan,
-    SortOp,
 )
 from .pipeline import (
     CollectSink,
@@ -46,7 +38,6 @@ from .pipeline import (
     PushFilter,
     PushLimit,
     PushProject,
-    SortSink,
 )
 from .planner import Planner
 

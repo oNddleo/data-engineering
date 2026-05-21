@@ -107,7 +107,7 @@ class ToleranceChecker:
         if field in self.AMOUNT_FIELDS:
             return self._compare_relative(key, field, lv, kv)
         # Default: try relative if numeric, else exact
-        if isinstance(lv, (int, float)) and isinstance(kv, (int, float)):
+        if isinstance(lv, int | float) and isinstance(kv, int | float):
             return self._compare_relative(key, field, lv, kv)
         return self._compare_exact(key, field, lv, kv)
 

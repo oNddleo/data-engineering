@@ -60,11 +60,11 @@ class PipelineResult:
             for e in self.errors:
                 print(f"  ✗  {e}")
 
-        print(f"\n[REPORTS GENERATED]")
+        print("\n[REPORTS GENERATED]")
         for code, df in self.reports.items():
             print(f"  {code:12s}  {len(df):>6,} rows")
 
-        print(f"\n[RECONCILIATION]")
+        print("\n[RECONCILIATION]")
         all_pass = True
         for r in self.reconciliation:
             mark = "✓" if r.passed else "✗"
@@ -74,14 +74,14 @@ class PipelineResult:
         if all_pass:
             print("  All reconciliation checks PASSED")
 
-        print(f"\n[OUTPUT FILES]")
+        print("\n[OUTPUT FILES]")
         if "excel" in self.output_files:
             print(f"  Excel : {self.output_files['excel']}")
         if "csv" in self.output_files:
             for code, p in self.output_files["csv"].items():
                 print(f"  CSV   : {p}")
 
-        print(f"\n[AUDIT TRAIL]")
+        print("\n[AUDIT TRAIL]")
         print(f"  Log   : {self.audit_summary.get('log_path')}")
         print(f"  Entries: {self.audit_summary.get('total_entries')}")
         print(f"  Chain : {self.audit_summary.get('chain_hash', '')[:16]}...")

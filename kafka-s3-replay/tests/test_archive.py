@@ -2,14 +2,9 @@
 
 from __future__ import annotations
 
-import gzip
-import json
-from datetime import datetime, timezone
-
 import pytest
 
 from replay.archive.s3 import S3ArchiveReader
-from replay.models import ArchiveFormat, S3ArchiveConfig, TimeWindow
 
 
 @pytest.mark.asyncio

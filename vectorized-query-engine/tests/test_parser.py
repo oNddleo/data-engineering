@@ -1,10 +1,11 @@
 """Test SQL → LogicalPlan parsing."""
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from vqe.parser import parse
 from vqe.logical_plan import Scan, Filter, Project, Aggregate, Sort, Limit, Join
-from vqe.expressions import ColumnRef, Literal, BinaryExpr, AggExpr
+from vqe.expressions import ColumnRef, BinaryExpr
 
 
 def test_simple_select_star():

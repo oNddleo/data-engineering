@@ -22,7 +22,6 @@ import extruct
 from price_parser import Price
 from selectolax.parser import HTMLParser
 
-from .config import settings
 from .logging import get_logger
 
 log = get_logger(__name__)

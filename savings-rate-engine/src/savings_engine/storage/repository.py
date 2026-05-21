@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
-from typing import Optional
-from sqlalchemy.orm import Session
-from sqlalchemy import select, desc, func
 
-from savings_engine.models.db_models import Bank, RateSnapshot, RateRecord
+from sqlalchemy import desc, func, select
+from sqlalchemy.orm import Session
+
+from savings_engine.models.db_models import Bank, RateRecord, RateSnapshot
 from savings_engine.models.schemas import NormalizedRate
 
 
@@ -13,7 +13,7 @@ class RateRepository:
 
     # --- writes ---
 
-    def save_snapshot(self, bank_code: str, rates: list[NormalizedRate], *, error: Optional[str] = None) -> RateSnapshot:
+    def save_snapshot(self, bank_code: str, rates: list[NormalizedRate], *, error: str | None = None) -> RateSnapshot:
         snapshot = RateSnapshot(
             bank_code=bank_code,
             scraped_at=datetime.utcnow(),
@@ -41,7 +41,7 @@ class RateRepository:
 
     # --- reads ---
 
-    def get_latest_rates(self, bank_code: Optional[str] = None) -> list[RateRecord]:
+    def get_latest_rates(self, bank_code: str | None = None) -> list[RateRecord]:
         """Return the most recent successful rate records for each bank (or a specific bank)."""
         # Subquery: latest snapshot id per bank
         sub = (
@@ -64,7 +64,7 @@ class RateRepository:
         bank_code: str,
         term_days: int,
         rate_type: str = "standard",
-        since: Optional[datetime] = None,
+        since: datetime | None = None,
     ) -> list[tuple[datetime, float]]:
         """Return (scraped_at, rate_pa) time series for a specific bank+term."""
         if since is None:
@@ -108,7 +108,7 @@ class RateRepository:
             stmt = stmt.where(Bank.active == True)  # noqa: E712
         return list(self.db.execute(stmt).scalars())
 
-    def get_bank(self, bank_code: str) -> Optional[Bank]:
+    def get_bank(self, bank_code: str) -> Bank | None:
         return self.db.get(Bank, bank_code)
 
     def get_available_terms(self) -> list[int]:

@@ -1,8 +1,6 @@
 """Tests for JSON and HTML reporters."""
 
 import json
-import tempfile
-from pathlib import Path
 
 import pytest
 from query_cost_optimizer.demo import build_demo_report

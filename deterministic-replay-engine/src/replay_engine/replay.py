@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Callable
 
 from .causal_order import CausalOrderError, causal_sort, validate_monotone_sequences
@@ -35,7 +35,7 @@ class ReplayResult:
         lines = [
             f"Replayed {len(self.ordered_events)} events in {self.duration_ms:.1f} ms",
             f"Exactly-once violations: {self.exactly_once_report['total_violations']}",
-            f"UDF non-determinism violations: "
+            "UDF non-determinism violations: "
             + str(sum(r["total_violations"] for r in self.udf_reports.values())),
         ]
         if self.sequence_errors:

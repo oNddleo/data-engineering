@@ -6,7 +6,6 @@ import base64
 from typing import TYPE_CHECKING, Any
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import JSONResponse
 
 from ..state.serializer import decode_key, decode_value, encode_key, is_tombstone
 

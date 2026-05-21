@@ -5,8 +5,6 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-import pytest
-
 from src.lambda_arch.models import Event
 from src.lambda_arch.speed_layer import SpeedLayer
 

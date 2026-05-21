@@ -20,10 +20,9 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Optional
 
 from .adapters.base import BaseAdapter
 from .cost_model import CalibrationStore, CostModel, PricingConfig
@@ -66,8 +65,8 @@ class ViewScheduler:
     def __init__(
         self,
         adapter: BaseAdapter,
-        config: Optional[SchedulerConfig] = None,
-        pricing: Optional[PricingConfig] = None,
+        config: SchedulerConfig | None = None,
+        pricing: PricingConfig | None = None,
     ) -> None:
         self.adapter = adapter
         self.cfg = config or SchedulerConfig()
@@ -195,7 +194,7 @@ class ViewScheduler:
         self._save_state()
 
     def _calibrate_live_views(self) -> None:
-        since = datetime.now(timezone.utc) - timedelta(days=self.cfg.lookback_days)
+        since = datetime.now(UTC) - timedelta(days=self.cfg.lookback_days)
         for view in list(self._live_views.values()):
             try:
                 actual = self.adapter.measure_savings(view, since)

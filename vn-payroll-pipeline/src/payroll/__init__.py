@@ -2,110 +2,60 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
-
 __version__ = "0.1.0"
 
-if TYPE_CHECKING:
-    from payroll.engine import compute_payslip
-    from payroll.insurance import (
-        BHTN_EMPLOYEE_BPS,
-        BHTN_EMPLOYER_BPS,
-        BHXH_EMPLOYEE_BPS,
-        BHXH_EMPLOYER_BPS,
-        BHYT_EMPLOYEE_BPS,
-        BHYT_EMPLOYER_BPS,
-        EMPLOYEE_TOTAL_BPS,
-        EMPLOYER_TOTAL_BPS,
-        REGION_1_MIN_WAGE_VND,
-        SHUI_CAP_MULTIPLIER,
-        InsuranceBreakdown,
-        compute_insurance,
-        min_wage_for,
-        shui_cap_bhtn_for,
-        shui_cap_bhxh_bhyt_vnd,
-    )
-    from payroll.io_jsonl import (
-        dump_employees,
-        dump_payslips,
-        dump_periods,
-        employee_from_dict,
-        employee_to_dict,
-        load_employees,
-        load_payslips,
-        load_periods,
-        payslip_from_dict,
-        payslip_to_dict,
-        period_from_dict,
-        period_to_dict,
-    )
-    from payroll.schema import Employee, PayPeriod, Payslip, Region, ResidencyStatus
-    from payroll.simulator import generate_employees, generate_periods
-    from payroll.tax import (
-        DEPENDENT_ALLOWANCE_VND,
-        NON_RESIDENT_RATE_BPS,
-        PERSONAL_ALLOWANCE_VND,
-        PITBracket,
-        compute_pit,
-        resident_brackets,
-        taxable_income,
-    )
+def __getattr__(name: str) -> object:
+    _LAZY = {
+        "BHTN_EMPLOYEE_BPS": ("payroll.insurance", "BHTN_EMPLOYEE_BPS"),
+        "BHTN_EMPLOYER_BPS": ("payroll.insurance", "BHTN_EMPLOYER_BPS"),
+        "BHXH_EMPLOYEE_BPS": ("payroll.insurance", "BHXH_EMPLOYEE_BPS"),
+        "BHXH_EMPLOYER_BPS": ("payroll.insurance", "BHXH_EMPLOYER_BPS"),
+        "BHYT_EMPLOYEE_BPS": ("payroll.insurance", "BHYT_EMPLOYEE_BPS"),
+        "BHYT_EMPLOYER_BPS": ("payroll.insurance", "BHYT_EMPLOYER_BPS"),
+        "DEPENDENT_ALLOWANCE_VND": ("payroll.tax", "DEPENDENT_ALLOWANCE_VND"),
+        "EMPLOYEE_TOTAL_BPS": ("payroll.insurance", "EMPLOYEE_TOTAL_BPS"),
+        "EMPLOYER_TOTAL_BPS": ("payroll.insurance", "EMPLOYER_TOTAL_BPS"),
+        "Employee": ("payroll.schema", "Employee"),
+        "InsuranceBreakdown": ("payroll.insurance", "InsuranceBreakdown"),
+        "NON_RESIDENT_RATE_BPS": ("payroll.tax", "NON_RESIDENT_RATE_BPS"),
+        "PERSONAL_ALLOWANCE_VND": ("payroll.tax", "PERSONAL_ALLOWANCE_VND"),
+        "PITBracket": ("payroll.tax", "PITBracket"),
+        "PayPeriod": ("payroll.schema", "PayPeriod"),
+        "Payslip": ("payroll.schema", "Payslip"),
+        "REGION_1_MIN_WAGE_VND": ("payroll.insurance", "REGION_1_MIN_WAGE_VND"),
+        "Region": ("payroll.schema", "Region"),
+        "ResidencyStatus": ("payroll.schema", "ResidencyStatus"),
+        "SHUI_CAP_MULTIPLIER": ("payroll.insurance", "SHUI_CAP_MULTIPLIER"),
+        "compute_insurance": ("payroll.insurance", "compute_insurance"),
+        "compute_payslip": ("payroll.engine", "compute_payslip"),
+        "compute_pit": ("payroll.tax", "compute_pit"),
+        "dump_employees": ("payroll.io_jsonl", "dump_employees"),
+        "dump_payslips": ("payroll.io_jsonl", "dump_payslips"),
+        "dump_periods": ("payroll.io_jsonl", "dump_periods"),
+        "employee_from_dict": ("payroll.io_jsonl", "employee_from_dict"),
+        "employee_to_dict": ("payroll.io_jsonl", "employee_to_dict"),
+        "generate_employees": ("payroll.simulator", "generate_employees"),
+        "generate_periods": ("payroll.simulator", "generate_periods"),
+        "load_employees": ("payroll.io_jsonl", "load_employees"),
+        "load_payslips": ("payroll.io_jsonl", "load_payslips"),
+        "load_periods": ("payroll.io_jsonl", "load_periods"),
+        "min_wage_for": ("payroll.insurance", "min_wage_for"),
+        "payslip_from_dict": ("payroll.io_jsonl", "payslip_from_dict"),
+        "payslip_to_dict": ("payroll.io_jsonl", "payslip_to_dict"),
+        "period_from_dict": ("payroll.io_jsonl", "period_from_dict"),
+        "period_to_dict": ("payroll.io_jsonl", "period_to_dict"),
+        "resident_brackets": ("payroll.tax", "resident_brackets"),
+        "shui_cap_bhtn_for": ("payroll.insurance", "shui_cap_bhtn_for"),
+        "shui_cap_bhxh_bhyt_vnd": ("payroll.insurance", "shui_cap_bhxh_bhyt_vnd"),
+        "taxable_income": ("payroll.tax", "taxable_income"),
+    }
 
-
-_LAZY: dict[str, tuple[str, str]] = {
-    "BHTN_EMPLOYEE_BPS": ("payroll.insurance", "BHTN_EMPLOYEE_BPS"),
-    "BHTN_EMPLOYER_BPS": ("payroll.insurance", "BHTN_EMPLOYER_BPS"),
-    "BHXH_EMPLOYEE_BPS": ("payroll.insurance", "BHXH_EMPLOYEE_BPS"),
-    "BHXH_EMPLOYER_BPS": ("payroll.insurance", "BHXH_EMPLOYER_BPS"),
-    "BHYT_EMPLOYEE_BPS": ("payroll.insurance", "BHYT_EMPLOYEE_BPS"),
-    "BHYT_EMPLOYER_BPS": ("payroll.insurance", "BHYT_EMPLOYER_BPS"),
-    "DEPENDENT_ALLOWANCE_VND": ("payroll.tax", "DEPENDENT_ALLOWANCE_VND"),
-    "EMPLOYEE_TOTAL_BPS": ("payroll.insurance", "EMPLOYEE_TOTAL_BPS"),
-    "EMPLOYER_TOTAL_BPS": ("payroll.insurance", "EMPLOYER_TOTAL_BPS"),
-    "Employee": ("payroll.schema", "Employee"),
-    "InsuranceBreakdown": ("payroll.insurance", "InsuranceBreakdown"),
-    "NON_RESIDENT_RATE_BPS": ("payroll.tax", "NON_RESIDENT_RATE_BPS"),
-    "PERSONAL_ALLOWANCE_VND": ("payroll.tax", "PERSONAL_ALLOWANCE_VND"),
-    "PITBracket": ("payroll.tax", "PITBracket"),
-    "PayPeriod": ("payroll.schema", "PayPeriod"),
-    "Payslip": ("payroll.schema", "Payslip"),
-    "REGION_1_MIN_WAGE_VND": ("payroll.insurance", "REGION_1_MIN_WAGE_VND"),
-    "Region": ("payroll.schema", "Region"),
-    "ResidencyStatus": ("payroll.schema", "ResidencyStatus"),
-    "SHUI_CAP_MULTIPLIER": ("payroll.insurance", "SHUI_CAP_MULTIPLIER"),
-    "compute_insurance": ("payroll.insurance", "compute_insurance"),
-    "compute_payslip": ("payroll.engine", "compute_payslip"),
-    "compute_pit": ("payroll.tax", "compute_pit"),
-    "dump_employees": ("payroll.io_jsonl", "dump_employees"),
-    "dump_payslips": ("payroll.io_jsonl", "dump_payslips"),
-    "dump_periods": ("payroll.io_jsonl", "dump_periods"),
-    "employee_from_dict": ("payroll.io_jsonl", "employee_from_dict"),
-    "employee_to_dict": ("payroll.io_jsonl", "employee_to_dict"),
-    "generate_employees": ("payroll.simulator", "generate_employees"),
-    "generate_periods": ("payroll.simulator", "generate_periods"),
-    "load_employees": ("payroll.io_jsonl", "load_employees"),
-    "load_payslips": ("payroll.io_jsonl", "load_payslips"),
-    "load_periods": ("payroll.io_jsonl", "load_periods"),
-    "min_wage_for": ("payroll.insurance", "min_wage_for"),
-    "payslip_from_dict": ("payroll.io_jsonl", "payslip_from_dict"),
-    "payslip_to_dict": ("payroll.io_jsonl", "payslip_to_dict"),
-    "period_from_dict": ("payroll.io_jsonl", "period_from_dict"),
-    "period_to_dict": ("payroll.io_jsonl", "period_to_dict"),
-    "resident_brackets": ("payroll.tax", "resident_brackets"),
-    "shui_cap_bhtn_for": ("payroll.insurance", "shui_cap_bhtn_for"),
-    "shui_cap_bhxh_bhyt_vnd": ("payroll.insurance", "shui_cap_bhxh_bhyt_vnd"),
-    "taxable_income": ("payroll.tax", "taxable_income"),
-}
-
-
-def __getattr__(name: str) -> Any:
     if name in _LAZY:
         from importlib import import_module
 
         m, attr = _LAZY[name]
         return getattr(import_module(m), attr)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 
 __all__ = [
     "BHTN_EMPLOYEE_BPS",

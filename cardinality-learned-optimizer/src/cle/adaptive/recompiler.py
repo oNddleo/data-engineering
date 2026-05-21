@@ -14,15 +14,14 @@ intercept executor nodes via ExecutorRun hooks — that approach is
 described in Section 4.2 of the Bao paper.
 """
 from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 from typing import Optional
 
 from ..db.connector import ConnectionPool
-from ..db.hint_injector import build_correction_hints, apply_hint_set_to_connection, reset_hint_set
-from ..db.interceptor import QueryInterceptor, ExecutionRecord
-from ..plan.node import PlanNode
-from ..plan.parser import has_critical_error
+from ..db.hint_injector import build_correction_hints
+from ..db.interceptor import ExecutionRecord, QueryInterceptor
 from .monitor import CardinalityMonitor, MonitorReport
 
 logger = logging.getLogger(__name__)

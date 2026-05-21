@@ -6,7 +6,7 @@ import json
 import logging
 
 import aiohttp
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from replay.models import Event, HttpTargetConfig
 from replay.targets.base import BaseTarget

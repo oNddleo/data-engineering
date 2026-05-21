@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
 
 from sqlalchemy import (
     Boolean,
@@ -112,7 +111,7 @@ class MetricsStore:
             )
         return [self._row_to_run(r) for r in rows]
 
-    def get_run(self, run_id: str) -> Optional[JobRun]:
+    def get_run(self, run_id: str) -> JobRun | None:
         with Session(self._engine) as s:
             row = s.get(JobRunRow, run_id)
             return self._row_to_run(row) if row else None

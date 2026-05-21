@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from dateutil.parser import parse as parse_dt
 
@@ -15,7 +15,7 @@ def window_from_days_ago(days: int, end: datetime | None = None) -> TimeWindow:
     """Create a window from N days ago until *end* (default: now)."""
     if days < 1 or days > MAX_WINDOW_DAYS:
         raise ValueError(f"days must be between 1 and {MAX_WINDOW_DAYS}, got {days}")
-    end = end or datetime.now(tz=timezone.utc)
+    end = end or datetime.now(tz=UTC)
     start = end - timedelta(days=days)
     return TimeWindow(start=start, end=end)
 
@@ -41,5 +41,5 @@ def split_window(window: TimeWindow, chunk_hours: int = 24) -> list[TimeWindow]:
 
 def _ensure_tz(dt: datetime) -> datetime:
     if dt.tzinfo is None:
-        return dt.replace(tzinfo=timezone.utc)
+        return dt.replace(tzinfo=UTC)
     return dt

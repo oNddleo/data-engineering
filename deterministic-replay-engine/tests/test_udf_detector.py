@@ -1,4 +1,3 @@
-import random
 import pytest
 from replay_engine.event import Event
 from replay_engine.vector_clock import VectorClock

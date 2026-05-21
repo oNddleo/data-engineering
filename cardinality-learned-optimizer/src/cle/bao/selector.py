@@ -8,19 +8,18 @@ For each incoming query:
   5. If adaptive recompile fires, record the speedup separately
 """
 from __future__ import annotations
+
 import logging
-import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
-from ..db.connector import ConnectionPool
-from ..db.hint_injector import BAO_HINT_SETS, hint_set_to_pg_hints, reset_hint_set
-from ..db.interceptor import QueryInterceptor, ExecutionRecord
 from ..adaptive.recompiler import AdaptiveRecompiler, RecompileResult
-from ..plan.encoder import Vocabulary, encode_tree
-from ..model.gnn import QueryOptimizer
+from ..db.connector import ConnectionPool
+from ..db.hint_injector import BAO_HINT_SETS, hint_set_to_pg_hints
+from ..db.interceptor import ExecutionRecord, QueryInterceptor
 from ..model.trainer import Trainer
-from .bandit import ThompsonSamplingBandit, NeuralBandit
+from ..plan.encoder import Vocabulary, encode_tree
+from .bandit import NeuralBandit, ThompsonSamplingBandit
 
 logger = logging.getLogger(__name__)
 

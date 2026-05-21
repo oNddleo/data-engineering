@@ -1,11 +1,11 @@
 """Integration-style tests for the full attribution pipeline."""
 
 import json
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from pipeline_rca.attribution.root_cause import RootCauseAttributor
 from pipeline_rca.lineage.tracer import LineageTracer
-from pipeline_rca.models import ChangeCategoryKind, DegradationKind, MetricDegradation, MetricPoint
+from pipeline_rca.models import ChangeCategoryKind, DegradationKind, MetricDegradation
 from pipeline_rca.monitors.metric_monitor import build_synthetic_degradation
 from pipeline_rca.monitors.schema_monitor import SchemaStore
 

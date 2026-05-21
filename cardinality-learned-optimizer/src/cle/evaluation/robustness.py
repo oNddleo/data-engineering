@@ -12,11 +12,11 @@ We reproduce Figure 9 / Table 2 from the paper:
   - "Regret" = chosen_latency / optimal_latency (1.0 = optimal)
 """
 from __future__ import annotations
+
 import json
 import logging
-import math
 import statistics
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 

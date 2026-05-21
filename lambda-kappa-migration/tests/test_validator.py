@@ -7,9 +7,7 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-import pytest
-
-from src.validator.tolerance import FieldComparison, MatchResult, ToleranceChecker
+from src.validator.tolerance import MatchResult, ToleranceChecker
 
 
 class TestToleranceCheckerExact:

@@ -3,9 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
-from datetime import datetime, timezone
-from pathlib import Path
 
 import pytest
 
@@ -18,7 +15,6 @@ from replay.models import (
     ReplayStatus,
     S3ArchiveConfig,
     TargetType,
-    TimeWindow,
 )
 from replay.targets.base import BaseTarget
 

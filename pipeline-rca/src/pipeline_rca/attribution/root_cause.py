@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from pipeline_rca.analysis.causal_impact import ITSAnalyzer, rank_candidates
 from pipeline_rca.lineage.tracer import LineageTracer

@@ -1,7 +1,9 @@
 """Parse PostgreSQL EXPLAIN (ANALYZE, FORMAT JSON) output into PlanNode trees."""
 from __future__ import annotations
+
 import json
 from typing import Any
+
 from .node import PlanNode
 
 _FIELD_MAP = {

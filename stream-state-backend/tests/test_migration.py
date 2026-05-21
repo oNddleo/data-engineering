@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-import asyncio
 
 import pytest
-import pytest_asyncio
 
 from ssb.manager import StateBackendManager
 from ssb.topology.descriptor import OperatorDescriptor, TopologyDescriptor
-from ssb.topology.migrator import MigrationStatus, MigrationTask, _cf_name
+from ssb.topology.migrator import MigrationStatus
 
 
 # ---------------------------------------------------------------------------

@@ -19,7 +19,6 @@ Usage
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 import textwrap
 from pathlib import Path
@@ -137,7 +136,7 @@ def _cmd_explain(args: argparse.Namespace, sql: str) -> int:
 
     try:
         from rich.console import Console
-        from rich.syntax import Syntax
+        from rich.syntax import Syntax  # noqa: F401
         from rich.panel import Panel
 
         console = Console()

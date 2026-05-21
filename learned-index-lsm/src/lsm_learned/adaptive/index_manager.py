@@ -9,7 +9,6 @@ the current key distribution and switches back.
 
 from __future__ import annotations
 
-import time
 from enum import Enum, auto
 from typing import Optional
 

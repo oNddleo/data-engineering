@@ -6,8 +6,8 @@ import json
 import logging
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 from src.config import HISTORICAL_DIR, LOCAL_KAFKA_FILE, config
 from src.kappa_arch.replay_manager import ProcessorMode

@@ -11,8 +11,6 @@ pg_hint_plan hint syntax reference:
   Leading(t1 t2 t3)   — force join order
 """
 from __future__ import annotations
-import math
-from typing import Optional
 
 from ..plan.node import PlanNode
 

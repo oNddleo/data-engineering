@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from cctest.codecs.gorilla import GorillaDeltaCodec, GorillaFloatCodec
 

@@ -11,11 +11,11 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from sbv_reporting.utils.config import get_config
 
 try:
     import numpy as np
@@ -30,8 +30,6 @@ class _SafeEncoder(json.JSONEncoder):
         if _NP_TYPES and isinstance(obj, _NP_TYPES):
             return obj.item()
         return super().default(obj)
-
-from sbv_reporting.utils.config import get_config
 
 
 class AuditTrail:

@@ -28,10 +28,10 @@ WHERE / ON conditions:
     col BETWEEN lo AND hi        (desugared to col >= lo AND col <= hi)
 """
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
-from .lexer import TT, AGG_FUNCS, LexError, Token, tokenize
+from .lexer import TT, AGG_FUNCS, Token, tokenize
 
 
 # ------------------------------------------------------------------
@@ -284,11 +284,17 @@ class Parser:
     def _join_clause(self) -> JoinClause:
         join_type = "inner"
         if self._match(TT.LEFT):
-            self._advance(); self._consume(TT.OUTER); join_type = "left"
+            self._advance()
+            self._consume(TT.OUTER)
+            join_type = "left"
         elif self._match(TT.RIGHT):
-            self._advance(); self._consume(TT.OUTER); join_type = "right"
+            self._advance()
+            self._consume(TT.OUTER)
+            join_type = "right"
         elif self._match(TT.FULL):
-            self._advance(); self._consume(TT.OUTER); join_type = "full"
+            self._advance()
+            self._consume(TT.OUTER)
+            join_type = "full"
         elif self._consume(TT.INNER):
             pass
         self._expect(TT.JOIN)
@@ -409,17 +415,23 @@ class Parser:
         tok = self._peek()
 
         if tok.type == TT.INTEGER:
-            self._advance(); return SqlLiteral(int(tok.value))  # type: ignore[arg-type]
+            self._advance()
+            return SqlLiteral(int(tok.value))  # type: ignore[arg-type]
         if tok.type == TT.FLOAT:
-            self._advance(); return SqlLiteral(float(tok.value))  # type: ignore[arg-type]
+            self._advance()
+            return SqlLiteral(float(tok.value))  # type: ignore[arg-type]
         if tok.type == TT.STRING:
-            self._advance(); return SqlLiteral(str(tok.value))
+            self._advance()
+            return SqlLiteral(str(tok.value))
         if tok.type == TT.TRUE:
-            self._advance(); return SqlLiteral(True)
+            self._advance()
+            return SqlLiteral(True)
         if tok.type == TT.FALSE:
-            self._advance(); return SqlLiteral(False)
+            self._advance()
+            return SqlLiteral(False)
         if tok.type == TT.NULL:
-            self._advance(); return SqlLiteral(None)
+            self._advance()
+            return SqlLiteral(None)
 
         if tok.type == TT.LPAREN:
             self._advance()
@@ -437,7 +449,8 @@ class Parser:
             func = self._advance().type.name.lower()
             self._expect(TT.LPAREN)
             if self._match(TT.STAR):
-                self._advance(); arg = None
+                self._advance()
+                arg = None
             else:
                 arg = self._expr()
             self._expect(TT.RPAREN)
@@ -451,7 +464,7 @@ class Parser:
                 return SqlColRef(name=col, table=name)
             return SqlColRef(name=name)
 
-        raise ParseError(f"Unexpected token in expression", tok)
+        raise ParseError("Unexpected token in expression", tok)
 
 
 # Keywords that are also valid identifiers in column/table position

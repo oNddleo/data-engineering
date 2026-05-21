@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections import defaultdict, deque
+from collections import defaultdict
 from typing import Sequence
 
 from .event import Event
@@ -27,7 +27,7 @@ def causal_sort(events: Sequence[Event]) -> list[Event]:
         return []
 
     n = len(events)
-    idx: dict[str, int] = {e.event_id: i for i, e in enumerate(events)}
+    _idx: dict[str, int] = {e.event_id: i for i, e in enumerate(events)}  # noqa: F841
 
     # in-degree and adjacency list
     in_degree = [0] * n
@@ -65,9 +65,11 @@ def causal_sort(events: Sequence[Event]) -> list[Event]:
         while ri < len(ready) and ni < len(newly_ready):
             re, ne = events[ready[ri]], events[newly_ready[ni]]
             if (re.producer_id, re.sequence_num) <= (ne.producer_id, ne.sequence_num):
-                merged.append(ready[ri]); ri += 1
+                merged.append(ready[ri])
+                ri += 1
             else:
-                merged.append(newly_ready[ni]); ni += 1
+                merged.append(newly_ready[ni])
+                ni += 1
         merged.extend(ready[ri:])
         merged.extend(newly_ready[ni:])
         ready = merged

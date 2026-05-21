@@ -1,10 +1,10 @@
 """Self-Optimizing Materialized View Selector."""
 
+from .cost_model import CalibrationStore, CostModel
 from .models import CandidateView, MaterializedView, OptimizationResult, Warehouse
 from .optimizer import AnnealingSelector, GreedySelector
 from .query_analyzer import QueryAnalyzer
-from .cost_model import CostModel, CalibrationStore
-from .scheduler import ViewScheduler, SchedulerConfig
+from .scheduler import SchedulerConfig, ViewScheduler
 
 __all__ = [
     "CandidateView",

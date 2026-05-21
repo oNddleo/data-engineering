@@ -16,7 +16,6 @@ Algorithm
 8. Wrap in ProjectNode for the SELECT column list (outermost).
 """
 from __future__ import annotations
-from typing import Any
 
 from ..catalog import Catalog
 from ..expressions import (
@@ -27,7 +26,7 @@ from ..plan import (
     PlanNode, ProjectNode, ScanNode, SortNode,
 )
 from .parser import (
-    ParseError, Parser, SqlAgg, SqlBinOp, SqlColRef, SqlExpr,
+    Parser, SqlAgg, SqlBinOp, SqlColRef, SqlExpr,
     SqlIsNull, SqlLiteral, SqlQuery, SqlUnaryOp,
 )
 

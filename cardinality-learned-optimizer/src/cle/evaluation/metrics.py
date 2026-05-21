@@ -6,9 +6,9 @@ Key metrics:
   plan quality= relative latency vs optimal (PostgreSQL default)
 """
 from __future__ import annotations
+
 import math
 import statistics
-from typing import Optional
 
 from ..plan.node import PlanNode
 

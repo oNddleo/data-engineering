@@ -17,10 +17,8 @@ from __future__ import annotations
 import math
 import random
 import time
-from typing import Optional
 
 from .models import CandidateView, OptimizationResult
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -108,7 +106,7 @@ class AnnealingSelector:
         initial_temp: float = 1.0,
         cooling_rate: float = 0.9995,
         max_iterations: int = 50_000,
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ) -> None:
         self.initial_temp = initial_temp
         self.cooling_rate = cooling_rate
@@ -121,7 +119,7 @@ class AnnealingSelector:
         self,
         candidates: list[CandidateView],
         budget_bytes: int,
-        greedy_seed: Optional[list[CandidateView]] = None,
+        greedy_seed: list[CandidateView] | None = None,
     ) -> OptimizationResult:
         t0 = time.perf_counter()
 
@@ -148,15 +146,12 @@ class AnnealingSelector:
         not_selected = [v for v in candidates if v not in current]
 
         # Auto-scale temperature to ~10 % of initial objective
-        if current_obj > 0:
-            T = self.initial_temp * current_obj * 0.10
-        else:
-            T = self.initial_temp
+        T = self.initial_temp * current_obj * 0.1 if current_obj > 0 else self.initial_temp
 
         history = [best_obj]
         i = 0
 
-        for i in range(self.max_iterations):
+        for _ in range(self.max_iterations):
             candidate_state = self._neighbour(
                 current, not_selected, budget_bytes
             )
@@ -205,7 +200,7 @@ class AnnealingSelector:
         current: frozenset[CandidateView],
         not_selected: list[CandidateView],
         budget: int,
-    ) -> Optional[tuple[frozenset[CandidateView], list[CandidateView]]]:
+    ) -> tuple[frozenset[CandidateView], list[CandidateView]] | None:
         """Return (new_selection, new_not_selected) or None if stuck."""
         sel_list = list(current)
 

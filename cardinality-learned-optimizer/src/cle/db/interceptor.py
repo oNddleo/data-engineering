@@ -1,13 +1,14 @@
 """Query interceptor: run queries with EXPLAIN ANALYZE and collect plan trees."""
 from __future__ import annotations
+
 import logging
 import time
 from dataclasses import dataclass
 from typing import Optional
 
-from .connector import ConnectionPool
 from ..plan.node import PlanNode
-from ..plan.parser import parse_explain_result, has_critical_error
+from ..plan.parser import has_critical_error, parse_explain_result
+from .connector import ConnectionPool
 
 logger = logging.getLogger(__name__)
 

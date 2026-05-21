@@ -8,7 +8,6 @@ from dqp.engines.base import EngineBase, EngineCapability, PushdownResult
 from dqp.predicate import (
     AndPredicate,
     BetweenPredicate,
-    ColumnRef,
     ComparisonOp,
     ComparisonPredicate,
     InPredicate,

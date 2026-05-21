@@ -21,15 +21,15 @@ from __future__ import annotations
 
 import collections
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Callable, Dict, Generator, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
 
 import pyarrow as pa
 import pyarrow.compute as pc
 
 from .catalog import Catalog
 from .expressions import AggExpr, ColumnRef, Expr
-from .physical_plan import BATCH_SIZE, SequentialScan
+from .physical_plan import SequentialScan
 
 
 # ---------------------------------------------------------------------------

@@ -1,10 +1,13 @@
 """Encode a PlanNode tree into tensors consumable by the TreeLSTM/GNN."""
 from __future__ import annotations
+
 import math
 from typing import Optional
+
 import torch
 from torch import Tensor
-from .node import PlanNode, OPERATOR_TYPES
+
+from .node import PlanNode
 
 
 # ── vocabulary for relation names and column tokens ──────────────────────────
@@ -117,7 +120,7 @@ def encode_tree(
     vocab: Vocabulary,
     include_actuals: bool = False,
 ) -> EncodedTree:
-    nodes = root.all_nodes()
+    _ = root.all_nodes()  # noqa: F841
     idx_map = build_index_map(root)
 
     features = []

@@ -1,6 +1,5 @@
 """Tests for the compaction cost model."""
 
-import pytest
 
 from cow_mor_bench.compaction.model import (
     build_amplification_curve,

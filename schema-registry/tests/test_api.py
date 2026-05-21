@@ -1,6 +1,4 @@
 import pytest
-import pytest_asyncio
-import httpx
 from fastapi.testclient import TestClient
 from src.api.app import create_app
 

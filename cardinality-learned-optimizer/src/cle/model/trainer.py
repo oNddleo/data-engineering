@@ -5,23 +5,20 @@ Two training objectives:
   2. Cost loss       — MSE on log query latency (Bao bandit regression)
 """
 from __future__ import annotations
+
 import logging
 import math
 import random
-import time
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import torch
 import torch.nn as nn
-from torch import Tensor
 from torch.optim import AdamW
-from torch.optim.lr_scheduler import CosineAnnealingLR
 
-from .gnn import QueryOptimizer
 from ..plan.encoder import EncodedTree
+from .gnn import QueryOptimizer
 
 logger = logging.getLogger(__name__)
 

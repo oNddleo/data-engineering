@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from src.registry.core import SchemaRegistry
 from src.registry.models import (
-    CompatibilityMode,
     MigrationScript,
-    MigrationStep,
-    SchemaType,
     TransformEvent,
 )
 from src.migration.dsl import DSLParseError, TransformationDSL

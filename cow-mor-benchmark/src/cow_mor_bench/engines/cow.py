@@ -21,7 +21,6 @@ import pyarrow.parquet as pq
 from cow_mor_bench.data.generator import primary_key_for
 from cow_mor_bench.data.schemas import (
     DataFile,
-    Snapshot,
     TableMetadata,
     WriteStrategy,
 )

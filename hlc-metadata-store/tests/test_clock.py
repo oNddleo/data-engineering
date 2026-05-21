@@ -1,7 +1,6 @@
 """Unit tests for HybridLogicalClock correctness."""
 from __future__ import annotations
 
-import pytest
 
 from hlc_store.clock import HybridLogicalClock, WallClock
 from hlc_store.timestamp import HLCTimestamp

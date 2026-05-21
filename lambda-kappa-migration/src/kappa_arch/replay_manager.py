@@ -5,9 +5,9 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections.abc import Iterator
 from enum import Enum
 from pathlib import Path
-from typing import Iterator
 
 from src.config import HISTORICAL_DIR, LOCAL_KAFKA_FILE, config
 from src.lambda_arch.models import Event

@@ -10,14 +10,12 @@ CLI entry-point.  Install the package (`pip install -e .`) then run:
     sre compare --term 180
 """
 import logging
-import sys
 from datetime import datetime, timedelta
-from typing import Optional
 
 import typer
+from rich import box
 from rich.console import Console
 from rich.table import Table
-from rich import box
 
 from savings_engine.storage.database import init_db
 
@@ -42,7 +40,7 @@ def _setup_logging(verbose: bool) -> None:
 
 @app.command()
 def scrape(
-    banks: Optional[str] = typer.Option(
+    banks: str | None = typer.Option(
         None, "--banks", "-b",
         help="Comma-separated bank codes to scrape (default: all). E.g. VCB,BIDV,TCB",
     ),
@@ -84,6 +82,7 @@ def serve(
     """Start the FastAPI server."""
     _setup_logging(False)
     import uvicorn
+
     from savings_engine.api.app import create_app  # noqa: F401 — ensure app is importable
     uvicorn.run(
         "savings_engine.api.app:create_app",
@@ -96,8 +95,8 @@ def serve(
 
 @app.command()
 def rates(
-    bank: Optional[str] = typer.Option(None, "--bank", "-b", help="Bank code, e.g. VCB"),
-    term: Optional[int] = typer.Option(None, "--term", "-t", help="Term in days, e.g. 180"),
+    bank: str | None = typer.Option(None, "--bank", "-b", help="Bank code, e.g. VCB"),
+    term: int | None = typer.Option(None, "--term", "-t", help="Term in days, e.g. 180"),
     rate_type: str = typer.Option("standard", "--type"),
 ):
     """Show latest rates from the database."""
@@ -142,9 +141,9 @@ def compare(
     """Rank all banks by rate for a given term."""
     _setup_logging(False)
     init_db()
+    from savings_engine.analyzer.comparisons import compare_banks
     from savings_engine.storage.database import SessionLocal
     from savings_engine.storage.repository import RateRepository
-    from savings_engine.analyzer.comparisons import compare_banks
 
     with SessionLocal() as db:
         repo = RateRepository(db)
@@ -177,9 +176,9 @@ def trends(
     """Show rate trend history for a bank + term."""
     _setup_logging(False)
     init_db()
+    from savings_engine.analyzer.trends import compute_trend
     from savings_engine.storage.database import SessionLocal
     from savings_engine.storage.repository import RateRepository
-    from savings_engine.analyzer.trends import compute_trend
 
     since = datetime.utcnow() - timedelta(days=days_back)
     with SessionLocal() as db:
@@ -224,7 +223,7 @@ def schedule(
     start_scheduler(interval_hours=interval_hours)
 
 
-def _fmt_delta(delta: Optional[float]) -> str:
+def _fmt_delta(delta: float | None) -> str:
     if delta is None:
         return "[dim]n/a[/]"
     color = "green" if delta > 0 else ("red" if delta < 0 else "white")

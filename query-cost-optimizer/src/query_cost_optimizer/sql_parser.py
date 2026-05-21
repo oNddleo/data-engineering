@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +91,7 @@ def extract_referenced_tables(sql: str) -> list[str]:
 def detect_expensive_patterns(sql: str) -> list[str]:
     """Return a list of expensive-pattern names found in sql."""
     patterns: list[str] = []
-    sql_lower = sql.lower()
+    _sql_lower = sql.lower()  # noqa: F841
 
     if extract_select_star(sql):
         patterns.append("select_star")

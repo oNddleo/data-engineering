@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -137,7 +136,6 @@ def _predicates_to_arrow(predicates: list[exp.Expression]):
     if not predicates:
         return None
     try:
-        import pyarrow.compute as pc
 
         parts = [_expr_to_arrow(p) for p in predicates]
         parts = [p for p in parts if p is not None]
@@ -175,11 +173,11 @@ def _expr_to_arrow(expr: exp.Expression):
             case exp.In(this=c, expressions=vals) if isinstance(c, exp.Column):
                 return pc.is_in(field(c), pa.array([lit(v) for v in vals]))
             case exp.And(this=left, expression=right):
-                l, r = _expr_to_arrow(left), _expr_to_arrow(right)
-                return (l & r) if l is not None and r is not None else (l or r)
+                lv, r = _expr_to_arrow(left), _expr_to_arrow(right)
+                return (lv & r) if lv is not None and r is not None else (lv or r)
             case exp.Or(this=left, expression=right):
-                l, r = _expr_to_arrow(left), _expr_to_arrow(right)
-                return (l | r) if l is not None and r is not None else (l or r)
+                lv, r = _expr_to_arrow(left), _expr_to_arrow(right)
+                return (lv | r) if lv is not None and r is not None else (lv or r)
     except Exception:
         pass
     return None

@@ -1,9 +1,7 @@
 """Tests for individual connectors in mock mode."""
 
-import pandas as pd
 import pytest
 import sqlglot
-import sqlglot.expressions as exp
 
 from federation.connectors import (
     MongoDBConnector, PostgresConnector,

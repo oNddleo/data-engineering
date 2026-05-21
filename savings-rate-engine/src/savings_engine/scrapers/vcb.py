@@ -8,10 +8,12 @@ Response is JSON with a `data` list.  Falls back gracefully if the endpoint chan
 """
 import logging
 from datetime import datetime
+
 from bs4 import BeautifulSoup
 
-from .base import BaseScraper, ScraperError
 from savings_engine.models.schemas import RateEntry
+
+from .base import BaseScraper, ScraperError
 
 logger = logging.getLogger(__name__)
 

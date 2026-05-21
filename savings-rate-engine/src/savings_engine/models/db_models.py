@@ -1,6 +1,14 @@
 from datetime import datetime
+
 from sqlalchemy import (
-    Column, String, Float, Integer, DateTime, ForeignKey, Boolean, Index, UniqueConstraint
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
 )
 from sqlalchemy.orm import DeclarativeBase, relationship
 

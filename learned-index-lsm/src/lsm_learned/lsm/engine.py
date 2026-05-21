@@ -17,10 +17,9 @@ benchmark surface clean and focused on index comparison.
 from __future__ import annotations
 
 import itertools
-import os
 import tempfile
 from pathlib import Path
-from typing import Iterator, Literal
+from typing import Literal
 
 from .memtable import MemTable
 from .sstable import SSTable, SSTableBuilder

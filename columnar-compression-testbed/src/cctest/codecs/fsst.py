@@ -141,10 +141,12 @@ class FSSTCodec(Codec):
 
         # Parse symbol table
         pos = 0
-        n_syms = raw[pos]; pos += 1
+        n_syms = raw[pos]
+        pos += 1
         symbols: list[bytes] = []
         for _ in range(n_syms):
-            sym_len = raw[pos]; pos += 1
+            sym_len = raw[pos]
+            pos += 1
             symbols.append(raw[pos : pos + sym_len])
             pos += sym_len
 
@@ -152,8 +154,10 @@ class FSSTCodec(Codec):
 
         strings = []
         for _ in range(n):
-            (enc_len,) = struct.unpack_from("<H", raw, pos); pos += 2
-            chunk = raw[pos : pos + enc_len]; pos += enc_len
+            (enc_len,) = struct.unpack_from("<H", raw, pos)
+            pos += 2
+            chunk = raw[pos : pos + enc_len]
+            pos += enc_len
             strings.append(_decode_string(chunk, symbols).decode())
 
         return np.array(strings, dtype=object)

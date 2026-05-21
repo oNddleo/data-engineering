@@ -16,7 +16,6 @@ class EncodedColumn:
     original_len: int = 0
 
     def total_bytes(self) -> int:
-        import struct
         meta_bytes = 0
         for v in self.metadata.values():
             if isinstance(v, (int, float)):

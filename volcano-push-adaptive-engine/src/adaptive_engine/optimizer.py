@@ -27,7 +27,6 @@ from .plan import (
     ProjectNode,
     ScanNode,
     SortNode,
-    walk,
 )
 
 
@@ -116,7 +115,6 @@ def _filter_selectivity(node: "FilterNode", catalog: "Catalog") -> float | None:
     anchored to a scan child.  Returns None if it can't improve on the
     caller-supplied estimate.
     """
-    from .expressions import BinOp, ColRef, Literal, AndExpr, OrExpr
     from .plan import ScanNode
 
     # Find the nearest scan in the child chain to know the table name

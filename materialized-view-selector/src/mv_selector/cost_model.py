@@ -8,13 +8,10 @@ exponential moving average to adjust future predictions.
 from __future__ import annotations
 
 import json
-import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from .models import CandidateView, MaterializedView, Warehouse
-
 
 # ---------------------------------------------------------------------------
 # Warehouse pricing constants (USD, as of 2025 — update in config)
@@ -56,7 +53,7 @@ class CalibrationStore:
     Persists calibration ratios to a JSON file so they survive restarts.
     """
 
-    def __init__(self, path: Optional[Path] = None) -> None:
+    def __init__(self, path: Path | None = None) -> None:
         self._path = path or Path(".mv_calibration.json")
         self._data: dict[str, _ViewCalibration] = {}
         self._load()
@@ -122,8 +119,8 @@ class CostModel:
 
     def __init__(
         self,
-        pricing: Optional[PricingConfig] = None,
-        calibration_store: Optional[CalibrationStore] = None,
+        pricing: PricingConfig | None = None,
+        calibration_store: CalibrationStore | None = None,
         scan_reduction_factor: float = 0.70,
     ) -> None:
         self.pricing = pricing or DEFAULT_PRICING
@@ -139,7 +136,7 @@ class CostModel:
         self,
         candidate: CandidateView,
         warehouse: Warehouse,
-        queries_per_month: Optional[int] = None,
+        queries_per_month: int | None = None,
     ) -> float:
         """Monthly benefit in USD (raw, before calibration)."""
         q_count = queries_per_month or len(candidate.benefiting_query_ids)

@@ -6,7 +6,6 @@ producing events conforming to the target schema version.
 """
 from __future__ import annotations
 
-import asyncio
 from typing import Any, AsyncIterator
 
 import jsonschema
@@ -134,7 +133,6 @@ class ReplayEngine:
         to_version: int,
     ) -> list:
         """Walk version-by-version and auto-generate missing migrations."""
-        from src.registry.models import MigrationScript
 
         versions = await self.registry.list_versions(subject)
         try:

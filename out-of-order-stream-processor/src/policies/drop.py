@@ -1,5 +1,4 @@
 from __future__ import annotations
-import time
 from ..event import Event, LateEvent, WindowResult
 from ..windows.base import WindowAssignment
 from .base import LateDataPolicy

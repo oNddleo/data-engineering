@@ -35,6 +35,11 @@ from .push import Pipeline, PushCompiler
 from .volcano import VolcanoExecutor
 
 __all__ = [
+    # SQL
+    "Parser",
+    "Planner",
+    "SQLParser",
+    "SQLPlanner",
     # Catalog
     "Catalog",
     "ColumnStats",

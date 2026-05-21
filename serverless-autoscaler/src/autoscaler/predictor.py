@@ -3,8 +3,6 @@ from __future__ import annotations
 import logging
 import warnings
 from datetime import datetime
-from typing import Optional
-from uuid import uuid4
 
 import numpy as np
 
@@ -34,7 +32,7 @@ class ARIMAPredictor:
         job_id: str,
         history: list[JobRun],
         target_start: datetime,
-    ) -> Optional[ResourceForecast]:
+    ) -> ResourceForecast | None:
         completed = [r for r in history if r.peak_workers is not None]
         if len(completed) < self._cfg.min_history_points:
             logger.warning(
@@ -58,7 +56,7 @@ class ARIMAPredictor:
         series: np.ndarray,
         completed: list[JobRun],
         target_start: datetime,
-    ) -> Optional[ResourceForecast]:
+    ) -> ResourceForecast | None:
         try:
             from statsmodels.tsa.statespace.sarimax import SARIMAX
 
@@ -117,7 +115,7 @@ class ARIMAPredictor:
         job_id: str,
         completed: list[JobRun],
         target_start: datetime,
-    ) -> Optional[ResourceForecast]:
+    ) -> ResourceForecast | None:
         if not completed:
             logger.warning("job=%s no completed runs at all — cannot forecast", job_id)
             return None

@@ -1,6 +1,5 @@
 """Tests for drift detectors."""
 import numpy as np
-import pytest
 
 from lsm_learned.drift.detector import ADWINDetector, KSWindowDetector
 

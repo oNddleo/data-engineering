@@ -2,8 +2,6 @@
 from __future__ import annotations
 
 import time
-import unittest.mock as mock
-from unittest.mock import MagicMock, patch
 
 import fakeredis
 import pytest

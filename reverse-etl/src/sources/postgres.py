@@ -20,7 +20,7 @@ class PostgresSource(BaseSource):
         }
 
     def fetch(self, query: str, query_params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
-        logger.debug(f"PostgresSource: executing query")
+        logger.debug("PostgresSource: executing query")
         with psycopg2.connect(**self._conn_params) as conn:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                 cur.execute(query, query_params or {})

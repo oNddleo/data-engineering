@@ -1,10 +1,11 @@
 """Test optimizer: predicate pushdown, projection pushdown, constant folding."""
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from vqe.parser import parse
 from vqe.optimizer import Optimizer
-from vqe.logical_plan import Scan, Filter, Project, Aggregate
+from vqe.logical_plan import Scan, Aggregate
 
 
 opt = Optimizer()

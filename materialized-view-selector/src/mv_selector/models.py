@@ -6,7 +6,6 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 
 class Warehouse(str, Enum):
@@ -23,9 +22,9 @@ class QueryRecord:
     bytes_processed: int
     cost_usd: float
     query_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    user: Optional[str] = None
-    project_or_account: Optional[str] = None
-    dataset_or_schema: Optional[str] = None
+    user: str | None = None
+    project_or_account: str | None = None
+    dataset_or_schema: str | None = None
     frequency: int = 1  # bumped when deduped
 
 
@@ -69,7 +68,7 @@ class MaterializedView:
     warehouse: Warehouse
     created_at: datetime
     fqn: str  # fully-qualified name, e.g. project.dataset.mv_name
-    last_refreshed_at: Optional[datetime] = None
+    last_refreshed_at: datetime | None = None
     actual_savings_usd: float = 0.0
     refresh_count: int = 0
     is_active: bool = True

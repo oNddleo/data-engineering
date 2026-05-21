@@ -5,7 +5,7 @@ The root operator drives everything top-down; data flows bottom-up.
 """
 from __future__ import annotations
 from collections import defaultdict
-from typing import Iterator
+from typing import Any, Iterator
 
 from .catalog import Catalog
 from .expressions import Row
@@ -158,8 +158,6 @@ class VolcanoExecutor:
 # ------------------------------------------------------------------
 # Aggregate helpers
 # ------------------------------------------------------------------
-
-from typing import Any
 
 
 def _agg_init(func: str) -> Any:

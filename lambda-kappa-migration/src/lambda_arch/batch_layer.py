@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 import pandas as pd
 
-from src.config import HISTORICAL_DIR, config
+from src.config import HISTORICAL_DIR
 from src.lambda_arch.models import (
     BatchView,
     Event,

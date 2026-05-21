@@ -5,7 +5,7 @@ import pytest
 from inflation_crawler import analyze
 from inflation_crawler.config import settings
 from inflation_crawler.extract import Product
-from inflation_crawler.store import connect, upsert_products
+from inflation_crawler.store import upsert_products
 
 
 @pytest.fixture(autouse=True)

@@ -11,10 +11,10 @@ a single record out of a ~1GB WARC file.
 
 from __future__ import annotations
 
+import gzip
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-import urllib.request
-import gzip
 
 import duckdb
 

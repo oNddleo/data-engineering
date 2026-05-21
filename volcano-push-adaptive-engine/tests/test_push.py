@@ -1,5 +1,4 @@
 """Tests for push-based (pipeline) executor."""
-import pytest
 from adaptive_engine import (
     Catalog,
     PushCompiler,
@@ -10,7 +9,6 @@ from adaptive_engine import (
     AggregateNode,
     SortNode,
     LimitNode,
-    eq,
     gt,
 )
 from adaptive_engine.optimizer import Optimizer

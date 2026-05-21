@@ -27,7 +27,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-from .event import Event, JoinResult, STREAM_LEFT, STREAM_RIGHT
+from .event import Event, JoinResult, STREAM_LEFT
 from .interval_tree import IntervalTree
 from .watermark import WatermarkTracker
 

@@ -1,9 +1,9 @@
 """Query plan node data structures."""
 from __future__ import annotations
+
+import math
 from dataclasses import dataclass, field
 from typing import Optional
-import math
-
 
 OPERATOR_TYPES = [
     "Seq Scan", "Index Scan", "Index Only Scan", "Bitmap Heap Scan",

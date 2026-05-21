@@ -9,15 +9,15 @@ This module:
   - Reports per-query and aggregate statistics
 """
 from __future__ import annotations
+
 import json
 import logging
-import time
 from pathlib import Path
 from typing import Optional
 
-from ..db.connector import ConnectionPool, DBConfig
+from ..db.connector import ConnectionPool
 from ..db.interceptor import QueryInterceptor
-from .metrics import workload_q_error_stats, latency_speedup_stats, print_metric_table
+from .metrics import latency_speedup_stats, print_metric_table, workload_q_error_stats
 
 logger = logging.getLogger(__name__)
 

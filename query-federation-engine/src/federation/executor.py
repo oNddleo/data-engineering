@@ -266,7 +266,7 @@ class Executor:
 
         agg_spec: dict[str, Any] = {}
         for agg_expr in node.aggregates:
-            out_col = str(agg_expr)
+            _out_col = str(agg_expr)
             inner = next(iter(agg_expr.find_all(exp.Column)), None)
             if inner is None:
                 continue

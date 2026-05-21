@@ -7,10 +7,12 @@ for regulatory transparency, so lxml works well here.
 """
 import logging
 from datetime import datetime
+
 from bs4 import BeautifulSoup
 
-from .base import BaseScraper, ScraperError
 from savings_engine.models.schemas import RateEntry
+
+from .base import BaseScraper, ScraperError
 
 logger = logging.getLogger(__name__)
 

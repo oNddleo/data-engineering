@@ -1,6 +1,5 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Optional
 
 from .replay import StreamReplay, ReplayConfig, ReplayMetrics
 
@@ -70,7 +69,10 @@ class ComparisonReport:
         'dropped_events' (lower is better).
         """
         maximize = {"completeness", "events_in_windows"}
-        key_fn = lambda r: getattr(r.metrics, metric)
+
+        def key_fn(r: object) -> object:
+            return getattr(r.metrics, metric)  # type: ignore[union-attr]
+
         if metric in maximize:
             return max(self.results, key=key_fn)
         return min(self.results, key=key_fn)

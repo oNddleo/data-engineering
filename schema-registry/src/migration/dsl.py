@@ -55,7 +55,7 @@ from typing import Any
 
 import yaml
 
-from src.registry.models import MigrationScript, MigrationStep
+from src.registry.models import MigrationStep
 
 SUPPORTED_OPS = {
     "rename_field",

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import itertools
 
 from .nodes import (
     Aggregate, Filter, Join, JoinType, Limit, PlanNode,
@@ -43,7 +42,7 @@ class CostBasedOptimizer:
     def _push_projections(self, node: PlanNode) -> PlanNode:
         """Walk the tree and trim projected_columns on TableScans."""
         match node:
-            case Project(child=child, columns=cols, output_names=names):
+            case Project(child=child, columns=cols, output_names=_names):
                 needed = self._columns_needed_by(cols)
                 child = self._prune_columns(child, needed)
                 node.child = self._push_projections(child)

@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import click
@@ -220,7 +220,7 @@ def _build_window(days, start_ts, end_ts) -> TimeWindow:
     if days:
         return window_from_days_ago(days)
     if start_ts:
-        end = end_ts or datetime.now(tz=timezone.utc).isoformat()
+        end = end_ts or datetime.now(tz=UTC).isoformat()
         return parse_window(start_ts, end)
     raise click.UsageError("Provide either --days or --start (and optionally --end).")
 
@@ -269,10 +269,7 @@ def _build_config_from_flags(**kw) -> ReplayConfig:
 def _load_config_file(path: str) -> ReplayConfig:
     import yaml  # optional dep; only needed for YAML config files
     raw = Path(path).read_text()
-    if path.endswith((".yaml", ".yml")):
-        data = yaml.safe_load(raw)
-    else:
-        data = json.loads(raw)
+    data = yaml.safe_load(raw) if path.endswith((".yaml", ".yml")) else json.loads(raw)
 
     # Coerce window dict to TimeWindow
     if "window" in data and isinstance(data["window"], dict):
@@ -282,7 +279,7 @@ def _load_config_file(path: str) -> ReplayConfig:
 
 
 def _make_job_id() -> str:
-    return f"replay-{datetime.now(tz=timezone.utc).strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
+    return f"replay-{datetime.now(tz=UTC).strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
 
 
 def _print_job_banner(cfg: ReplayConfig) -> None:

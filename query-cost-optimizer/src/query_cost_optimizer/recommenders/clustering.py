@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from collections import Counter
 
-from ..models import Platform, QueryRecord, Recommendation, RecommendationType, Severity, TableStats
+from ..models import Platform, Recommendation, RecommendationType, Severity, TableStats
 
 logger = logging.getLogger(__name__)
 

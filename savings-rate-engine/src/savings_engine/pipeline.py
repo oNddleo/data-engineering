@@ -8,7 +8,6 @@ import logging
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 from savings_engine.models.schemas import NormalizedRate
 from savings_engine.normalizer import normalize
@@ -25,13 +24,13 @@ class BankResult:
     success: bool
     rates_saved: int
     duration_s: float
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @dataclass
 class PipelineRun:
     started_at: datetime = field(default_factory=datetime.utcnow)
-    finished_at: Optional[datetime] = None
+    finished_at: datetime | None = None
     results: list[BankResult] = field(default_factory=list)
 
     @property
@@ -53,7 +52,7 @@ class PipelineRun:
         return 0.0
 
 
-def run_pipeline(bank_codes: Optional[list[str]] = None) -> PipelineRun:
+def run_pipeline(bank_codes: list[str] | None = None) -> PipelineRun:
     """
     Execute the full scrape → normalize → persist pipeline.
 

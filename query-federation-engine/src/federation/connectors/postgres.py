@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 import pandas as pd
-import sqlglot
 import sqlglot.expressions as exp
 
 from .base import BaseConnector, ConnectorResult
@@ -175,7 +174,6 @@ def _apply_predicates(df: pd.DataFrame, predicates: list[exp.Expression]) -> pd.
 
 def _eval_predicate(df: pd.DataFrame, expr: exp.Expression):
     """Return a boolean Series or None."""
-    import pandas as pd
 
     def col(e: exp.Expression):
         name = e.name if isinstance(e, exp.Column) else str(e)

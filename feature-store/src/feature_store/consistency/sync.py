@@ -12,9 +12,7 @@ Training ↔ serving consistency is enforced structurally:
 """
 from __future__ import annotations
 
-import time
 from datetime import date, datetime, timezone
-from typing import Any
 
 import pandas as pd
 import structlog

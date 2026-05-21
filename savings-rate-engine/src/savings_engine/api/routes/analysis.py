@@ -1,12 +1,11 @@
 from datetime import datetime, timedelta
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from savings_engine.analyzer.trends import compute_trend, TrendSummary
-from savings_engine.analyzer.comparisons import compare_banks, best_rates_table
+from savings_engine.analyzer.comparisons import best_rates_table, compare_banks
+from savings_engine.analyzer.trends import TrendSummary, compute_trend
 from savings_engine.storage.database import get_db
 from savings_engine.storage.repository import RateRepository
 
@@ -18,7 +17,7 @@ router = APIRouter()
 class TrendPointOut(BaseModel):
     scraped_at: datetime
     rate_pa: float
-    delta_from_prev: Optional[float]
+    delta_from_prev: float | None
 
 
 class TrendOut(BaseModel):
@@ -26,9 +25,9 @@ class TrendOut(BaseModel):
     term_days: int
     rate_type: str
     current_rate: float
-    change_7d: Optional[float]
-    change_30d: Optional[float]
-    change_90d: Optional[float]
+    change_7d: float | None
+    change_30d: float | None
+    change_90d: float | None
     min_rate: float
     max_rate: float
     avg_rate: float
@@ -43,7 +42,7 @@ class ComparisonOut(BaseModel):
     rate_pa: float
     rate_type: str
     rank: int
-    scraped_at: Optional[datetime]
+    scraped_at: datetime | None
 
 
 class BestRatesTableOut(BaseModel):
@@ -72,7 +71,7 @@ def rate_trend(
     since = datetime.utcnow() - timedelta(days=days_back)
     history = repo.get_rate_history(bank_code.upper(), term_days, rate_type, since=since)
 
-    summary: Optional[TrendSummary] = compute_trend(history, bank_code.upper(), term_days, rate_type)
+    summary: TrendSummary | None = compute_trend(history, bank_code.upper(), term_days, rate_type)
     if summary is None:
         raise HTTPException(404, f"No history found for {bank_code} / {term_days}d / {rate_type}")
 

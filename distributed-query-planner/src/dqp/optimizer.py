@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 import itertools
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from dqp.catalog import Catalog
 from dqp.cost.model import CostModel, PlanCost
 from dqp.cost.statistics import TableStats
-from dqp.engines.base import EngineBase, PushdownResult
+from dqp.engines.base import EngineBase
 from dqp.logical_plan import (
     FilterNode,
     JoinNode,

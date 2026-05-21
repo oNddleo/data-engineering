@@ -1,5 +1,4 @@
 """Tests for volcano (pull-based) executor."""
-import pytest
 from adaptive_engine import (
     Catalog,
     VolcanoExecutor,

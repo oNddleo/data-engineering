@@ -1,12 +1,14 @@
 """PostgreSQL connection management."""
 from __future__ import annotations
+
 import contextlib
 import logging
 from typing import Any, Generator
 
 import psycopg2
 import psycopg2.extras
-from psycopg2.extensions import connection as PGConnection, cursor as PGCursor
+from psycopg2.extensions import connection as PGConnection
+from psycopg2.extensions import cursor as PGCursor
 
 logger = logging.getLogger(__name__)
 

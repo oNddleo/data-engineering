@@ -10,7 +10,7 @@ binary search rather than a full O(log n) traversal.
 from __future__ import annotations
 
 import bisect
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np

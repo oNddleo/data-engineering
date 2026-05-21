@@ -2,7 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 
 import requests
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from savings_engine.config import settings
 from savings_engine.models.schemas import RateEntry

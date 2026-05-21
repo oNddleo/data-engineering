@@ -10,7 +10,6 @@ preventing label leakage.
 """
 from __future__ import annotations
 
-import io
 import threading
 import uuid
 from collections import defaultdict

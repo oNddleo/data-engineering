@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-import json
 import logging
-import time
 from pathlib import Path
 
-from src.config import HISTORICAL_DIR, LOCAL_KAFKA_FILE, config
+from src.config import HISTORICAL_DIR, config
 from src.kappa_arch.replay_manager import ReplayManager
-from src.lambda_arch.models import Event
 
 logger = logging.getLogger(__name__)
 

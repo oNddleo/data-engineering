@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import threading
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from .clock import HybridLogicalClock, WallClock
-from .timestamp import ZERO, HLCTimestamp
+from .timestamp import HLCTimestamp
 
 
 @dataclass

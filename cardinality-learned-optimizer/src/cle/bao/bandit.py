@@ -10,10 +10,12 @@ uses a neural network ensemble for uncertainty estimation.  We support both:
   - NeuralBandit:   uses the QueryOptimizer cost head (accurate, needs data)
 """
 from __future__ import annotations
+
 import logging
 import math
 import random
 from typing import Optional
+
 import torch
 
 logger = logging.getLogger(__name__)

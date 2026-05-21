@@ -15,9 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Optional
 
 try:
     import sqlglot
@@ -27,7 +25,6 @@ except ImportError:
     _SQLGLOT = False
 
 from .models import CandidateView, QueryRecord
-
 
 # ---------------------------------------------------------------------------
 # SQL normalisation helpers
@@ -91,7 +88,7 @@ def _extract_tables_sqlglot(node: exp.Expression) -> list[str]:
     return list(dict.fromkeys(tables))
 
 
-def _subquery_sql(node: exp.Expression) -> Optional[str]:
+def _subquery_sql(node: exp.Expression) -> str | None:
     try:
         return node.sql(dialect="bigquery")
     except Exception:

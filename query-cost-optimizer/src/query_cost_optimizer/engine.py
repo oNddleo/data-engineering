@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Literal
 
 from .models import AnalysisReport, Platform
 from .recommenders.clustering import ClusteringRecommender

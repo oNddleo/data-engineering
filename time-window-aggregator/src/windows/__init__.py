@@ -2,65 +2,39 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
-
 __version__ = "0.1.0"
 
-if TYPE_CHECKING:
-    from windows.io_jsonl import (
-        agg_from_dict,
-        agg_to_dict,
-        dump_aggs,
-        dump_events,
-        event_from_dict,
-        event_to_dict,
-        load_aggs,
-        load_events,
-        window_from_dict,
-        window_to_dict,
-    )
-    from windows.schema import Event, Window, WindowedAggregate, WindowKind
-    from windows.session import aggregate as session_aggregate
-    from windows.simulator import bursty_stream, uniform_stream
-    from windows.sliding import aggregate as sliding_aggregate
-    from windows.sliding import windows_for
-    from windows.tumbling import aggregate as tumbling_aggregate
-    from windows.tumbling import assign_window
+def __getattr__(name: str) -> object:
+    _LAZY = {
+        "Event": ("windows.schema", "Event"),
+        "Window": ("windows.schema", "Window"),
+        "WindowKind": ("windows.schema", "WindowKind"),
+        "WindowedAggregate": ("windows.schema", "WindowedAggregate"),
+        "agg_from_dict": ("windows.io_jsonl", "agg_from_dict"),
+        "agg_to_dict": ("windows.io_jsonl", "agg_to_dict"),
+        "assign_window": ("windows.tumbling", "assign_window"),
+        "bursty_stream": ("windows.simulator", "bursty_stream"),
+        "dump_aggs": ("windows.io_jsonl", "dump_aggs"),
+        "dump_events": ("windows.io_jsonl", "dump_events"),
+        "event_from_dict": ("windows.io_jsonl", "event_from_dict"),
+        "event_to_dict": ("windows.io_jsonl", "event_to_dict"),
+        "load_aggs": ("windows.io_jsonl", "load_aggs"),
+        "load_events": ("windows.io_jsonl", "load_events"),
+        "session_aggregate": ("windows.session", "aggregate"),
+        "sliding_aggregate": ("windows.sliding", "aggregate"),
+        "tumbling_aggregate": ("windows.tumbling", "aggregate"),
+        "uniform_stream": ("windows.simulator", "uniform_stream"),
+        "window_from_dict": ("windows.io_jsonl", "window_from_dict"),
+        "window_to_dict": ("windows.io_jsonl", "window_to_dict"),
+        "windows_for": ("windows.sliding", "windows_for"),
+    }
 
-
-_LAZY: dict[str, tuple[str, str]] = {
-    "Event": ("windows.schema", "Event"),
-    "Window": ("windows.schema", "Window"),
-    "WindowKind": ("windows.schema", "WindowKind"),
-    "WindowedAggregate": ("windows.schema", "WindowedAggregate"),
-    "agg_from_dict": ("windows.io_jsonl", "agg_from_dict"),
-    "agg_to_dict": ("windows.io_jsonl", "agg_to_dict"),
-    "assign_window": ("windows.tumbling", "assign_window"),
-    "bursty_stream": ("windows.simulator", "bursty_stream"),
-    "dump_aggs": ("windows.io_jsonl", "dump_aggs"),
-    "dump_events": ("windows.io_jsonl", "dump_events"),
-    "event_from_dict": ("windows.io_jsonl", "event_from_dict"),
-    "event_to_dict": ("windows.io_jsonl", "event_to_dict"),
-    "load_aggs": ("windows.io_jsonl", "load_aggs"),
-    "load_events": ("windows.io_jsonl", "load_events"),
-    "session_aggregate": ("windows.session", "aggregate"),
-    "sliding_aggregate": ("windows.sliding", "aggregate"),
-    "tumbling_aggregate": ("windows.tumbling", "aggregate"),
-    "uniform_stream": ("windows.simulator", "uniform_stream"),
-    "window_from_dict": ("windows.io_jsonl", "window_from_dict"),
-    "window_to_dict": ("windows.io_jsonl", "window_to_dict"),
-    "windows_for": ("windows.sliding", "windows_for"),
-}
-
-
-def __getattr__(name: str) -> Any:
     if name in _LAZY:
         from importlib import import_module
 
         m, attr = _LAZY[name]
         return getattr(import_module(m), attr)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 
 __all__ = [
     "Event",

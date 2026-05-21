@@ -1,10 +1,8 @@
 """Tests for CoW and MoR engines."""
 
-import tempfile
 from pathlib import Path
 
 import pytest
-import pyarrow as pa
 
 from cow_mor_bench.data.generator import generate_orders, generate_update_batch
 from cow_mor_bench.engines.cow import CopyOnWriteEngine

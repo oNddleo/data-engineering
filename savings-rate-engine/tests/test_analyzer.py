@@ -1,12 +1,12 @@
 """Tests for trend computation and bank comparison logic."""
-import pytest
 from datetime import datetime, timedelta
 
-from savings_engine.analyzer.trends import compute_trend, TrendSummary
+import pytest
+
 from savings_engine.analyzer.comparisons import compare_banks
+from savings_engine.analyzer.trends import compute_trend
 from savings_engine.models.schemas import NormalizedRate
 from savings_engine.storage.repository import RateRepository
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

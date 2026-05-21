@@ -86,9 +86,9 @@ class ValidationReport:
     def print_rich(self) -> None:
         """Print a formatted table to the terminal using the rich library."""
         try:
+            from rich import box
             from rich.console import Console
             from rich.table import Table
-            from rich import box
 
             console = Console()
             table = Table(

@@ -1,6 +1,5 @@
 """SQL lexer — converts a SQL string into a flat token stream."""
 from __future__ import annotations
-import re
 from dataclasses import dataclass
 from enum import Enum, auto
 
@@ -165,13 +164,21 @@ def tokenize(sql: str) -> list[Token]:
         # Two-char operators
         two = sql[i : i + 2]
         if two == "!=":
-            tokens.append(Token(TT.NEQ, "!=", i)); i += 2; continue
+            tokens.append(Token(TT.NEQ, "!=", i))
+            i += 2
+            continue
         if two == "<>":
-            tokens.append(Token(TT.NEQ, "<>", i)); i += 2; continue
+            tokens.append(Token(TT.NEQ, "<>", i))
+            i += 2
+            continue
         if two == "<=":
-            tokens.append(Token(TT.LTE, "<=", i)); i += 2; continue
+            tokens.append(Token(TT.LTE, "<=", i))
+            i += 2
+            continue
         if two == ">=":
-            tokens.append(Token(TT.GTE, ">=", i)); i += 2; continue
+            tokens.append(Token(TT.GTE, ">=", i))
+            i += 2
+            continue
 
         # Single-char
         ONE = {
@@ -181,7 +188,9 @@ def tokenize(sql: str) -> list[Token]:
             "(": TT.LPAREN, ")": TT.RPAREN, ";": TT.SEMICOLON,
         }
         if sql[i] in ONE:
-            tokens.append(Token(ONE[sql[i]], sql[i], i)); i += 1; continue
+            tokens.append(Token(ONE[sql[i]], sql[i], i))
+            i += 1
+            continue
 
         raise LexError(f"Unexpected character {sql[i]!r} at position {i}")
 

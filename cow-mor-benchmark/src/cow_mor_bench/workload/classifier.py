@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from cow_mor_bench.workload.patterns import WorkloadClass, WorkloadProfile
+from cow_mor_bench.workload.patterns import WorkloadClass
 from cow_mor_bench.workload.generator import WorkloadTrace, OperationRecord
 
 
@@ -133,7 +133,7 @@ def classify_custom(
     Derives insert/update/delete split from write_ratio and update_fraction:
     high update_fraction → update-heavy; otherwise insert-heavy (streaming).
     """
-    from cow_mor_bench.workload.generator import WorkloadTrace, OperationRecord
+    from cow_mor_bench.workload.generator import WorkloadTrace
 
     n = 100
     trace = WorkloadTrace(profile_name="custom", engine_strategy="n/a", schema_name="n/a")

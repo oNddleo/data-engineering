@@ -33,7 +33,7 @@ class BaseTarget(ABC):
         """Flush buffers and tear down connections."""
         ...
 
-    async def __aenter__(self) -> "BaseTarget":
+    async def __aenter__(self) -> BaseTarget:
         await self.open()
         return self
 

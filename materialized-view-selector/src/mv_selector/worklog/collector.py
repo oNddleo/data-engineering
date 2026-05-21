@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 from ..adapters.base import BaseAdapter
-from ..models import Warehouse
 from .store import WorklogStore
 
 
@@ -14,16 +12,16 @@ class WorklogCollector:
     def __init__(
         self,
         adapter: BaseAdapter,
-        store: Optional[WorklogStore] = None,
+        store: WorklogStore | None = None,
         lookback_days: int = 30,
     ) -> None:
         self.adapter = adapter
         self.store = store or WorklogStore()
         self.lookback_days = lookback_days
 
-    def collect(self, since: Optional[datetime] = None) -> int:
+    def collect(self, since: datetime | None = None) -> int:
         if since is None:
-            since = datetime.now(timezone.utc) - timedelta(days=self.lookback_days)
+            since = datetime.now(UTC) - timedelta(days=self.lookback_days)
         records = self.adapter.fetch_query_history(since=since)
         upserted = self.store.upsert(records)
         self.store.record_ingestion(self.adapter.warehouse, len(records))

@@ -6,11 +6,11 @@ import asyncio
 import enum
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from ..backend.base import StorageBackend
-    from .descriptor import OperatorDescriptor, TopologyDescriptor
+    from .descriptor import TopologyDescriptor
 
 logger = logging.getLogger(__name__)
 

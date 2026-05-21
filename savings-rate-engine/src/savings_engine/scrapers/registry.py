@@ -1,11 +1,11 @@
-from .vcb import VCBScraper
-from .bidv import BIDVScraper
-from .vietinbank import VietinBankScraper
-from .techcombank import TechcombankScraper
-from .mb import MBBankScraper
 from .acb import ACBScraper
-from .vpbank import VPBankScraper
 from .base import BaseScraper
+from .bidv import BIDVScraper
+from .mb import MBBankScraper
+from .techcombank import TechcombankScraper
+from .vcb import VCBScraper
+from .vietinbank import VietinBankScraper
+from .vpbank import VPBankScraper
 
 # Map bank_code → scraper class. Add new scrapers here.
 SCRAPER_REGISTRY: dict[str, type[BaseScraper]] = {

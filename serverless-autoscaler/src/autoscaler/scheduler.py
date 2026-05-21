@@ -3,8 +3,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from datetime import datetime, timedelta
-from typing import Optional
+from datetime import datetime
 
 import yaml
 from croniter import croniter
@@ -148,7 +147,7 @@ class PredictiveScheduler:
         Prometheus to get live CPU/memory, compare to forecast, and patch HPA.
         """
         live = self._hpa.get_hpa(job.hpa_target, job.namespace)
-        current = live["current_replicas"]
+        _current = live["current_replicas"]  # noqa: F841
         desired = live["desired_replicas"]
 
         if desired > live["max_replicas"] * 0.9:

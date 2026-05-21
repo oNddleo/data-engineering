@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import humanize
 
-from cow_mor_bench.benchmark.runner import BenchmarkResult, BenchmarkSuite
+from cow_mor_bench.benchmark.runner import BenchmarkResult
 
 
 @dataclass

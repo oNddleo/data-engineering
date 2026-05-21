@@ -1,14 +1,11 @@
 """Tests for the adaptive engine and runtime re-optimizer."""
-import pytest
 from adaptive_engine import (
     AdaptiveEngine,
     Catalog,
     FilterNode,
     HashJoinNode,
     AggregateNode,
-    SortNode,
     ScanNode,
-    ProjectNode,
     eq,
     gt,
 )
@@ -142,7 +139,7 @@ class TestReOptimizer:
         catalog = Catalog()
         catalog.create_table("t", [{"a": i, "b": i * 2} for i in range(100)])
 
-        from adaptive_engine.expressions import gt, eq
+        from adaptive_engine.expressions import gt
         plan = FilterNode(
             child=FilterNode(
                 child=ScanNode(table="t"),
@@ -155,7 +152,7 @@ class TestReOptimizer:
         plan = Optimizer(catalog).optimize(plan)
 
         reopt = ReOptimizer(catalog)
-        new_plan = reopt.reoptimize(plan, {})
+        _new_plan = reopt.reoptimize(plan, {})  # noqa: F841
         assert len(reopt.reoptimizations) > 0
 
     def test_results_identical_after_reopt(self):

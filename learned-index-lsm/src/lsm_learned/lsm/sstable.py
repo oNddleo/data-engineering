@@ -13,7 +13,6 @@ The index is kept in memory; data records are read on demand via mmap.
 from __future__ import annotations
 
 import mmap
-import os
 import struct
 from pathlib import Path
 from typing import Iterator, Optional
@@ -62,7 +61,7 @@ class SSTableBuilder:
                 f.write(struct.pack(_RECORD_FMT, k, raw_v))
 
             # Write sparse index after data
-            index_start = f.tell()
+            _index_start = f.tell()  # noqa: F841
             for (ik, io_) in sparse_index:
                 f.write(struct.pack(">qq", ik, io_))
 

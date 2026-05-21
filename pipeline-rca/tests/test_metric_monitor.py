@@ -2,7 +2,6 @@
 
 from datetime import datetime, timedelta
 
-import pytest
 
 from pipeline_rca.models import DegradationKind, MetricPoint
 from pipeline_rca.monitors.metric_monitor import MetricMonitor, build_synthetic_degradation

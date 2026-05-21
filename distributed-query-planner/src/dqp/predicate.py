@@ -1,11 +1,10 @@
 """Core predicate intermediate representation for federated query planning."""
 from __future__ import annotations
 
-import re
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from abc import ABC
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Iterator, List, Optional, Set
+from typing import Any, List, Optional, Set
 
 
 # ---------------------------------------------------------------------------

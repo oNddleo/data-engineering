@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import pyarrow as pa
-from typing import Dict, Optional
+from typing import Dict
 
 
 class Table:

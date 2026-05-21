@@ -5,11 +5,13 @@ Two heads share the PlanTreeEncoder backbone:
   2. CostHead       — scalar query latency prediction (used by the Bao bandit)
 """
 from __future__ import annotations
+
 import torch
 import torch.nn as nn
 from torch import Tensor
-from .tree_lstm import PlanTreeEncoder
+
 from ..plan.encoder import EncodedTree
+from .tree_lstm import PlanTreeEncoder
 
 
 class CardinalityHead(nn.Module):

@@ -2,124 +2,63 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
-
 __version__ = "0.1.0"
 
-if TYPE_CHECKING:
-    from evn.aggregator import AnnualSummary, aggregate_annual
-    from evn.anomaly import (
-        find_sudden_drops,
-        find_unrealistic_spikes,
-        find_zero_usage,
-    )
-    from evn.billing import compute_bill
-    from evn.customer import (
-        ProvincialUnit,
-        all_units,
-        is_valid_customer_code,
-        unit_for_abbr,
-        unit_for_code,
-        unit_for_prefix,
-    )
-    from evn.io_jsonl import (
-        anomaly_from_dict,
-        anomaly_to_dict,
-        bill_from_dict,
-        bill_to_dict,
-        dump_anomalies,
-        dump_bills,
-        dump_readings,
-        dump_summaries,
-        load_anomalies,
-        load_bills,
-        load_readings,
-        load_summaries,
-        reading_from_dict,
-        reading_to_dict,
-        summary_from_dict,
-        summary_to_dict,
-    )
-    from evn.schema import (
-        VAT_BPS,
-        AnomalyFinding,
-        AnomalyKind,
-        CustomerCategory,
-        ElectricityBill,
-        MeterReading,
-        TierUsage,
-    )
-    from evn.simulator import generate
-    from evn.tariff import (
-        DEFAULT_SCHEDULE,
-        SCHEDULE_2023_11,
-        SCHEDULE_2024_10,
-        FlatTariff,
-        HouseholdTariff,
-        TariffSchedule,
-        TariffTier,
-        all_schedules,
-        tariff_for_date,
-    )
+def __getattr__(name: str) -> object:
+    _LAZY = {
+        "AnnualSummary": ("evn.aggregator", "AnnualSummary"),
+        "AnomalyFinding": ("evn.schema", "AnomalyFinding"),
+        "AnomalyKind": ("evn.schema", "AnomalyKind"),
+        "CustomerCategory": ("evn.schema", "CustomerCategory"),
+        "DEFAULT_SCHEDULE": ("evn.tariff", "DEFAULT_SCHEDULE"),
+        "ElectricityBill": ("evn.schema", "ElectricityBill"),
+        "FlatTariff": ("evn.tariff", "FlatTariff"),
+        "HouseholdTariff": ("evn.tariff", "HouseholdTariff"),
+        "MeterReading": ("evn.schema", "MeterReading"),
+        "ProvincialUnit": ("evn.customer", "ProvincialUnit"),
+        "SCHEDULE_2023_11": ("evn.tariff", "SCHEDULE_2023_11"),
+        "SCHEDULE_2024_10": ("evn.tariff", "SCHEDULE_2024_10"),
+        "TariffSchedule": ("evn.tariff", "TariffSchedule"),
+        "TariffTier": ("evn.tariff", "TariffTier"),
+        "TierUsage": ("evn.schema", "TierUsage"),
+        "VAT_BPS": ("evn.schema", "VAT_BPS"),
+        "aggregate_annual": ("evn.aggregator", "aggregate_annual"),
+        "all_schedules": ("evn.tariff", "all_schedules"),
+        "all_units": ("evn.customer", "all_units"),
+        "anomaly_from_dict": ("evn.io_jsonl", "anomaly_from_dict"),
+        "anomaly_to_dict": ("evn.io_jsonl", "anomaly_to_dict"),
+        "bill_from_dict": ("evn.io_jsonl", "bill_from_dict"),
+        "bill_to_dict": ("evn.io_jsonl", "bill_to_dict"),
+        "compute_bill": ("evn.billing", "compute_bill"),
+        "dump_anomalies": ("evn.io_jsonl", "dump_anomalies"),
+        "dump_bills": ("evn.io_jsonl", "dump_bills"),
+        "dump_readings": ("evn.io_jsonl", "dump_readings"),
+        "dump_summaries": ("evn.io_jsonl", "dump_summaries"),
+        "find_sudden_drops": ("evn.anomaly", "find_sudden_drops"),
+        "find_unrealistic_spikes": ("evn.anomaly", "find_unrealistic_spikes"),
+        "find_zero_usage": ("evn.anomaly", "find_zero_usage"),
+        "generate": ("evn.simulator", "generate"),
+        "is_valid_customer_code": ("evn.customer", "is_valid_customer_code"),
+        "load_anomalies": ("evn.io_jsonl", "load_anomalies"),
+        "load_bills": ("evn.io_jsonl", "load_bills"),
+        "load_readings": ("evn.io_jsonl", "load_readings"),
+        "load_summaries": ("evn.io_jsonl", "load_summaries"),
+        "reading_from_dict": ("evn.io_jsonl", "reading_from_dict"),
+        "reading_to_dict": ("evn.io_jsonl", "reading_to_dict"),
+        "summary_from_dict": ("evn.io_jsonl", "summary_from_dict"),
+        "summary_to_dict": ("evn.io_jsonl", "summary_to_dict"),
+        "tariff_for_date": ("evn.tariff", "tariff_for_date"),
+        "unit_for_abbr": ("evn.customer", "unit_for_abbr"),
+        "unit_for_code": ("evn.customer", "unit_for_code"),
+        "unit_for_prefix": ("evn.customer", "unit_for_prefix"),
+    }
 
-
-_LAZY: dict[str, tuple[str, str]] = {
-    "AnnualSummary": ("evn.aggregator", "AnnualSummary"),
-    "AnomalyFinding": ("evn.schema", "AnomalyFinding"),
-    "AnomalyKind": ("evn.schema", "AnomalyKind"),
-    "CustomerCategory": ("evn.schema", "CustomerCategory"),
-    "DEFAULT_SCHEDULE": ("evn.tariff", "DEFAULT_SCHEDULE"),
-    "ElectricityBill": ("evn.schema", "ElectricityBill"),
-    "FlatTariff": ("evn.tariff", "FlatTariff"),
-    "HouseholdTariff": ("evn.tariff", "HouseholdTariff"),
-    "MeterReading": ("evn.schema", "MeterReading"),
-    "ProvincialUnit": ("evn.customer", "ProvincialUnit"),
-    "SCHEDULE_2023_11": ("evn.tariff", "SCHEDULE_2023_11"),
-    "SCHEDULE_2024_10": ("evn.tariff", "SCHEDULE_2024_10"),
-    "TariffSchedule": ("evn.tariff", "TariffSchedule"),
-    "TariffTier": ("evn.tariff", "TariffTier"),
-    "TierUsage": ("evn.schema", "TierUsage"),
-    "VAT_BPS": ("evn.schema", "VAT_BPS"),
-    "aggregate_annual": ("evn.aggregator", "aggregate_annual"),
-    "all_schedules": ("evn.tariff", "all_schedules"),
-    "all_units": ("evn.customer", "all_units"),
-    "anomaly_from_dict": ("evn.io_jsonl", "anomaly_from_dict"),
-    "anomaly_to_dict": ("evn.io_jsonl", "anomaly_to_dict"),
-    "bill_from_dict": ("evn.io_jsonl", "bill_from_dict"),
-    "bill_to_dict": ("evn.io_jsonl", "bill_to_dict"),
-    "compute_bill": ("evn.billing", "compute_bill"),
-    "dump_anomalies": ("evn.io_jsonl", "dump_anomalies"),
-    "dump_bills": ("evn.io_jsonl", "dump_bills"),
-    "dump_readings": ("evn.io_jsonl", "dump_readings"),
-    "dump_summaries": ("evn.io_jsonl", "dump_summaries"),
-    "find_sudden_drops": ("evn.anomaly", "find_sudden_drops"),
-    "find_unrealistic_spikes": ("evn.anomaly", "find_unrealistic_spikes"),
-    "find_zero_usage": ("evn.anomaly", "find_zero_usage"),
-    "generate": ("evn.simulator", "generate"),
-    "is_valid_customer_code": ("evn.customer", "is_valid_customer_code"),
-    "load_anomalies": ("evn.io_jsonl", "load_anomalies"),
-    "load_bills": ("evn.io_jsonl", "load_bills"),
-    "load_readings": ("evn.io_jsonl", "load_readings"),
-    "load_summaries": ("evn.io_jsonl", "load_summaries"),
-    "reading_from_dict": ("evn.io_jsonl", "reading_from_dict"),
-    "reading_to_dict": ("evn.io_jsonl", "reading_to_dict"),
-    "summary_from_dict": ("evn.io_jsonl", "summary_from_dict"),
-    "summary_to_dict": ("evn.io_jsonl", "summary_to_dict"),
-    "tariff_for_date": ("evn.tariff", "tariff_for_date"),
-    "unit_for_abbr": ("evn.customer", "unit_for_abbr"),
-    "unit_for_code": ("evn.customer", "unit_for_code"),
-    "unit_for_prefix": ("evn.customer", "unit_for_prefix"),
-}
-
-
-def __getattr__(name: str) -> Any:
     if name in _LAZY:
         from importlib import import_module
 
         m, attr = _LAZY[name]
         return getattr(import_module(m), attr)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 
 __all__ = [
     "AnnualSummary",

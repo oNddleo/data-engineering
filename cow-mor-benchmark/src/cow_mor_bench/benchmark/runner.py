@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import shutil
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -12,7 +11,6 @@ from cow_mor_bench.engines.mor import MergeOnReadEngine
 from cow_mor_bench.engines.base import TableStats
 from cow_mor_bench.workload.generator import WorkloadGenerator, WorkloadTrace
 from cow_mor_bench.workload.patterns import WorkloadProfile
-from cow_mor_bench.compaction.model import estimate_compaction_cost, ClusterConfig, DEFAULT_CLUSTER
 
 
 @dataclass

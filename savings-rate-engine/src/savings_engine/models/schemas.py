@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 
 @dataclass
@@ -10,7 +9,7 @@ class RateEntry:
     term_label: str        # raw string from bank, e.g. "3 tháng", "6M", "180 ngày"
     rate_pa: float         # % per annum
     rate_type: str = "standard"
-    min_amount_vnd: Optional[int] = None
+    min_amount_vnd: int | None = None
     currency: str = "VND"
     scraped_at: datetime = field(default_factory=datetime.utcnow)
 
@@ -23,7 +22,7 @@ class NormalizedRate:
     term_label: str
     rate_pa: float
     rate_type: str = "standard"
-    min_amount_vnd: Optional[int] = None
+    min_amount_vnd: int | None = None
     currency: str = "VND"
     scraped_at: datetime = field(default_factory=datetime.utcnow)
 
@@ -33,7 +32,7 @@ class TrendPoint:
     """A single point in a rate's time series."""
     scraped_at: datetime
     rate_pa: float
-    delta_from_prev: Optional[float] = None  # pp change from previous point
+    delta_from_prev: float | None = None  # pp change from previous point
 
 
 @dataclass

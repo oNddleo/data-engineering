@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import gzip
 import json
-from datetime import datetime, timezone
+from collections.abc import Generator
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Generator
 
 import boto3
 import pytest
@@ -38,8 +38,8 @@ SAMPLE_EVENTS = [
 @pytest.fixture
 def window() -> TimeWindow:
     return TimeWindow(
-        start=datetime(2024, 3, 14, 0, 0, tzinfo=timezone.utc),
-        end=datetime(2024, 3, 15, 0, 0, tzinfo=timezone.utc),
+        start=datetime(2024, 3, 14, 0, 0, tzinfo=UTC),
+        end=datetime(2024, 3, 15, 0, 0, tzinfo=UTC),
     )
 
 

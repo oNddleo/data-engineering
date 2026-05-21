@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import logging
 import threading
-import time
 from typing import TYPE_CHECKING
 
-from ..state.serializer import TOMBSTONE, decode_value, is_tombstone, now_ms
+from ..state.serializer import decode_value, is_tombstone, now_ms
 
 if TYPE_CHECKING:
     from ..backend.base import StorageBackend
+    from ..state.descriptor import TTLConfig
 
 logger = logging.getLogger(__name__)
 

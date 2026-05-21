@@ -9,7 +9,7 @@ from typing import Any
 
 import pandas as pd
 
-from .contract import DataContract, FieldSchema, SLARule, SemanticRule
+from .contract import DataContract, FieldSchema
 
 # ------------------------------------------------------------------ #
 # Result types

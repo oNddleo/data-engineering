@@ -7,16 +7,14 @@ optimizer always works with aggregate statistics rather than raw rows.
 
 from __future__ import annotations
 
-import json
 import sqlite3
+from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Generator, Optional
 
 from ..models import QueryRecord, Warehouse
 from ..query_analyzer import fingerprint
-
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS query_records (
@@ -44,7 +42,7 @@ CREATE TABLE IF NOT EXISTS ingestion_log (
 
 
 class WorklogStore:
-    def __init__(self, path: Optional[Path] = None) -> None:
+    def __init__(self, path: Path | None = None) -> None:
         self._path = path or Path(".worklog.db")
         self._init()
 
@@ -109,7 +107,7 @@ class WorklogStore:
 
     def load(
         self,
-        warehouse: Optional[Warehouse] = None,
+        warehouse: Warehouse | None = None,
         limit: int = 50_000,
     ) -> list[QueryRecord]:
         where = ""

@@ -91,11 +91,11 @@ class StreamProcessor:
             if self.watermark.is_late(event) and event.event_time < win.end:
                 # Event is late for this window
                 existing = list(self._buffer.get(buf_key, []))
-                r, l = self.late_policy.handle(
+                r, late = self.late_policy.handle(
                     event, win, existing, new_watermark
                 )
                 results.extend(r)
-                lates.extend(l)
+                lates.extend(late)
             else:
                 self._buffer[buf_key].append(event)
 

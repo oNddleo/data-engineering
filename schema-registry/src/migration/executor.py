@@ -5,7 +5,6 @@ Applies a MigrationScript (list of steps) to a single event payload dict.
 """
 from __future__ import annotations
 
-import re
 from copy import deepcopy
 from typing import Any
 

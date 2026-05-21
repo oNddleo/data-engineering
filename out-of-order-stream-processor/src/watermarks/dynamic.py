@@ -1,7 +1,5 @@
 from __future__ import annotations
 from collections import defaultdict, deque
-from typing import Optional
-import math
 
 from ..event import Event
 from .base import Watermark

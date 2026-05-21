@@ -17,7 +17,7 @@ from typing import Optional
 
 import numpy as np
 
-from .codecs import Codec, EncodedColumn
+from .codecs import EncodedColumn
 from .schema import SchemaEvolutionTracker
 from .selector import EncodingSelector, SelectorConfig
 
@@ -63,7 +63,7 @@ class ColumnStore:
             chunks = self._store.get(name, [])
             if not chunks:
                 continue
-            codec = self._selector.select.__self__  # noqa: not ideal – look up via name
+            _codec = self._selector.select.__self__  # noqa: F841
             decoded_chunks = []
             for chunk in chunks:
                 from .codecs import ALL_CODECS

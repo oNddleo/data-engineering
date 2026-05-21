@@ -1,5 +1,4 @@
 """Tests for PNCounter CRDT properties."""
-import pytest
 from src.crdts import PNCounter
 
 

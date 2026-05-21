@@ -7,10 +7,7 @@ from typing import Any
 
 from src.lambda_arch.models import (
     BatchView,
-    EventTypeSummary,
-    HourlyEventCounts,
     RealTimeView,
-    UserTotals,
 )
 
 logger = logging.getLogger(__name__)

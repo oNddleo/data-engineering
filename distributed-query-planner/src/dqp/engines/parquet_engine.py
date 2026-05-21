@@ -139,7 +139,7 @@ class ParquetEngine(EngineBase):
         if not valid:
             return None
         try:
-            import pyarrow.dataset as ds
+            import pyarrow.dataset as ds  # noqa: F401
         except ImportError:
             return None
         result = valid[0]

@@ -1,5 +1,3 @@
-from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -17,7 +15,7 @@ class RateOut(BaseModel):
     term_label: str
     rate_pa: float
     rate_type: str
-    min_amount_vnd: Optional[int]
+    min_amount_vnd: int | None
     currency: str
 
     model_config = {"from_attributes": True}
@@ -29,9 +27,9 @@ class BestRateOut(RateOut):
 
 @router.get("", response_model=list[RateOut])
 def get_latest_rates(
-    bank_code: Optional[str] = Query(None, description="Filter by bank code, e.g. VCB"),
-    rate_type: Optional[str] = Query(None, description="standard | online | promotional"),
-    term_days: Optional[int] = Query(None, description="Filter by canonical term in days"),
+    bank_code: str | None = Query(None, description="Filter by bank code, e.g. VCB"),
+    rate_type: str | None = Query(None, description="standard | online | promotional"),
+    term_days: int | None = Query(None, description="Filter by canonical term in days"),
     db: Session = Depends(get_db),
 ):
     """Latest rates for all banks (or a specific bank), from the most recent successful scrape."""
@@ -83,7 +81,7 @@ def available_terms(db: Session = Depends(get_db)):
 @router.get("/{bank_code}", response_model=list[RateOut])
 def get_bank_rates(
     bank_code: str,
-    rate_type: Optional[str] = Query(None),
+    rate_type: str | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """All latest rates for a specific bank."""

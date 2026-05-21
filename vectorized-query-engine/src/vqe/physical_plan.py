@@ -14,14 +14,13 @@ from __future__ import annotations
 
 import collections
 from abc import ABC, abstractmethod
-from typing import Dict, Generator, Iterable, Iterator, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
-import numpy as np
 import pyarrow as pa
 import pyarrow.compute as pc
 
-from .catalog import Catalog, Table
-from .expressions import AggExpr, BinaryExpr, ColumnRef, Expr, conjuncts_to_expr
+from .catalog import Catalog
+from .expressions import AggExpr, ColumnRef, Expr
 
 
 BATCH_SIZE = 8192   # Tuned for L1/L2 cache; SIMD-friendly power of two
@@ -270,11 +269,6 @@ class HashAggOp(PhysicalOp):
         self._result: Optional[pa.RecordBatch] = None
         self._done = False
 
-    def open(self, catalog: Catalog) -> None:
-        self.child.open(catalog)
-        self._result = None
-        self._done = False
-
     def _build(self, catalog: Catalog) -> None:
         # state: group_key_tuple → [partial_state_per_agg]
         states: Dict[Tuple, List] = collections.defaultdict(
@@ -299,8 +293,6 @@ class HashAggOp(PhysicalOp):
                 row_keys: List[Tuple] = list(zip(*key_np)) if key_np else [() for _ in range(n)]
 
                 # Build partial per-batch aggregates per unique group
-                from itertools import groupby as _groupby
-                import numpy as _np
 
                 # Build group → row indices mapping
                 group_indices: Dict[Tuple, List[int]] = collections.defaultdict(list)

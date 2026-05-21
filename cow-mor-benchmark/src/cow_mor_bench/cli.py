@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
-import tempfile
 from pathlib import Path
 
 import click
@@ -15,7 +13,7 @@ from rich import box
 
 from cow_mor_bench.benchmark.metrics import compare
 from cow_mor_bench.benchmark.runner import BenchmarkSuite, run_benchmark
-from cow_mor_bench.compaction.model import build_amplification_curve, DEFAULT_CLUSTER
+from cow_mor_bench.compaction.model import build_amplification_curve
 from cow_mor_bench.recommender.engine import recommend, recommend_from_params
 from cow_mor_bench.workload.classifier import classify_trace
 from cow_mor_bench.workload.patterns import PROFILES

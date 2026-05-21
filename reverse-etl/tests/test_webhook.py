@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from src.triggers.webhook import create_webhook_app
 from src.models import PipelineConfig, RunResult

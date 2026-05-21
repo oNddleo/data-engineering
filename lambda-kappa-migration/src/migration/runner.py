@@ -13,7 +13,6 @@ from src.lambda_arch.batch_layer import BatchProcessor
 from src.lambda_arch.models import BatchView
 from src.lambda_arch.serving_layer import ServingLayer
 from src.lambda_arch.speed_layer import SpeedLayer
-from src.migration.backfill import BackfillJob
 from src.validator.correctness_validator import CorrectnessValidator
 
 logger = logging.getLogger(__name__)

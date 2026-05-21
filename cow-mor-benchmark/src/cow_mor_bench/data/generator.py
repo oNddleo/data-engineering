@@ -2,20 +2,11 @@
 
 from __future__ import annotations
 
-import random
 import time
-from datetime import datetime, timezone
 
 import numpy as np
 import pyarrow as pa
-import pyarrow.parquet as pq
 
-from cow_mor_bench.data.schemas import (
-    EVENTS_SCHEMA,
-    INVENTORY_SCHEMA,
-    ORDERS_SCHEMA,
-    SCHEMA_REGISTRY,
-)
 
 _RNG = np.random.default_rng(42)
 

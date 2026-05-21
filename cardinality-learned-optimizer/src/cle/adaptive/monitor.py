@@ -7,12 +7,12 @@ The adaptive query processing pipeline:
   4. (Recompiler will re-execute with fixed hints if triggered)
 """
 from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 from ..plan.node import PlanNode
-from ..plan.parser import extract_cardinality_errors, get_worst_node
+from ..plan.parser import extract_cardinality_errors
 
 logger = logging.getLogger(__name__)
 

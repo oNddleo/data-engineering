@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -35,13 +35,13 @@ class CheckpointStore:
         self._state.setdefault("completed_keys", [])
         if key not in self._state["completed_keys"]:
             self._state["completed_keys"].append(key)
-        self._state["last_updated"] = datetime.now(tz=timezone.utc).isoformat()
+        self._state["last_updated"] = datetime.now(tz=UTC).isoformat()
         self._save()
 
     def record_progress(self, replayed: int, failed: int) -> None:
         self._state["replayed_events"] = replayed
         self._state["failed_events"] = failed
-        self._state["last_updated"] = datetime.now(tz=timezone.utc).isoformat()
+        self._state["last_updated"] = datetime.now(tz=UTC).isoformat()
         self._save()
 
     def get_replayed_count(self) -> int:

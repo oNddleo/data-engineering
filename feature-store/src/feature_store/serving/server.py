@@ -177,7 +177,7 @@ async def get_features_batch(req: BatchRequest) -> dict:
     if misses:
         try:
             fetched = await online_store.get_multi_group(misses)
-        except Exception as exc:
+        except Exception:
             STORE_ERRORS.labels("redis").inc()
             raise HTTPException(status_code=503, detail="Store unavailable")
         for (g, e), features in fetched.items():

@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone, timedelta
-import random
+from datetime import datetime, timezone
 
 from .models import (
-    AnalysisReport, ExpensivePattern, Platform, QueryRecord,
-    Recommendation, RecommendationType, Severity, TableStats,
+    AnalysisReport, ExpensivePattern, Platform, Recommendation, RecommendationType, Severity, TableStats,
 )
 
 

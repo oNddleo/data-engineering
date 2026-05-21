@@ -12,10 +12,12 @@ Reference:
   applied to query plan trees.
 """
 from __future__ import annotations
+
 import torch
 import torch.nn as nn
 from torch import Tensor
-from ..plan.encoder import EncodedTree, FEATURE_DIM
+
+from ..plan.encoder import FEATURE_DIM, EncodedTree
 
 
 class ChildSumTreeLSTM(nn.Module):

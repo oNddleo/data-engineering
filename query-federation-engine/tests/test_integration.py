@@ -1,7 +1,6 @@
 """End-to-end integration tests — full query federation across all four sources."""
 
 import pandas as pd
-import pytest
 
 from federation.engine import FederationEngine
 

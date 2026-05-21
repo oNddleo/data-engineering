@@ -7,7 +7,7 @@ if the ratio exceeds a threshold.
 """
 from __future__ import annotations
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Iterator
 
 from .expressions import Row

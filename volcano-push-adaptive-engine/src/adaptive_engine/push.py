@@ -14,7 +14,6 @@ drives the source to completion.
 """
 from __future__ import annotations
 from collections import defaultdict
-from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from .catalog import Catalog
@@ -359,7 +358,6 @@ class PushCompiler:
 # Aggregate helpers (shared with volcano.py to avoid circular import)
 # ------------------------------------------------------------------
 
-from typing import Any
 
 
 def _agg_init(func: str) -> Any:

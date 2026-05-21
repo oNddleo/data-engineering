@@ -14,9 +14,8 @@ A term_label is matched by:
 """
 import logging
 import re
-from typing import Optional
 
-from savings_engine.models.schemas import RateEntry, NormalizedRate
+from savings_engine.models.schemas import NormalizedRate, RateEntry
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +77,7 @@ def _snap_to_canonical(days: int) -> int:
     return min(CANONICAL_TERMS, key=lambda c: abs(c - days))
 
 
-def parse_term_days(label: str) -> Optional[int]:
+def parse_term_days(label: str) -> int | None:
     clean = label.strip().lower()
 
     # Exact keyword match

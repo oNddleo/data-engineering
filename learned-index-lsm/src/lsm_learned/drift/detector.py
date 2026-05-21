@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import math
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
@@ -116,7 +116,7 @@ class ADWINDetector:
         shows a statistically significant mean difference.
         """
         n = self._total_count
-        mean = self._total_sum / n
+        _mean = self._total_sum / n  # noqa: F841
 
         # Accumulate from oldest end
         n0 = 0

@@ -1,5 +1,5 @@
-from .db_models import Base, Bank, RateSnapshot, RateRecord
-from .schemas import RateEntry, NormalizedRate, TrendPoint, BankComparison
+from .db_models import Bank, Base, RateRecord, RateSnapshot
+from .schemas import BankComparison, NormalizedRate, RateEntry, TrendPoint
 
 __all__ = [
     "Base", "Bank", "RateSnapshot", "RateRecord",

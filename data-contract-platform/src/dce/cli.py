@@ -16,7 +16,6 @@ from .reporter import (
     breaking_change_report,
     consumer_notification,
     contracts_dir_breaking_changes,
-    validation_summary_report,
     write_markdown_report,
     write_report,
 )
