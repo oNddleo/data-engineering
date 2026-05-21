@@ -1,0 +1,5 @@
+services:
+  vnfishery:
+    build: .
+    image: vn-fishery-export-pipeline:latest
+    command: ["info"]

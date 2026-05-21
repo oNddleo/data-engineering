@@ -1,0 +1,32 @@
+name: vn-fishery-export-pipeline CI
+
+on:
+  push:
+    paths:
+      - "vn-fishery-export-pipeline/**"
+      - ".github/workflows/vnfishery.yml"
+  pull_request:
+    paths:
+      - "vn-fishery-export-pipeline/**"
+
+defaults:
+  run:
+    working-directory: vn-fishery-export-pipeline
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e .[dev]
+      - run: ruff check src tests
+      - run: ruff format --check src tests
+      - run: mypy --strict src
+      - run: pytest -q
