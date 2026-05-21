@@ -1,0 +1,5 @@
+services:
+  dlq:
+    build: .
+    image: deadletter-queue-toolkit:latest
+    command: ["info"]
