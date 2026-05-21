@@ -1,0 +1,5 @@
+services:
+  bloomdedup:
+    build: .
+    image: dedup-with-bloom:latest
+    command: ["info"]
