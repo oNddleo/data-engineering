@@ -1,0 +1,30 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: pip install -e ".[dev]"
+        working-directory: multi-source-reconciliation-engine
+      - name: Ruff lint
+        run: ruff check src tests
+        working-directory: multi-source-reconciliation-engine
+      - name: Ruff format
+        run: ruff format --check src tests
+        working-directory: multi-source-reconciliation-engine
+      - name: Mypy
+        run: mypy --strict src
+        working-directory: multi-source-reconciliation-engine
+      - name: Pytest
+        run: pytest -q
+        working-directory: multi-source-reconciliation-engine

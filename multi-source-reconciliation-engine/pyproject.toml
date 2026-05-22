@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "multi-source-reconciliation-engine"
+version = "0.1.0"
+description = "Financial reconciliation pipeline: fuzzy multi-key matching across N data sources with discrepancy classification"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "multi-source-reconciliation-engine contributors" }]
+keywords = ["data-engineering", "reconciliation", "financial", "matching", "pipeline"]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.1",
+    "hypothesis>=6.100",
+    "ruff>=0.4",
+    "mypy>=1.9",
+]
+
+[project.scripts]
+recon = "recon.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/recon"]
+
+[tool.hatch.envs.default]
+features = ["dev"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+src = ["src"]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "TCH"]
+ignore = ["E501", "SIM105"]
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
