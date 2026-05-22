@@ -140,44 +140,32 @@ def quantile(td: BuildableTDigest | TDigest, q: float) -> float:
     if q == 1:
         return vmax
     target = q * total
-    cumulative = 0.0
-    for i, c in enumerate(centroids):
-        # Cumulative quantile midpoint of centroid i.
-        next_cum = cumulative + c.weight
-        if target <= next_cum:
-            # Found the centroid containing the target.
-            if i == 0 and (c.weight <= 1 or target <= c.weight / 2):
-                # First centroid, target in its lower half — interpolate from
-                # min_value up to the centroid's mean.
-                frac = target / max(c.weight / 2, 1e-12)
-                return vmin + frac * (c.mean - vmin)
-            if i + 1 >= len(centroids):
-                # Last centroid — interpolate from its mean to max_value.
-                remaining = total - (cumulative + c.weight / 2)
-                if remaining <= 0:
-                    return vmax
-                tail = target - (cumulative + c.weight / 2)
-                if tail <= 0:
-                    return c.mean
-                frac = tail / remaining
-                return c.mean + frac * (vmax - c.mean)
-            nxt = centroids[i + 1]
-            # Linear interpolation between centroid centres (cumulative + weight/2).
-            this_centre = cumulative + c.weight / 2
-            next_centre = next_cum + nxt.weight / 2
-            if target <= this_centre:
-                # In the lower half of c — interpolate from previous centroid or min.
-                if i == 0:
-                    frac = (target - 0) / max(this_centre, 1e-12)
-                    return vmin + frac * (c.mean - vmin)
-                prev = centroids[i - 1]
-                prev_centre = cumulative - prev.weight / 2
-                frac = (target - prev_centre) / max(this_centre - prev_centre, 1e-12)
-                return prev.mean + frac * (c.mean - prev.mean)
-            # Between this_centre and next_centre.
-            frac = (target - this_centre) / max(next_centre - this_centre, 1e-12)
-            return c.mean + frac * (nxt.mean - c.mean)
-        cumulative = next_cum
+    # Build sorted (cumulative_midpoint, mean) pairs for interpolation.
+    mids: list[tuple[float, float]] = []
+    cum = 0.0
+    for c in centroids:
+        mids.append((cum + c.weight / 2, c.mean))
+        cum += c.weight
+
+    # Boundary sentinel points.
+    lo_w, lo_v = 0.0, vmin
+    hi_w, hi_v = total, vmax
+
+    # Find the two adjacent anchor points that straddle target.
+    all_points = [(lo_w, lo_v)] + mids + [(hi_w, hi_v)]
+    for j in range(len(all_points) - 1):
+        w0, v0 = all_points[j]
+        w1, v1 = all_points[j + 1]
+        if w0 <= target <= w1:
+            span = max(w1 - w0, 1e-15)
+            frac = max(0.0, min(1.0, (target - w0) / span))
+            # Use endpoints directly to avoid catastrophic cancellation when
+            # |v1 - v0| is tiny relative to |v0| (e.g. v0=-1, v1≈0).
+            if frac <= 0.0:
+                return v0
+            if frac >= 1.0:
+                return v1
+            return v0 + frac * (v1 - v0)
     return vmax
 
 
