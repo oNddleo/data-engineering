@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "intelligent-compaction-engine"
+version = "0.1.0"
+description = "Query-pattern-driven compaction planner: small-file merging, Z-order column scoring, partition pruning for lakehouse tables"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "intelligent-compaction-engine contributors" }]
+keywords = ["data-engineering", "compaction", "lakehouse", "delta", "iceberg", "query-optimization"]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.1",
+    "hypothesis>=6.100",
+    "ruff>=0.4",
+    "mypy>=1.9",
+]
+
+[project.scripts]
+compact = "compact.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/compact"]
+
+[tool.hatch.envs.default]
+features = ["dev"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+src = ["src"]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "TCH"]
+ignore = ["E501", "SIM105"]
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
