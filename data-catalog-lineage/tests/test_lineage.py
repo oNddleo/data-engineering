@@ -1,77 +1,106 @@
-import pytest
-from catalog.lineage import extract_lineage, parse_column_refs
+"""Tests for the lineage graph."""
+
+from __future__ import annotations
+
+from datacatalog.lineage import LineageGraph
+from datacatalog.schema import ColumnRef, LineageEdge
 
 
-class TestParseColumnRefs:
-    def test_three_part(self):
-        s, t, c = parse_column_refs("myschema.mytable.mycolumn")
-        assert s == "myschema"
-        assert t == "mytable"
-        assert c == "mycolumn"
-
-    def test_two_part(self):
-        s, t, c = parse_column_refs("mytable.mycolumn")
-        assert s is None
-        assert t == "mytable"
-        assert c == "mycolumn"
-
-    def test_one_part(self):
-        s, t, c = parse_column_refs("mycolumn")
-        assert s is None
-        assert t is None
-        assert c == "mycolumn"
+def ref(sid: str, tbl: str, col: str) -> ColumnRef:
+    return ColumnRef(sid, "public", tbl, col)
 
 
-class TestExtractLineage:
-    def test_simple_insert_select(self):
-        sql = """
-        INSERT INTO stg_users (user_id, email, phone)
-        SELECT user_id, email, phone FROM raw_users
-        """
-        edges = extract_lineage(sql)
-        assert len(edges) > 0
-        targets = [e["target"] for e in edges]
-        assert any("email" in t for t in targets)
-        assert any("user_id" in t for t in targets)
+def edge(s: ColumnRef, t: ColumnRef, job: str = "j1") -> LineageEdge:
+    return LineageEdge(s, t, job)
 
-    def test_create_table_as_select(self):
-        sql = """
-        CREATE TABLE reporting AS
-        SELECT u.user_id, u.email, SUM(o.total_amount) AS total_spent
-        FROM users u
-        JOIN orders o ON u.user_id = o.user_id
-        GROUP BY u.user_id, u.email
-        """
-        edges = extract_lineage(sql)
-        targets = [e["target"] for e in edges]
-        assert any("total_spent" in t for t in targets)
-        assert any("email" in t for t in targets)
 
-    def test_aliased_columns(self):
-        sql = """
-        INSERT INTO output (full_name)
-        SELECT first_name || ' ' || last_name AS full_name FROM input
-        """
-        edges = extract_lineage(sql)
-        targets = [e["target"] for e in edges]
-        assert any("full_name" in t for t in targets)
+class TestLineageGraph:
+    def test_add_and_get_edges(self) -> None:
+        g = LineageGraph()
+        e = edge(ref("raw", "t1", "c1"), ref("stg", "t2", "c2"))
+        g.add_edge(e)
+        assert len(g.edges()) == 1
 
-    def test_no_edges_for_bare_select(self):
-        sql = "SELECT id, name FROM users"
-        edges = extract_lineage(sql)
-        assert edges == []
+    def test_idempotent_add(self) -> None:
+        g = LineageGraph()
+        e = edge(ref("raw", "t1", "c1"), ref("stg", "t2", "c2"))
+        g.add_edge(e)
+        g.add_edge(e)
+        assert len(g.edges()) == 1
 
-    def test_empty_sql(self):
-        assert extract_lineage("") == []
+    def test_upstream(self) -> None:
+        g = LineageGraph()
+        r = ref("raw", "t1", "c1")
+        s = ref("stg", "t2", "c2")
+        p = ref("rep", "t3", "c3")
+        g.add_edges([edge(r, s), edge(s, p)])
+        ups = g.upstream_of(p)
+        assert s in ups
+        assert r in ups
 
-    def test_invalid_sql_returns_empty(self):
-        assert extract_lineage("NOT VALID SQL !!!") == []
+    def test_downstream(self) -> None:
+        g = LineageGraph()
+        r = ref("raw", "t1", "c1")
+        s = ref("stg", "t2", "c2")
+        p = ref("rep", "t3", "c3")
+        g.add_edges([edge(r, s), edge(s, p)])
+        downs = g.downstream_of(r)
+        assert s in downs
+        assert p in downs
 
-    def test_transform_captured(self):
-        sql = """
-        INSERT INTO sales_enriched (total)
-        SELECT amount * 1.1 AS total FROM raw_sales
-        """
-        edges = extract_lineage(sql)
-        assert len(edges) > 0
-        assert edges[0]["transform"] is not None
+    def test_no_cycles_in_topological_sort(self) -> None:
+        g = LineageGraph()
+        r = ref("raw", "t1", "c1")
+        s = ref("stg", "t2", "c2")
+        p = ref("rep", "t3", "c3")
+        g.add_edges([edge(r, s), edge(s, p)])
+        order = g.topological_sort()
+        assert order.index(r) < order.index(s)
+        assert order.index(s) < order.index(p)
+
+    def test_edges_from(self) -> None:
+        g = LineageGraph()
+        r = ref("raw", "t1", "c1")
+        s = ref("stg", "t2", "c2")
+        e = edge(r, s)
+        g.add_edge(e)
+        assert g.edges_from(r) == [e]
+
+    def test_edges_to(self) -> None:
+        g = LineageGraph()
+        r = ref("raw", "t1", "c1")
+        s = ref("stg", "t2", "c2")
+        e = edge(r, s)
+        g.add_edge(e)
+        assert g.edges_to(s) == [e]
+
+    def test_nodes(self) -> None:
+        g = LineageGraph()
+        r = ref("raw", "t1", "c1")
+        s = ref("stg", "t2", "c2")
+        g.add_edge(edge(r, s))
+        assert r in g.nodes()
+        assert s in g.nodes()
+
+    def test_pii_impact(self) -> None:
+        g = LineageGraph()
+        pii_col = ref("raw", "customers", "email")
+        stg_col = ref("stg", "customers", "email")
+        rep_col = ref("rep", "report", "email")
+        g.add_edges([edge(pii_col, stg_col), edge(stg_col, rep_col)])
+        impacted = g.pii_impact([pii_col])
+        assert stg_col in impacted
+        assert rep_col in impacted
+
+    def test_edges_for_table(self) -> None:
+        g = LineageGraph()
+        r = ref("raw", "customers", "email")
+        s = ref("stg", "customers", "email")
+        g.add_edge(edge(r, s))
+        result = g.edges_for_table("raw", "public", "customers")
+        assert len(result) == 1
+
+    def test_upstream_empty(self) -> None:
+        g = LineageGraph()
+        r = ref("raw", "t1", "c1")
+        assert g.upstream_of(r) == []

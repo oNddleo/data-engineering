@@ -1,12 +1,18 @@
+from __future__ import annotations
+
 import sqlite3
-import tempfile
-import os
+from typing import TYPE_CHECKING
+
 import pytest
+
 from catalog.discovery import discover_source
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @pytest.fixture()
-def sample_db(tmp_path):
+def sample_db(tmp_path: Path) -> str:
     db_path = tmp_path / "test.db"
     con = sqlite3.connect(db_path)
     cur = con.cursor()
@@ -33,19 +39,19 @@ def sample_db(tmp_path):
         "INSERT INTO customers VALUES (?,?,?,?,?,?,?)",
         [
             (1, "Alice", "Smith", "alice@test.com", "555-1234", "123-45-6789", 30),
-            (2, "Bob",   "Jones", "bob@test.com",   "555-5678", "987-65-4321", 25),
-        ]
+            (2, "Bob", "Jones", "bob@test.com", "555-5678", "987-65-4321", 25),
+        ],
     )
     cur.executemany(
         "INSERT INTO orders VALUES (?,?,?,?)",
-        [(1, 1, 100.0, "2024-01-01"), (2, 2, 200.0, "2024-01-02")]
+        [(1, 1, 100.0, "2024-01-01"), (2, 2, 200.0, "2024-01-02")],
     )
     con.commit()
     con.close()
     return str(db_path)
 
 
-def test_discovers_tables(sample_db):
+def test_discovers_tables(sample_db: str) -> None:
     result = discover_source(f"sqlite:///{sample_db}", "sqlite")
     assert not result.errors
     table_names = [t["name"] for t in result.tables]
@@ -53,7 +59,7 @@ def test_discovers_tables(sample_db):
     assert "orders" in table_names
 
 
-def test_discovers_columns(sample_db):
+def test_discovers_columns(sample_db: str) -> None:
     result = discover_source(f"sqlite:///{sample_db}", "sqlite")
     col_names = [c["name"] for c in result.columns if c["table"] == "customers"]
     assert "email" in col_names
@@ -61,7 +67,7 @@ def test_discovers_columns(sample_db):
     assert "first_name" in col_names
 
 
-def test_pii_detected_on_name(sample_db):
+def test_pii_detected_on_name(sample_db: str) -> None:
     result = discover_source(f"sqlite:///{sample_db}", "sqlite")
     email_col = next((c for c in result.columns if c["name"] == "email"), None)
     assert email_col is not None
@@ -69,34 +75,37 @@ def test_pii_detected_on_name(sample_db):
     assert "EMAIL" in email_col["pii_tags"]
 
 
-def test_pii_detected_on_values(sample_db):
+def test_pii_detected_on_values(sample_db: str) -> None:
     result = discover_source(f"sqlite:///{sample_db}", "sqlite")
     ssn_col = next((c for c in result.columns if c["name"] == "ssn"), None)
     assert ssn_col is not None
     assert "SSN" in ssn_col["pii_tags"]
 
 
-def test_primary_key_flagged(sample_db):
+def test_primary_key_flagged(sample_db: str) -> None:
     result = discover_source(f"sqlite:///{sample_db}", "sqlite")
-    pk_col = next((c for c in result.columns if c["name"] == "customer_id" and c["table"] == "customers"), None)
+    pk_col = next(
+        (c for c in result.columns if c["name"] == "customer_id" and c["table"] == "customers"),
+        None,
+    )
     assert pk_col is not None
     assert pk_col["is_primary_key"] is True
 
 
-def test_non_pii_column_clean(sample_db):
+def test_non_pii_column_clean(sample_db: str) -> None:
     result = discover_source(f"sqlite:///{sample_db}", "sqlite")
     age_col = next((c for c in result.columns if c["name"] == "age"), None)
     assert age_col is not None
     assert age_col["pii_tags"] == []
 
 
-def test_bad_connection_returns_error():
-    result = discover_source("sqlite:///nonexistent_dir/nope.db", "sqlite")
+def test_bad_connection_returns_error() -> None:
+    discover_source("sqlite:///nonexistent_dir/nope.db", "sqlite")
     # Should either work (SQLite creates) or return an error — not crash
     # Just assert no exception was raised
 
 
-def test_row_count(sample_db):
+def test_row_count(sample_db: str) -> None:
     result = discover_source(f"sqlite:///{sample_db}", "sqlite")
     customers = next((t for t in result.tables if t["name"] == "customers"), None)
     assert customers is not None
