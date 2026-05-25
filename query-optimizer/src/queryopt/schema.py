@@ -17,10 +17,11 @@ Schema
 Foreign key join predicates connect each dimension to the fact table.
 All joins are equi-joins on surrogate keys.
 """
+
 from __future__ import annotations
 
-from queryopt.histogram import ColumnStats, StatsCatalog, TableStats
 from queryopt.expressions import Predicate
+from queryopt.histogram import ColumnStats, StatsCatalog, TableStats
 
 
 def build_star_schema() -> tuple[StatsCatalog, list[str], list[Predicate]]:

@@ -19,28 +19,32 @@ JSONL plan output::
     {"join_order": [...], "total_cost": 1234.5,
      "algorithm": "HashJoin", "io_cost": 1200.0, "cpu_cost": 34.5}
 """
+
 from __future__ import annotations
 
 import argparse
 import json
 import sys
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from queryopt.cascades import CascadesOptimizer
 from queryopt.cost_model import CostModel
-from queryopt.expressions import Predicate, PhysicalJoin, PhysicalScan
-from queryopt.histogram import StatsCatalog, TableStats, ColumnStats
-from queryopt.memo import Winner
+from queryopt.expressions import PhysicalJoin, PhysicalScan, Predicate
+from queryopt.histogram import ColumnStats, StatsCatalog, TableStats
 from queryopt.schema import build_star_schema
 
+if TYPE_CHECKING:
+    from queryopt.memo import Winner
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 
-def _build_catalog_from_spec(spec: dict[str, Any]) -> tuple[StatsCatalog, list[str], list[Predicate]]:
+def _build_catalog_from_spec(
+    spec: dict[str, Any],
+) -> tuple[StatsCatalog, list[str], list[Predicate]]:
     """Build a StatsCatalog from a JSONL query spec dict."""
     tables: list[str] = spec["tables"]
     row_counts: dict[str, int] = spec.get("row_counts", {})
@@ -79,9 +83,7 @@ def _winner_to_dict(winner: Winner) -> dict[str, Any]:
         node["table"] = expr.table
     elif isinstance(expr, PhysicalJoin):
         node["op"] = expr.algorithm.value
-        node["children"] = [
-            _winner_to_dict(cw) for cw in winner.child_winners.values()
-        ]
+        node["children"] = [_winner_to_dict(cw) for cw in winner.child_winners.values()]
     return node
 
 
@@ -136,7 +138,7 @@ def cmd_optimize(args: argparse.Namespace) -> int:
             catalog, tables, predicates = _build_catalog_from_spec(spec)
             cost_model = CostModel(
                 avg_row_bytes={
-                    t: (catalog.get(t).avg_row_bytes if catalog.get(t) else 100)
+                    t: (_ts.avg_row_bytes if (_ts := catalog.get(t)) is not None else 100)
                     for t in tables
                 }
             )
@@ -181,8 +183,7 @@ def cmd_demo(_args: argparse.Namespace) -> int:
 
     cost_model = CostModel(
         avg_row_bytes={
-            t: (catalog.get(t).avg_row_bytes if catalog.get(t) else 100)
-            for t in tables
+            t: (_ts.avg_row_bytes if (_ts := catalog.get(t)) is not None else 100) for t in tables
         }
     )
     optimizer = CascadesOptimizer(catalog, cost_model)

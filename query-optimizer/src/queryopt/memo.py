@@ -21,13 +21,14 @@ canonical *signature* based on the frozenset of base table names they cover.
 This is an approximation sufficient for join-ordering; a full implementation
 would use pattern-based equivalence proofs.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from queryopt.cost_model import PAGE_SIZE_BYTES, CostEstimate
 from queryopt.expressions import Scan
-from queryopt.cost_model import CostEstimate, PAGE_SIZE_BYTES
 
 if TYPE_CHECKING:
     from queryopt.expressions import LogicalExpr, PhysicalExpr
@@ -147,8 +148,8 @@ class Memo:
         lines = [f"Memo ({self.num_groups()} groups):"]
         for g in sorted(self._groups.values(), key=lambda x: x.id):
             lines.append(f"  {g}")
-            for e in g.logical_exprs:
-                lines.append(f"    L: {e}")
-            for e in g.physical_exprs:
-                lines.append(f"    P: {e}")
+            for le in g.logical_exprs:
+                lines.append(f"    L: {le}")
+            for pe in g.physical_exprs:
+                lines.append(f"    P: {pe}")
         return "\n".join(lines)

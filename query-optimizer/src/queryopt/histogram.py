@@ -12,6 +12,7 @@ Selectivity estimation follows classic formulas:
   - Range pred sel = (high - low) / (max - min)
   - Default sel    = 0.33
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

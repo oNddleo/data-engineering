@@ -19,6 +19,7 @@ controlled by memoization (each unique sub-plan is costed once) and
 pruning (cost bound propagation).  For N=10 we enumerate all bushy trees
 via DP over subsets, which is O(3^N) but finishes quickly in Python for N<=12.
 """
+
 from __future__ import annotations
 
 import itertools
@@ -26,11 +27,11 @@ from typing import TYPE_CHECKING
 
 from queryopt.expressions import PhysicalJoin, PhysicalOp, PhysicalScan, Predicate
 from queryopt.memo import GroupStats, Memo, Winner
-from queryopt.cost_model import CostEstimate, CostModel
 
 if TYPE_CHECKING:
-    from queryopt.memo import Group
+    from queryopt.cost_model import CostEstimate, CostModel
     from queryopt.histogram import StatsCatalog
+    from queryopt.memo import Group
 
 
 class CascadesOptimizer:
@@ -160,13 +161,9 @@ class CascadesOptimizer:
                     else:
                         local_cost = self._cost_nl(left_group, right_group, out_rows)
 
-                    total_cost = (
-                        local_cost + left_group.winner.cost + right_group.winner.cost
-                    )
+                    total_cost = local_cost + left_group.winner.cost + right_group.winner.cost
 
-                    phys = PhysicalJoin(
-                        left_group.id, right_group.id, algo, preds_tuple
-                    )
+                    phys = PhysicalJoin(left_group.id, right_group.id, algo, preds_tuple)
                     # Only add physical if it's a candidate for best
                     if g.winner is None or total_cost.total < g.winner.cost.total:
                         g.add_physical(phys)
@@ -201,9 +198,7 @@ class CascadesOptimizer:
             build, probe = left_g, right_g
         else:
             build, probe = right_g, left_g
-        return self.cost_model.hash_join(
-            build.stats.row_count, probe.stats.row_count, out_rows
-        )
+        return self.cost_model.hash_join(build.stats.row_count, probe.stats.row_count, out_rows)
 
     def _cost_merge(self, left_g: Group, right_g: Group, out_rows: float) -> CostEstimate:
         return self.cost_model.merge_join(

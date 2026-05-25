@@ -1,4 +1,5 @@
 """Cascades-framework cost-based query optimizer."""
+
 from __future__ import annotations
 
 from queryopt.cascades import CascadesOptimizer

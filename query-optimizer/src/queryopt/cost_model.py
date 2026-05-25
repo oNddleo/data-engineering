@@ -15,6 +15,7 @@ HashJoin        : build side I/O + probe side I/O + output
 MergeJoin       : sort both sides (if not already sorted) + merge pass
 NestedLoopJoin  : outer rows * inner pages  (good only for tiny outer)
 """
+
 from __future__ import annotations
 
 import math
@@ -115,9 +116,12 @@ class CostModel:
             passes = math.ceil(math.log2(max(pages / BUFFER_POOL_PAGES, 1.0) + 1))
             return SORT_COST_FACTOR * pages * max(1, passes)
 
-        io = (0.0 if left_sorted else sort_cost(left_pages)) + (
-            0.0 if right_sorted else sort_cost(right_pages)
-        ) + left_pages + right_pages  # merge pass
+        io = (
+            (0.0 if left_sorted else sort_cost(left_pages))
+            + (0.0 if right_sorted else sort_cost(right_pages))
+            + left_pages
+            + right_pages
+        )  # merge pass
 
         cpu = (left_rows + right_rows + output_rows) * CPU_FACTOR
         return CostEstimate(io_cost=io, cpu_cost=cpu)

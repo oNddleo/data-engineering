@@ -15,6 +15,7 @@ Implementation rules  (logical -> physical):
 Each rule's `apply` method returns a list of new (expr, tables) pairs to
 insert into the memo, or an empty list if the rule does not match.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -117,9 +118,7 @@ class AssociateLeft(Rule):
             ac_preds = tuple(
                 p
                 for p in (expr.predicates + inner.predicates)
-                if p.left_table in ac_tables
-                and p.right_table in ac_tables
-                and p not in bc_preds
+                if p.left_table in ac_tables and p.right_table in ac_tables and p not in bc_preds
             )
             results.append(("two_level", bc_expr, bc_tables, ac_preds, a_gid, ac_tables))
 
@@ -166,9 +165,7 @@ class AssociateRight(Rule):
             abc_preds = tuple(
                 p
                 for p in (expr.predicates + inner.predicates)
-                if p not in ab_preds
-                and p.left_table in abc_tables
-                and p.right_table in abc_tables
+                if p not in ab_preds and p.left_table in abc_tables and p.right_table in abc_tables
             )
             results.append(("two_level", ab_expr, ab_tables, abc_preds, c_gid, abc_tables))
 

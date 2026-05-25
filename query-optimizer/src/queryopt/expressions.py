@@ -4,6 +4,7 @@ Logical and physical expression nodes for the query plan tree.
 In the Cascades framework, every node in the memo table is an Expression
 referencing child *groups* (by ID) rather than child expressions directly.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
