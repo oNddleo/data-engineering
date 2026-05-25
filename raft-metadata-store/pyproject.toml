@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "raft-metadata-store"
+version = "0.1.0"
+description = "Raft consensus simulation: leader election, log replication, and a linearisable KV metadata store — stdlib only"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "raft-metadata-store contributors" }]
+keywords = ["data-engineering", "raft", "consensus", "distributed-systems", "metadata"]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.1",
+    "hypothesis>=6.100",
+    "ruff>=0.4",
+    "mypy>=1.9",
+]
+
+[project.scripts]
+raftmeta = "raftmeta.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/raftmeta"]
+
+[tool.hatch.envs.default]
+features = ["dev"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+src = ["src"]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "TCH"]
+ignore = ["E501", "SIM105"]
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
