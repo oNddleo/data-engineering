@@ -6,12 +6,11 @@ Subcommands
   ivm snapshot    Read a JSONL update stream and write a snapshot.
   ivm version     Print the package version.
 """
+
 from __future__ import annotations
 
 import argparse
-import json
 import sys
-from pathlib import Path
 
 import ivm
 from ivm.engine import IVMEngine
@@ -39,10 +38,10 @@ def _cmd_demo(args: argparse.Namespace) -> int:  # noqa: ARG001
     engine.register_view("summary", view)
 
     batch = [
-        {"category": "books",       "amount": 25},
+        {"category": "books", "amount": 25},
         {"category": "electronics", "amount": 299},
-        {"category": "books",       "amount": 18},
-        {"category": "clothing",    "amount": 75},
+        {"category": "books", "amount": 18},
+        {"category": "clothing", "amount": 75},
         {"category": "electronics", "amount": 149},
     ]
     for rec in batch:
@@ -50,16 +49,20 @@ def _cmd_demo(args: argparse.Namespace) -> int:  # noqa: ARG001
 
     print("Category summary (after initial batch):")
     for row in sorted(engine.query("summary"), key=lambda r: r["category"]):
-        print(f"  {row['category']:12s}  revenue={row['total_revenue']}  "
-              f"count={row['order_count']}")
+        print(
+            f"  {row['category']:12s}  revenue={row['total_revenue']}  "
+            f"count={row['order_count']}"
+        )
 
     # Retract one record
     engine.retract("orders", {"category": "books", "amount": 18}, timestamp=2000)
 
     print("\nCategory summary (after retracting books/$18):")
     for row in sorted(engine.query("summary"), key=lambda r: r["category"]):
-        print(f"  {row['category']:12s}  revenue={row['total_revenue']}  "
-              f"count={row['order_count']}")
+        print(
+            f"  {row['category']:12s}  revenue={row['total_revenue']}  "
+            f"count={row['order_count']}"
+        )
     return 0
 
 

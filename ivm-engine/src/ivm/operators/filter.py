@@ -1,10 +1,15 @@
 """Filter operator — drop records that don't satisfy a predicate."""
+
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from ivm.operators.base import Operator
-from ivm.types import Record, Update
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from ivm.types import Record, Update
 
 
 class FilterOperator(Operator):
@@ -21,6 +26,5 @@ class FilterOperator(Operator):
         """Keep only updates whose record passes the predicate."""
         return [u for u in updates if self.predicate(u.record)]
 
-    # Needed for mypy strict: unused type param Any suppressed inline
     def _unused(self) -> Any:  # pragma: no cover
         return None

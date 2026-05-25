@@ -1,4 +1,5 @@
 """Tests for JSONL I/O utilities."""
+
 from __future__ import annotations
 
 import json
@@ -20,8 +21,9 @@ def test_dump_and_load_snapshot() -> None:
 
 
 def test_load_snapshot_empty_lines() -> None:
-    with tempfile.NamedTemporaryFile(suffix=".jsonl", mode="w",
-                                     delete=False, encoding="utf-8") as f:
+    with tempfile.NamedTemporaryFile(
+        suffix=".jsonl", mode="w", delete=False, encoding="utf-8"
+    ) as f:
         f.write('{"x": 1}\n')
         f.write("\n")  # blank line
         f.write('{"x": 2}\n')
@@ -36,8 +38,9 @@ def test_read_jsonl_updates() -> None:
         {"record": {"k": "a"}, "timestamp": 1000, "diff": 1},
         {"record": {"k": "b"}, "timestamp": 2000, "diff": -1},
     ]
-    with tempfile.NamedTemporaryFile(suffix=".jsonl", mode="w",
-                                     delete=False, encoding="utf-8") as f:
+    with tempfile.NamedTemporaryFile(
+        suffix=".jsonl", mode="w", delete=False, encoding="utf-8"
+    ) as f:
         for u in updates:
             f.write(json.dumps(u) + "\n")
         path = f.name

@@ -1,9 +1,9 @@
 """Tests for JoinOperator — inner join, left join, and retraction propagation."""
+
 from __future__ import annotations
 
-from ivm import IVMEngine
 import ivm.aggregates as agg
-
+from ivm import IVMEngine
 
 # ---------------------------------------------------------------------------
 # INNER JOIN basics
@@ -12,12 +12,12 @@ import ivm.aggregates as agg
 
 def test_inner_join_left_arrives_first() -> None:
     e = IVMEngine()
-    left  = e.source("left")
+    left = e.source("left")
     right = e.source("right")
     joined = left.join(right, left_key="id", right_key="id")
     e.register_view("j", joined)
 
-    e.ingest("left",  {"id": 1, "lval": "A"}, timestamp=1)
+    e.ingest("left", {"id": 1, "lval": "A"}, timestamp=1)
     e.ingest("right", {"id": 1, "rval": "B"}, timestamp=2)
 
     rows = e.query("j")
@@ -28,13 +28,13 @@ def test_inner_join_left_arrives_first() -> None:
 
 def test_inner_join_right_arrives_first() -> None:
     e = IVMEngine()
-    left  = e.source("left")
+    left = e.source("left")
     right = e.source("right")
     joined = left.join(right, left_key="id", right_key="id")
     e.register_view("j", joined)
 
     e.ingest("right", {"id": 1, "rval": "B"}, timestamp=1)
-    e.ingest("left",  {"id": 1, "lval": "A"}, timestamp=2)
+    e.ingest("left", {"id": 1, "lval": "A"}, timestamp=2)
 
     rows = e.query("j")
     assert len(rows) == 1
@@ -44,12 +44,12 @@ def test_inner_join_right_arrives_first() -> None:
 
 def test_inner_join_no_match() -> None:
     e = IVMEngine()
-    left  = e.source("left")
+    left = e.source("left")
     right = e.source("right")
     joined = left.join(right, left_key="id", right_key="id")
     e.register_view("j", joined)
 
-    e.ingest("left",  {"id": 1, "lval": "A"}, timestamp=1)
+    e.ingest("left", {"id": 1, "lval": "A"}, timestamp=1)
     e.ingest("right", {"id": 2, "rval": "B"}, timestamp=2)
 
     assert e.query("j") == []
@@ -57,12 +57,12 @@ def test_inner_join_no_match() -> None:
 
 def test_inner_join_one_to_many() -> None:
     e = IVMEngine()
-    left  = e.source("left")
+    left = e.source("left")
     right = e.source("right")
     joined = left.join(right, left_key="cat", right_key="cat")
     e.register_view("j", joined)
 
-    e.ingest("left",  {"cat": "X", "lval": "L"},  timestamp=1)
+    e.ingest("left", {"cat": "X", "lval": "L"}, timestamp=1)
     e.ingest("right", {"cat": "X", "rval": "R1"}, timestamp=2)
     e.ingest("right", {"cat": "X", "rval": "R2"}, timestamp=3)
 
@@ -74,13 +74,13 @@ def test_inner_join_one_to_many() -> None:
 
 def test_inner_join_many_to_many() -> None:
     e = IVMEngine()
-    left  = e.source("left")
+    left = e.source("left")
     right = e.source("right")
     joined = left.join(right, left_key="k", right_key="k")
     e.register_view("j", joined)
 
     for i in range(3):
-        e.ingest("left",  {"k": "x", "l": i}, timestamp=1)
+        e.ingest("left", {"k": "x", "l": i}, timestamp=1)
     for j in range(2):
         e.ingest("right", {"k": "x", "r": j}, timestamp=2)
 
@@ -94,12 +94,12 @@ def test_inner_join_many_to_many() -> None:
 
 def test_left_retraction_removes_join_output() -> None:
     e = IVMEngine()
-    left  = e.source("left")
+    left = e.source("left")
     right = e.source("right")
     joined = left.join(right, left_key="id", right_key="id")
     e.register_view("j", joined)
 
-    e.ingest("left",  {"id": 1, "lval": "A"}, timestamp=1)
+    e.ingest("left", {"id": 1, "lval": "A"}, timestamp=1)
     e.ingest("right", {"id": 1, "rval": "B"}, timestamp=2)
     assert len(e.query("j")) == 1
 
@@ -109,12 +109,12 @@ def test_left_retraction_removes_join_output() -> None:
 
 def test_right_retraction_removes_join_output() -> None:
     e = IVMEngine()
-    left  = e.source("left")
+    left = e.source("left")
     right = e.source("right")
     joined = left.join(right, left_key="id", right_key="id")
     e.register_view("j", joined)
 
-    e.ingest("left",  {"id": 1, "lval": "A"}, timestamp=1)
+    e.ingest("left", {"id": 1, "lval": "A"}, timestamp=1)
     e.ingest("right", {"id": 1, "rval": "B"}, timestamp=2)
     e.retract("right", {"id": 1, "rval": "B"}, timestamp=3)
 
@@ -123,12 +123,12 @@ def test_right_retraction_removes_join_output() -> None:
 
 def test_right_retraction_partial() -> None:
     e = IVMEngine()
-    left  = e.source("left")
+    left = e.source("left")
     right = e.source("right")
     joined = left.join(right, left_key="k", right_key="k")
     e.register_view("j", joined)
 
-    e.ingest("left",  {"k": "x", "l": 1},   timestamp=1)
+    e.ingest("left", {"k": "x", "l": 1}, timestamp=1)
     e.ingest("right", {"k": "x", "r": "a"}, timestamp=2)
     e.ingest("right", {"k": "x", "r": "b"}, timestamp=3)
 
@@ -147,7 +147,7 @@ def test_right_retraction_partial() -> None:
 
 def test_join_then_group_by() -> None:
     e = IVMEngine()
-    orders   = e.source("orders")
+    orders = e.source("orders")
     products = e.source("products")
 
     joined = orders.join(products, left_key="pid", right_key="pid")
@@ -181,7 +181,7 @@ def test_join_then_group_by() -> None:
 
 def test_left_join_unmatched_rows() -> None:
     e = IVMEngine()
-    left  = e.source("left")
+    left = e.source("left")
     right = e.source("right")
     joined = left.join(right, left_key="id", right_key="id", join_type="left")
     e.register_view("j", joined)
@@ -197,7 +197,7 @@ def test_left_join_unmatched_rows() -> None:
     rows = e.query("j")
     assert len(rows) == 2
 
-    matched   = next(r for r in rows if r["id"] == 1)
+    matched = next(r for r in rows if r["id"] == 1)
     unmatched = next(r for r in rows if r["id"] == 2)
     assert matched.get("rval") == "X"
     assert "rval" not in unmatched  # NULL for left-join unmatched
@@ -205,12 +205,12 @@ def test_left_join_unmatched_rows() -> None:
 
 def test_left_join_retract_right_restores_unmatched() -> None:
     e = IVMEngine()
-    left  = e.source("left")
+    left = e.source("left")
     right = e.source("right")
     joined = left.join(right, left_key="id", right_key="id", join_type="left")
     e.register_view("j", joined)
 
-    e.ingest("left",  {"id": 1, "lval": "A"}, timestamp=1)
+    e.ingest("left", {"id": 1, "lval": "A"}, timestamp=1)
     e.ingest("right", {"id": 1, "rval": "X"}, timestamp=2)
 
     rows = e.query("j")

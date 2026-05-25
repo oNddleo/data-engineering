@@ -11,6 +11,7 @@ Update stream format
 Each line is a JSON object with:
   { "record": {...}, "timestamp": <int>, "diff": <int> }
 """
+
 from __future__ import annotations
 
 import json

@@ -25,14 +25,19 @@ A left record with no matching right records must still appear in the output
 with NULL right columns.  We track the match count per left record and emit
 the "unmatched" row when the count transitions 0↔1.
 """
+
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from ivm.operators.base import Operator
-from ivm.types import Record, Update, freeze_record, record_key
+from ivm.types import Update, freeze_record
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from ivm.types import Record
 
 # ---------------------------------------------------------------------------
 # Key extractors
@@ -42,9 +47,9 @@ from ivm.types import Record, Update, freeze_record, record_key
 def _make_key_fn(spec: Any) -> Callable[[Record], tuple[Any, ...]]:
     """Accept a column name, list of names, or callable."""
     if callable(spec):
-        return spec  # type: ignore[return-value]
+        return spec  # type: ignore[no-any-return]
     if isinstance(spec, str):
-        return lambda r, _s=spec: (_s and (r[_s],) or ())  # type: ignore[return-value]
+        return lambda r, _s=spec: (_s and (r[_s],) or ())  # type: ignore[misc]
     cols: list[str] = list(spec)
     return lambda r: tuple(r[col] for col in cols)
 
@@ -176,7 +181,9 @@ class JoinOperator(Operator):
             key = self._right_key_fn(u.record)
             left_bucket = self._left_idx[key]
 
-            prev_right_total = sum(self._right_idx[key].values()) if self.join_type == "left" else 0
+            prev_right_total = (
+                sum(self._right_idx[key].values()) if self.join_type == "left" else 0
+            )
 
             # Emit join results for all current left matches
             for frozen_left, left_mult in left_bucket.items():
@@ -201,14 +208,10 @@ class JoinOperator(Operator):
                     left_rec = dict(frozen_left)
                     if prev_right_total == 0 and new_right_total > 0:
                         # Right matches appeared: retract the NULL-right placeholder
-                        out.append(
-                            Update(self._null_right(left_rec), u.timestamp, -left_mult)
-                        )
+                        out.append(Update(self._null_right(left_rec), u.timestamp, -left_mult))
                     elif prev_right_total > 0 and new_right_total == 0:
                         # Right matches disappeared: emit the NULL-right placeholder
-                        out.append(
-                            Update(self._null_right(left_rec), u.timestamp, +left_mult)
-                        )
+                        out.append(Update(self._null_right(left_rec), u.timestamp, +left_mult))
 
         return out
 

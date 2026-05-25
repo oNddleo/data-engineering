@@ -28,15 +28,20 @@ Usage
     # Retract an event (correction / cancellation)
     engine.retract("orders", {"id": 1, "category": "books", "amount": 42, "status": "completed"})
 """
+
 from __future__ import annotations
 
 from collections import Counter
-from typing import Callable
+from typing import TYPE_CHECKING
 
-from ivm.operators.base import Operator
 from ivm.operators.source import SourceOperator
-from ivm.types import Record, Update, freeze_record, now_ms
+from ivm.types import Update, freeze_record, now_ms
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from ivm.operators.base import Operator
+    from ivm.types import Record
 
 # ---------------------------------------------------------------------------
 # ViewState — accumulates updates into a queryable snapshot
@@ -133,9 +138,7 @@ class IVMEngine:
         operator.add_listener(capture)
         return self
 
-    def on_view_update(
-        self, view_name: str, fn: Callable[[list[Update]], None]
-    ) -> IVMEngine:
+    def on_view_update(self, view_name: str, fn: Callable[[list[Update]], None]) -> IVMEngine:
         """Register a callback fired whenever `view_name` receives new deltas."""
         self._listeners.setdefault(view_name, []).append(fn)
         return self
@@ -221,8 +224,7 @@ class IVMEngine:
     def _check_view(self, name: str) -> None:
         if name not in self._views:
             raise KeyError(
-                f"Unknown view: {name!r}. "
-                f"Call engine.register_view({name!r}, ...) first."
+                f"Unknown view: {name!r}. " f"Call engine.register_view({name!r}, ...) first."
             )
 
     # ------------------------------------------------------------------

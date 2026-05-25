@@ -1,10 +1,16 @@
 """Project operator — reshape records by selecting or transforming columns."""
+
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from ivm.operators.base import Operator
-from ivm.types import Record, Update
+from ivm.types import Update
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from ivm.types import Record
 
 
 class ProjectOperator(Operator):

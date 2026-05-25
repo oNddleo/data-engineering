@@ -1,9 +1,9 @@
 """Tests for WindowOperator — tumbling, sliding, and partition windows."""
+
 from __future__ import annotations
 
-from ivm import IVMEngine, TumblingWindow, SlidingWindow, PartitionWindow
 import ivm.aggregates as agg
-
+from ivm import IVMEngine, PartitionWindow, SlidingWindow, TumblingWindow
 
 # ---------------------------------------------------------------------------
 # Tumbling window
@@ -13,8 +13,9 @@ import ivm.aggregates as agg
 def test_tumbling_single_window() -> None:
     e = IVMEngine()
     src = e.source("s")
-    v = src.window(TumblingWindow(size_ms=10_000),
-                   aggregates={"count": agg.Count(), "total": agg.Sum("val")})
+    v = src.window(
+        TumblingWindow(size_ms=10_000), aggregates={"count": agg.Count(), "total": agg.Sum("val")}
+    )
     e.register_view("v", v)
 
     e.ingest("s", {"val": 5}, timestamp=1_000)
@@ -34,7 +35,7 @@ def test_tumbling_two_windows() -> None:
     v = src.window(TumblingWindow(size_ms=10_000), aggregates={"count": agg.Count()})
     e.register_view("v", v)
 
-    e.ingest("s", {"x": 1}, timestamp=5_000)   # window 0
+    e.ingest("s", {"x": 1}, timestamp=5_000)  # window 0
     e.ingest("s", {"x": 2}, timestamp=15_000)  # window 1
     e.ingest("s", {"x": 3}, timestamp=25_000)  # window 2
 
@@ -49,8 +50,8 @@ def test_tumbling_retraction() -> None:
     v = src.window(TumblingWindow(size_ms=10_000), aggregates={"count": agg.Count()})
     e.register_view("v", v)
 
-    e.ingest("s",  {"x": 1}, timestamp=3_000)
-    e.ingest("s",  {"x": 2}, timestamp=7_000)
+    e.ingest("s", {"x": 1}, timestamp=3_000)
+    e.ingest("s", {"x": 2}, timestamp=7_000)
     e.retract("s", {"x": 1}, timestamp=3_000)
 
     rows = e.query("v")
@@ -64,7 +65,7 @@ def test_tumbling_window_empty_after_full_retraction() -> None:
     v = src.window(TumblingWindow(size_ms=10_000), aggregates={"count": agg.Count()})
     e.register_view("v", v)
 
-    e.ingest("s",  {"x": 1}, timestamp=1_000)
+    e.ingest("s", {"x": 1}, timestamp=1_000)
     e.retract("s", {"x": 1}, timestamp=1_000)
 
     assert e.query("v") == []
@@ -106,8 +107,8 @@ def test_sliding_retraction() -> None:
     v = src.window(spec, aggregates={"count": agg.Count()})
     e.register_view("v", v)
 
-    e.ingest("s",  {"x": 1}, timestamp=5_000)
-    e.ingest("s",  {"x": 2}, timestamp=5_000)
+    e.ingest("s", {"x": 1}, timestamp=5_000)
+    e.ingest("s", {"x": 2}, timestamp=5_000)
     e.retract("s", {"x": 1}, timestamp=5_000)
 
     # Only x=2 remains
@@ -128,12 +129,12 @@ def test_row_number_basic() -> None:
     e.register_view("v", v)
 
     e.ingest("s", {"user": "alice", "score": 100}, timestamp=1)
-    e.ingest("s", {"user": "alice", "score": 50},  timestamp=2)
-    e.ingest("s", {"user": "alice", "score": 75},  timestamp=3)
+    e.ingest("s", {"user": "alice", "score": 50}, timestamp=2)
+    e.ingest("s", {"user": "alice", "score": 75}, timestamp=3)
 
     rows = sorted(e.query("v"), key=lambda r: r["rn"])
     scores = [r["score"] for r in rows]
-    assert scores == [100, 75, 50]   # descending
+    assert scores == [100, 75, 50]  # descending
     assert [r["rn"] for r in rows] == [1, 2, 3]
 
 
@@ -145,8 +146,8 @@ def test_row_number_multiple_partitions() -> None:
     e.register_view("v", v)
 
     data = [
-        {"dept": "eng",   "name": "a", "salary": 100},
-        {"dept": "eng",   "name": "b", "salary": 90},
+        {"dept": "eng", "name": "a", "salary": 100},
+        {"dept": "eng", "name": "b", "salary": 90},
         {"dept": "sales", "name": "c", "salary": 80},
         {"dept": "sales", "name": "d", "salary": 95},
     ]

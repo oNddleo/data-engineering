@@ -8,12 +8,15 @@ Operators form a DAG.  Each operator:
 The fluent builder methods (filter, project, group_by, window, join) let you
 construct pipelines without manually wiring listeners.
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ivm.types import Update
 
 
@@ -65,6 +68,7 @@ class Operator(ABC):
     def filter(self, predicate: Callable[[Any], bool]) -> Operator:
         """Attach a FilterOperator that keeps records matching predicate."""
         from ivm.operators.filter import FilterOperator
+
         return self.pipe(FilterOperator(predicate))
 
     def project(
@@ -74,11 +78,13 @@ class Operator(ABC):
     ) -> Operator:
         """Attach a ProjectOperator that reshapes records."""
         from ivm.operators.project import ProjectOperator
+
         return self.pipe(ProjectOperator(columns, transform))
 
     def group_by(self, key_columns: list[str], aggregates: dict[str, Any]) -> Operator:
         """Attach a GroupByOperator for incremental aggregation."""
         from ivm.operators.group_by import GroupByOperator
+
         return self.pipe(GroupByOperator(key_columns, aggregates))
 
     def window(
@@ -89,6 +95,7 @@ class Operator(ABC):
     ) -> Operator:
         """Attach a WindowOperator for time or partition windowing."""
         from ivm.operators.window import WindowOperator
+
         return self.pipe(WindowOperator(window_spec, aggregates or {}, rank_fns or {}))
 
     def join(
@@ -100,6 +107,7 @@ class Operator(ABC):
     ) -> Operator:
         """Wire a JoinOperator between self (left) and right."""
         from ivm.operators.join import JoinOperator
+
         op = JoinOperator(left_key, right_key, join_type)
         self.add_listener(op.handle_left)
         right.add_listener(op.handle_right)

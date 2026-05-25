@@ -5,14 +5,15 @@ Quick start
     from ivm import IVMEngine
     import ivm.aggregates as agg
 """
+
 from __future__ import annotations
 
-from ivm.engine import IVMEngine
 from ivm import aggregates as agg
+from ivm.engine import IVMEngine
 from ivm.operators import (
-    TumblingWindow,
-    SlidingWindow,
     PartitionWindow,
+    SlidingWindow,
+    TumblingWindow,
 )
 
 __all__ = [

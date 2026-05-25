@@ -14,14 +14,6 @@ dependencies = []
 [project.scripts]
 ivm = "ivm.__main__:main"
 
-[project.optional-dependencies]
-dev = [
-    "ruff>=0.4",
-    "mypy>=1.10",
-    "pytest>=8.0",
-    "hypothesis>=6.100",
-]
-
 [tool.hatch.build.targets.wheel]
 packages = ["src/ivm"]
 
@@ -31,7 +23,7 @@ src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "TCH", "ANN"]
-ignore = ["ANN101", "ANN102"]
+ignore = ["ANN101", "ANN102", "ANN401"]
 
 [tool.mypy]
 strict = true
@@ -40,4 +32,3 @@ files = ["src/ivm"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-v"

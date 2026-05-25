@@ -1,8 +1,13 @@
 """Source operator — the entry point for a named input stream."""
+
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from ivm.operators.base import Operator
-from ivm.types import Update
+
+if TYPE_CHECKING:
+    from ivm.types import Update
 
 
 class SourceOperator(Operator):

@@ -12,28 +12,28 @@ Properties verified:
   P9  Net delta-log multiplicity is always non-negative for each record.
   P10 Row count reported by engine equals len(query()).
 """
+
 from __future__ import annotations
 
 from collections import Counter
 
 import pytest
-from hypothesis import assume, given, settings
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
+import ivm.aggregates as agg
 from ivm import IVMEngine
 from ivm.types import freeze_record
-import ivm.aggregates as agg
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-_records = st.fixed_dictionaries({"g": st.sampled_from(["a", "b", "c"]),
-                                   "v": st.integers(min_value=1, max_value=100)})
+_records = st.fixed_dictionaries(
+    {"g": st.sampled_from(["a", "b", "c"]), "v": st.integers(min_value=1, max_value=100)}
+)
 
-_values = st.lists(st.integers(min_value=1, max_value=1_000),
-                   min_size=1, max_size=20)
+_values = st.lists(st.integers(min_value=1, max_value=1_000), min_size=1, max_size=20)
 
 
 # ---------------------------------------------------------------------------
@@ -95,6 +95,7 @@ def test_count_after_retractions(n: int, k: int) -> None:
 def test_sum_commutative(values: list[int]) -> None:
     """Sum result is the same regardless of insertion order."""
     import random
+
     shuffled = list(values)
     random.shuffle(shuffled)
 
@@ -120,10 +121,14 @@ def test_sum_commutative(values: list[int]) -> None:
 # ---------------------------------------------------------------------------
 
 
-@given(values=_values, retract_indices=st.lists(st.integers(min_value=0, max_value=19),
-                                                 max_size=10))
+@given(
+    values=_values, retract_indices=st.lists(st.integers(min_value=0, max_value=19), max_size=10)
+)
 def test_sum_after_retraction(values: list[int], retract_indices: list[int]) -> None:
-    """SUM equals sum of values not retracted."""
+    """SUM equals sum of values not retracted (each index retracted at most once)."""
+    # Deduplicate to avoid over-retraction (negative multiplicity)
+    unique_indices = list(dict.fromkeys(retract_indices))
+
     e = IVMEngine()
     src = e.source("s")
     view = src.group_by(["g"], {"total": agg.Sum("v")})
@@ -133,7 +138,7 @@ def test_sum_after_retraction(values: list[int], retract_indices: list[int]) -> 
         e.ingest("s", {"g": "x", "v": val}, timestamp=1)
 
     retracted: list[int] = []
-    for idx in retract_indices:
+    for idx in unique_indices:
         if idx < len(values):
             e.retract("s", {"g": "x", "v": values[idx]}, timestamp=2)
             retracted.append(values[idx])
@@ -179,8 +184,7 @@ def test_insert_retract_noop(records: list[dict[str, object]]) -> None:
 # ---------------------------------------------------------------------------
 
 
-@given(val=st.floats(min_value=-1e6, max_value=1e6, allow_nan=False,
-                     allow_infinity=False))
+@given(val=st.floats(min_value=-1e6, max_value=1e6, allow_nan=False, allow_infinity=False))
 def test_avg_single_value(val: float) -> None:
     e = IVMEngine()
     src = e.source("s")
@@ -197,8 +201,11 @@ def test_avg_single_value(val: float) -> None:
 # ---------------------------------------------------------------------------
 
 
-@given(values=st.lists(st.integers(min_value=-100, max_value=100),
-                       min_size=1, max_size=20, unique=True))
+@given(
+    values=st.lists(
+        st.integers(min_value=-100, max_value=100), min_size=1, max_size=20, unique=True
+    )
+)
 def test_min_is_actual_minimum(values: list[int]) -> None:
     e = IVMEngine()
     src = e.source("s")
@@ -217,8 +224,11 @@ def test_min_is_actual_minimum(values: list[int]) -> None:
 # ---------------------------------------------------------------------------
 
 
-@given(values=st.lists(st.integers(min_value=-100, max_value=100),
-                       min_size=1, max_size=20, unique=True))
+@given(
+    values=st.lists(
+        st.integers(min_value=-100, max_value=100), min_size=1, max_size=20, unique=True
+    )
+)
 def test_max_is_actual_maximum(values: list[int]) -> None:
     e = IVMEngine()
     src = e.source("s")
@@ -237,11 +247,13 @@ def test_max_is_actual_maximum(values: list[int]) -> None:
 # ---------------------------------------------------------------------------
 
 
-@given(ops=st.lists(
-    st.tuples(st.sampled_from(["insert", "retract"]),
-              st.integers(min_value=1, max_value=5)),
-    min_size=1, max_size=30,
-))
+@given(
+    ops=st.lists(
+        st.tuples(st.sampled_from(["insert", "retract"]), st.integers(min_value=1, max_value=5)),
+        min_size=1,
+        max_size=30,
+    )
+)
 @settings(max_examples=100)
 def test_delta_log_nonnegative_multiplicity(ops: list[tuple[str, int]]) -> None:
     """Net multiplicity of every record in the delta log must stay >= 0."""

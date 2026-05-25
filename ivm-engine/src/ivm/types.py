@@ -7,6 +7,7 @@ diff = +1 means "this record was inserted"
 diff = -1 means "this record was retracted (corrected)"
 diff >  1 or < -1 is valid (multiplicities, e.g. after a join).
 """
+
 from __future__ import annotations
 
 import time

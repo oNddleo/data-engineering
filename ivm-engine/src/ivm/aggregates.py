@@ -9,6 +9,7 @@ Each Aggregate exposes:
 All aggregates correctly handle retractions (diff = -1) because they track
 full multiplicity, not just presence.
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

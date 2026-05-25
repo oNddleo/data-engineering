@@ -26,17 +26,20 @@ For partition windows (ROW_NUMBER / RANK) we:
   2. For every row whose rank changed: retract old output, emit new output.
   This is O(n) in the worst case — acceptable for a reference implementation.
 """
+
 from __future__ import annotations
 
 import bisect
 from collections import Counter
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
-from ivm.aggregates import Aggregate
 from ivm.operators.base import Operator
-from ivm.types import Record, Update, freeze_record, record_key
+from ivm.types import Update, freeze_record, record_key
 
+if TYPE_CHECKING:
+    from ivm.aggregates import Aggregate
+    from ivm.types import Record
 
 # ---------------------------------------------------------------------------
 # Window spec classes
@@ -166,7 +169,7 @@ class WindowOperator(Operator):
         out: list[Update] = []
         for u in updates:
             spec = self.spec
-            assert isinstance(spec, (TumblingWindow, SlidingWindow))
+            assert isinstance(spec, TumblingWindow | SlidingWindow)
             for wid in spec.window_ids(u.timestamp):
                 # Retract old aggregate output
                 if wid in self._window_agg:
@@ -184,7 +187,8 @@ class WindowOperator(Operator):
                 # Update aggregate state
                 state = self._window_agg.get(wid, self._fresh_agg_state())
                 for col, agg in self.aggregates.items():
-                    value = u.record.get(getattr(agg, "column", None), None)
+                    _col: str | None = getattr(agg, "column", None)
+                    value = u.record.get(_col) if _col is not None else None
                     state[col] = agg.add(state[col], value, u.diff)
 
                 if self._window_is_empty(state):
@@ -317,10 +321,7 @@ class WindowOperator(Operator):
     def active_windows(self) -> list[dict[str, Any]]:
         """Return diagnostic info about all active windows."""
         if isinstance(self.spec, PartitionWindow):
-            return [
-                {"partition": pk, "rows": len(rows)}
-                for pk, rows in self._partitions.items()
-            ]
+            return [{"partition": pk, "rows": len(rows)} for pk, rows in self._partitions.items()]
         return [
             {"window_id": wid, **self._build_window_record(wid, state)}
             for wid, state in self._window_agg.items()

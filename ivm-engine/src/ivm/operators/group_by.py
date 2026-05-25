@@ -9,13 +9,17 @@ This produces the correct delta to the view without recomputing from scratch.
 
 Supports: Count, Sum, Avg, Min, Max, CountDistinct (see ivm/aggregates.py).
 """
+
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ivm.aggregates import Aggregate
 from ivm.operators.base import Operator
-from ivm.types import Record, Update, record_key
+from ivm.types import Update, record_key
+
+if TYPE_CHECKING:
+    from ivm.aggregates import Aggregate
+    from ivm.types import Record
 
 
 class GroupByOperator(Operator):
@@ -45,19 +49,14 @@ class GroupByOperator(Operator):
     def _fresh_state(self) -> dict[str, Any]:
         return {col: agg.initial_state() for col, agg in self.aggregates.items()}
 
-    def _build_record(
-        self, key: tuple[Any, ...], agg_state: dict[str, Any]
-    ) -> Record:
-        rec: Record = {col: val for col, val in zip(self.key_columns, key)}
+    def _build_record(self, key: tuple[Any, ...], agg_state: dict[str, Any]) -> Record:
+        rec: Record = {col: val for col, val in zip(self.key_columns, key, strict=False)}
         for col, agg in self.aggregates.items():
             rec[col] = agg.result(agg_state[col])
         return rec
 
     def _is_empty(self, agg_state: dict[str, Any]) -> bool:
-        return any(
-            agg.is_empty(agg_state[col])
-            for col, agg in self.aggregates.items()
-        )
+        return any(agg.is_empty(agg_state[col]) for col, agg in self.aggregates.items())
 
     # ------------------------------------------------------------------
     # Core processing
@@ -84,7 +83,8 @@ class GroupByOperator(Operator):
             for col, agg in self.aggregates.items():
                 # Each aggregate decides what "value" to extract from the record.
                 # For Count, value is ignored.  For Sum/Min/Max, it's the column.
-                value = u.record.get(getattr(agg, "column", None), None)
+                _col: str | None = getattr(agg, "column", None)
+                value = u.record.get(_col) if _col is not None else None
                 new_state[col] = agg.add(state[col], value, u.diff)
 
             # Step 3 — store new state and emit new output
@@ -103,7 +103,4 @@ class GroupByOperator(Operator):
 
     def current_groups(self) -> list[Record]:
         """Snapshot of all active groups and their aggregate values."""
-        return [
-            self._build_record(key, state)
-            for key, state in self._state.items()
-        ]
+        return [self._build_record(key, state) for key, state in self._state.items()]

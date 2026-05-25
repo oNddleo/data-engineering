@@ -8,14 +8,14 @@ every operator handles negative multiplicities correctly, including:
   - Retraction propagating through filter, project, group_by, join, window
   - Delta log has exact retract/assert pairs
 """
+
 from __future__ import annotations
 
 from collections import Counter
 
+import ivm.aggregates as agg
 from ivm import IVMEngine, TumblingWindow
 from ivm.types import freeze_record
-import ivm.aggregates as agg
-
 
 # ---------------------------------------------------------------------------
 # Value correction pattern
@@ -34,7 +34,7 @@ def test_value_correction_through_group_by() -> None:
 
     # Correct the first record: v was 100, should be 150
     e.retract("s", {"k": "x", "v": 100}, timestamp=3)
-    e.ingest("s",  {"k": "x", "v": 150}, timestamp=3)
+    e.ingest("s", {"k": "x", "v": 150}, timestamp=3)
 
     rows = {r["k"]: r["total"] for r in e.query("v")}
     assert rows["x"] == 350  # 150 + 200
@@ -51,7 +51,7 @@ def test_retract_then_reinsert() -> None:
     view = src.group_by(["k"], {"n": agg.Count()})
     e.register_view("v", view)
 
-    e.ingest("s",  {"k": "x"}, timestamp=1)
+    e.ingest("s", {"k": "x"}, timestamp=1)
     e.retract("s", {"k": "x"}, timestamp=2)
     assert e.query("v") == []
 
@@ -71,8 +71,8 @@ def test_retraction_through_filter() -> None:
     view = src.filter(lambda r: r["active"]).group_by(["k"], {"n": agg.Count()})
     e.register_view("v", view)
 
-    e.ingest("s", {"k": "x", "active": True},  timestamp=1)
-    e.ingest("s", {"k": "x", "active": True},  timestamp=2)
+    e.ingest("s", {"k": "x", "active": True}, timestamp=1)
+    e.ingest("s", {"k": "x", "active": True}, timestamp=2)
     e.ingest("s", {"k": "x", "active": False}, timestamp=3)  # filtered out
 
     assert {r["k"]: r["n"] for r in e.query("v")}["x"] == 2
@@ -94,12 +94,11 @@ def test_retraction_through_filter() -> None:
 def test_retraction_through_tumbling_window() -> None:
     e = IVMEngine()
     src = e.source("s")
-    view = src.window(TumblingWindow(size_ms=10_000),
-                      aggregates={"total": agg.Sum("v")})
+    view = src.window(TumblingWindow(size_ms=10_000), aggregates={"total": agg.Sum("v")})
     e.register_view("v", view)
 
     e.ingest("s", {"v": 100}, timestamp=1_000)
-    e.ingest("s", {"v": 50},  timestamp=2_000)
+    e.ingest("s", {"v": 50}, timestamp=2_000)
 
     rows = e.query("v")
     assert rows[0]["total"] == 150
@@ -128,7 +127,7 @@ def test_retract_min_updates_correctly() -> None:
     assert rows["x"]["mx"] == 20
 
     # Retract both extremes
-    e.retract("s", {"g": "x", "v": 5},  timestamp=2)
+    e.retract("s", {"g": "x", "v": 5}, timestamp=2)
     e.retract("s", {"g": "x", "v": 20}, timestamp=3)
 
     rows = {r["g"]: r for r in e.query("v")}
@@ -175,16 +174,16 @@ def test_duplicate_values_retraction() -> None:
 
 def test_retraction_propagates_through_join_and_group_by() -> None:
     e = IVMEngine()
-    orders   = e.source("orders")
+    orders = e.source("orders")
     products = e.source("products")
 
-    joined  = orders.join(products, left_key="pid", right_key="pid")
+    joined = orders.join(products, left_key="pid", right_key="pid")
     revenue = joined.group_by(["cat"], {"rev": agg.Sum("amount")})
     e.register_view("revenue", revenue)
 
     e.ingest("products", {"pid": "p1", "cat": "A"}, timestamp=0)
-    e.ingest("orders",   {"pid": "p1", "amount": 100}, timestamp=1)
-    e.ingest("orders",   {"pid": "p1", "amount": 200}, timestamp=2)
+    e.ingest("orders", {"pid": "p1", "amount": 100}, timestamp=1)
+    e.ingest("orders", {"pid": "p1", "amount": 200}, timestamp=2)
 
     assert {r["cat"]: r["rev"] for r in e.query("revenue")}["A"] == 300
 
@@ -209,11 +208,11 @@ def test_delta_log_is_consistent() -> None:
     e.register_view("v", view)
 
     events = [
-        ("ingest",  {"k": "x", "v": 10}),
-        ("ingest",  {"k": "x", "v": 20}),
-        ("ingest",  {"k": "y", "v": 5}),
+        ("ingest", {"k": "x", "v": 10}),
+        ("ingest", {"k": "x", "v": 20}),
+        ("ingest", {"k": "y", "v": 5}),
         ("retract", {"k": "x", "v": 10}),
-        ("ingest",  {"k": "x", "v": 15}),
+        ("ingest", {"k": "x", "v": 15}),
         ("retract", {"k": "y", "v": 5}),
     ]
     for op, rec in events:
