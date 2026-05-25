@@ -1,7 +1,5 @@
 """Tests for JoinOperator — inner join, left join, and retraction propagation."""
-import pytest
-import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from __future__ import annotations
 
 from ivm import IVMEngine
 import ivm.aggregates as agg
@@ -11,7 +9,8 @@ import ivm.aggregates as agg
 # INNER JOIN basics
 # ---------------------------------------------------------------------------
 
-def test_inner_join_left_arrives_first():
+
+def test_inner_join_left_arrives_first() -> None:
     e = IVMEngine()
     left  = e.source("left")
     right = e.source("right")
@@ -27,7 +26,7 @@ def test_inner_join_left_arrives_first():
     assert rows[0]["rval"] == "B"
 
 
-def test_inner_join_right_arrives_first():
+def test_inner_join_right_arrives_first() -> None:
     e = IVMEngine()
     left  = e.source("left")
     right = e.source("right")
@@ -43,7 +42,7 @@ def test_inner_join_right_arrives_first():
     assert rows[0]["rval"] == "B"
 
 
-def test_inner_join_no_match():
+def test_inner_join_no_match() -> None:
     e = IVMEngine()
     left  = e.source("left")
     right = e.source("right")
@@ -56,14 +55,14 @@ def test_inner_join_no_match():
     assert e.query("j") == []
 
 
-def test_inner_join_one_to_many():
+def test_inner_join_one_to_many() -> None:
     e = IVMEngine()
     left  = e.source("left")
     right = e.source("right")
     joined = left.join(right, left_key="cat", right_key="cat")
     e.register_view("j", joined)
 
-    e.ingest("left", {"cat": "X", "lval": "L"}, timestamp=1)
+    e.ingest("left",  {"cat": "X", "lval": "L"},  timestamp=1)
     e.ingest("right", {"cat": "X", "rval": "R1"}, timestamp=2)
     e.ingest("right", {"cat": "X", "rval": "R2"}, timestamp=3)
 
@@ -73,7 +72,7 @@ def test_inner_join_one_to_many():
     assert rvals == {"R1", "R2"}
 
 
-def test_inner_join_many_to_many():
+def test_inner_join_many_to_many() -> None:
     e = IVMEngine()
     left  = e.source("left")
     right = e.source("right")
@@ -92,7 +91,8 @@ def test_inner_join_many_to_many():
 # Retraction through join
 # ---------------------------------------------------------------------------
 
-def test_left_retraction_removes_join_output():
+
+def test_left_retraction_removes_join_output() -> None:
     e = IVMEngine()
     left  = e.source("left")
     right = e.source("right")
@@ -107,7 +107,7 @@ def test_left_retraction_removes_join_output():
     assert e.query("j") == []
 
 
-def test_right_retraction_removes_join_output():
+def test_right_retraction_removes_join_output() -> None:
     e = IVMEngine()
     left  = e.source("left")
     right = e.source("right")
@@ -121,14 +121,14 @@ def test_right_retraction_removes_join_output():
     assert e.query("j") == []
 
 
-def test_right_retraction_partial():
+def test_right_retraction_partial() -> None:
     e = IVMEngine()
     left  = e.source("left")
     right = e.source("right")
     joined = left.join(right, left_key="k", right_key="k")
     e.register_view("j", joined)
 
-    e.ingest("left",  {"k": "x", "l": 1}, timestamp=1)
+    e.ingest("left",  {"k": "x", "l": 1},   timestamp=1)
     e.ingest("right", {"k": "x", "r": "a"}, timestamp=2)
     e.ingest("right", {"k": "x", "r": "b"}, timestamp=3)
 
@@ -144,7 +144,8 @@ def test_right_retraction_partial():
 # Join into GROUP BY (multi-hop)
 # ---------------------------------------------------------------------------
 
-def test_join_then_group_by():
+
+def test_join_then_group_by() -> None:
     e = IVMEngine()
     orders   = e.source("orders")
     products = e.source("products")
@@ -177,7 +178,8 @@ def test_join_then_group_by():
 # LEFT JOIN
 # ---------------------------------------------------------------------------
 
-def test_left_join_unmatched_rows():
+
+def test_left_join_unmatched_rows() -> None:
     e = IVMEngine()
     left  = e.source("left")
     right = e.source("right")
@@ -201,7 +203,7 @@ def test_left_join_unmatched_rows():
     assert "rval" not in unmatched  # NULL for left-join unmatched
 
 
-def test_left_join_retract_right_restores_unmatched():
+def test_left_join_retract_right_restores_unmatched() -> None:
     e = IVMEngine()
     left  = e.source("left")
     right = e.source("right")

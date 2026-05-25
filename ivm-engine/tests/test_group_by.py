@@ -1,13 +1,14 @@
 """Tests for GroupByOperator — aggregate correctness and retraction safety."""
+from __future__ import annotations
+
 import pytest
-import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from ivm import IVMEngine
 import ivm.aggregates as agg
 
 
-def make_engine():
+def make_engine() -> tuple[IVMEngine, object]:
+    """Return (engine, source_operator) wired to stream 'events'."""
     e = IVMEngine()
     src = e.source("events")
     return e, src
@@ -17,20 +18,21 @@ def make_engine():
 # COUNT
 # ---------------------------------------------------------------------------
 
-def test_count_basic():
+
+def test_count_basic() -> None:
     e, src = make_engine()
     view = src.group_by(["color"], {"n": agg.Count()})
     e.register_view("v", view)
 
-    e.ingest("events", {"color": "red"},   timestamp=1)
-    e.ingest("events", {"color": "red"},   timestamp=2)
-    e.ingest("events", {"color": "blue"},  timestamp=3)
+    e.ingest("events", {"color": "red"},  timestamp=1)
+    e.ingest("events", {"color": "red"},  timestamp=2)
+    e.ingest("events", {"color": "blue"}, timestamp=3)
 
     rows = {r["color"]: r["n"] for r in e.query("v")}
     assert rows == {"red": 2, "blue": 1}
 
 
-def test_count_retraction():
+def test_count_retraction() -> None:
     e, src = make_engine()
     view = src.group_by(["color"], {"n": agg.Count()})
     e.register_view("v", view)
@@ -43,7 +45,7 @@ def test_count_retraction():
     assert rows == {"red": 1}
 
 
-def test_count_group_disappears_on_full_retraction():
+def test_count_group_disappears_on_full_retraction() -> None:
     e, src = make_engine()
     view = src.group_by(["k"], {"n": agg.Count()})
     e.register_view("v", view)
@@ -58,7 +60,8 @@ def test_count_group_disappears_on_full_retraction():
 # SUM
 # ---------------------------------------------------------------------------
 
-def test_sum_basic():
+
+def test_sum_basic() -> None:
     e, src = make_engine()
     view = src.group_by(["cat"], {"total": agg.Sum("val")})
     e.register_view("v", view)
@@ -70,7 +73,7 @@ def test_sum_basic():
     assert rows["A"] == 60
 
 
-def test_sum_retraction():
+def test_sum_retraction() -> None:
     e, src = make_engine()
     view = src.group_by(["cat"], {"total": agg.Sum("val")})
     e.register_view("v", view)
@@ -87,7 +90,8 @@ def test_sum_retraction():
 # AVG
 # ---------------------------------------------------------------------------
 
-def test_avg_basic():
+
+def test_avg_basic() -> None:
     e, src = make_engine()
     view = src.group_by(["g"], {"avg": agg.Avg("v")})
     e.register_view("v", view)
@@ -100,14 +104,14 @@ def test_avg_basic():
     assert rows["x"] == pytest.approx(20.0)
 
 
-def test_avg_retraction():
+def test_avg_retraction() -> None:
     e, src = make_engine()
     view = src.group_by(["g"], {"avg": agg.Avg("v")})
     e.register_view("v", view)
 
-    e.ingest("events",  {"g": "x", "v": 0},  timestamp=1)
-    e.ingest("events",  {"g": "x", "v": 100},timestamp=2)
-    e.retract("events", {"g": "x", "v": 0},  timestamp=3)
+    e.ingest("events",  {"g": "x", "v": 0},   timestamp=1)
+    e.ingest("events",  {"g": "x", "v": 100}, timestamp=2)
+    e.retract("events", {"g": "x", "v": 0},   timestamp=3)
 
     rows = {r["g"]: r["avg"] for r in e.query("v")}
     assert rows["x"] == pytest.approx(100.0)
@@ -117,14 +121,15 @@ def test_avg_retraction():
 # MIN / MAX with retractions
 # ---------------------------------------------------------------------------
 
-def test_min_retraction():
+
+def test_min_retraction() -> None:
     e, src = make_engine()
     view = src.group_by(["g"], {"mn": agg.Min("v")})
     e.register_view("v", view)
 
-    e.ingest("events",  {"g": "x", "v": 5},  timestamp=1)
-    e.ingest("events",  {"g": "x", "v": 3},  timestamp=2)
-    e.ingest("events",  {"g": "x", "v": 7},  timestamp=3)
+    e.ingest("events",  {"g": "x", "v": 5}, timestamp=1)
+    e.ingest("events",  {"g": "x", "v": 3}, timestamp=2)
+    e.ingest("events",  {"g": "x", "v": 7}, timestamp=3)
 
     rows = {r["g"]: r["mn"] for r in e.query("v")}
     assert rows["x"] == 3
@@ -135,7 +140,7 @@ def test_min_retraction():
     assert rows["x"] == 5
 
 
-def test_max_retraction():
+def test_max_retraction() -> None:
     e, src = make_engine()
     view = src.group_by(["g"], {"mx": agg.Max("v")})
     e.register_view("v", view)
@@ -152,7 +157,8 @@ def test_max_retraction():
 # Multi-key GROUP BY
 # ---------------------------------------------------------------------------
 
-def test_multi_key_group_by():
+
+def test_multi_key_group_by() -> None:
     e, src = make_engine()
     view = src.group_by(["region", "product"], {"sales": agg.Sum("amount")})
     e.register_view("v", view)
@@ -176,7 +182,8 @@ def test_multi_key_group_by():
 # Delta log correctness
 # ---------------------------------------------------------------------------
 
-def test_delta_log_has_retract_assert_pairs():
+
+def test_delta_log_has_retract_assert_pairs() -> None:
     e, src = make_engine()
     view = src.group_by(["g"], {"n": agg.Count()})
     e.register_view("v", view)
@@ -191,7 +198,7 @@ def test_delta_log_has_retract_assert_pairs():
     assert diffs == [1, -1, 1]
 
 
-def test_filter_then_group_by():
+def test_filter_then_group_by() -> None:
     e, src = make_engine()
     view = (
         src
@@ -206,3 +213,28 @@ def test_filter_then_group_by():
 
     rows = {r["cat"]: r["n"] for r in e.query("v")}
     assert rows["A"] == 2  # only active=True records
+
+
+def test_count_distinct_basic() -> None:
+    e, src = make_engine()
+    view = src.group_by(["g"], {"uv": agg.CountDistinct("v")})
+    e.register_view("v", view)
+
+    e.ingest("events", {"g": "x", "v": "a"}, timestamp=1)
+    e.ingest("events", {"g": "x", "v": "a"}, timestamp=2)  # duplicate
+    e.ingest("events", {"g": "x", "v": "b"}, timestamp=3)
+
+    rows = {r["g"]: r["uv"] for r in e.query("v")}
+    assert rows["x"] == 2  # "a" and "b"
+
+
+def test_ingest_batch() -> None:
+    e, src = make_engine()
+    view = src.group_by(["cat"], {"n": agg.Count()})
+    e.register_view("v", view)
+
+    recs = [{"cat": "A"}, {"cat": "A"}, {"cat": "B"}]
+    e.ingest_batch("events", recs, timestamp=1)
+
+    rows = {r["cat"]: r["n"] for r in e.query("v")}
+    assert rows == {"A": 2, "B": 1}

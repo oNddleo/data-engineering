@@ -8,11 +8,12 @@ every operator handles negative multiplicities correctly, including:
   - Retraction propagating through filter, project, group_by, join, window
   - Delta log has exact retract/assert pairs
 """
-import pytest
-import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from __future__ import annotations
+
+from collections import Counter
 
 from ivm import IVMEngine, TumblingWindow
+from ivm.types import freeze_record
 import ivm.aggregates as agg
 
 
@@ -20,7 +21,8 @@ import ivm.aggregates as agg
 # Value correction pattern
 # ---------------------------------------------------------------------------
 
-def test_value_correction_through_group_by():
+
+def test_value_correction_through_group_by() -> None:
     """Retract the old value, insert the corrected value → aggregate updates."""
     e = IVMEngine()
     src = e.source("s")
@@ -42,7 +44,8 @@ def test_value_correction_through_group_by():
 # Retraction followed by re-insertion
 # ---------------------------------------------------------------------------
 
-def test_retract_then_reinsert():
+
+def test_retract_then_reinsert() -> None:
     e = IVMEngine()
     src = e.source("s")
     view = src.group_by(["k"], {"n": agg.Count()})
@@ -61,7 +64,8 @@ def test_retract_then_reinsert():
 # Retraction through filter
 # ---------------------------------------------------------------------------
 
-def test_retraction_through_filter():
+
+def test_retraction_through_filter() -> None:
     e = IVMEngine()
     src = e.source("s")
     view = src.filter(lambda r: r["active"]).group_by(["k"], {"n": agg.Count()})
@@ -86,7 +90,8 @@ def test_retraction_through_filter():
 # Retraction through window
 # ---------------------------------------------------------------------------
 
-def test_retraction_through_tumbling_window():
+
+def test_retraction_through_tumbling_window() -> None:
     e = IVMEngine()
     src = e.source("s")
     view = src.window(TumblingWindow(size_ms=10_000),
@@ -108,7 +113,8 @@ def test_retraction_through_tumbling_window():
 # Min/Max: retract the extreme value
 # ---------------------------------------------------------------------------
 
-def test_retract_min_updates_correctly():
+
+def test_retract_min_updates_correctly() -> None:
     e = IVMEngine()
     src = e.source("s")
     view = src.group_by(["g"], {"mn": agg.Min("v"), "mx": agg.Max("v")})
@@ -134,7 +140,8 @@ def test_retract_min_updates_correctly():
 # Duplicate values with retractions
 # ---------------------------------------------------------------------------
 
-def test_duplicate_values_retraction():
+
+def test_duplicate_values_retraction() -> None:
     """When the same value appears multiple times, one retraction removes one copy."""
     e = IVMEngine()
     src = e.source("s")
@@ -165,7 +172,8 @@ def test_duplicate_values_retraction():
 # Multi-hop retraction (through join then group_by)
 # ---------------------------------------------------------------------------
 
-def test_retraction_propagates_through_join_and_group_by():
+
+def test_retraction_propagates_through_join_and_group_by() -> None:
     e = IVMEngine()
     orders   = e.source("orders")
     products = e.source("products")
@@ -192,22 +200,20 @@ def test_retraction_propagates_through_join_and_group_by():
 # Delta log consistency
 # ---------------------------------------------------------------------------
 
-def test_delta_log_is_consistent():
-    """Net multiplicity of each unique record in delta log should equal 0 or >0."""
-    from collections import Counter
-    from ivm.types import freeze_record
 
+def test_delta_log_is_consistent() -> None:
+    """Net multiplicity of each unique record in delta log should equal 0 or >0."""
     e = IVMEngine()
     src = e.source("s")
     view = src.group_by(["k"], {"n": agg.Count(), "total": agg.Sum("v")})
     e.register_view("v", view)
 
     events = [
-        ("ingest", {"k": "x", "v": 10}),
-        ("ingest", {"k": "x", "v": 20}),
-        ("ingest", {"k": "y", "v": 5}),
+        ("ingest",  {"k": "x", "v": 10}),
+        ("ingest",  {"k": "x", "v": 20}),
+        ("ingest",  {"k": "y", "v": 5}),
         ("retract", {"k": "x", "v": 10}),
-        ("ingest", {"k": "x", "v": 15}),
+        ("ingest",  {"k": "x", "v": 15}),
         ("retract", {"k": "y", "v": 5}),
     ]
     for op, rec in events:
@@ -217,10 +223,10 @@ def test_delta_log_is_consistent():
             e.retract("s", rec, timestamp=1)
 
     log = e.delta_log("v")
-    net: Counter = Counter()
+    net: Counter[object] = Counter()
     for delta in log:
         net[freeze_record(delta.record)] += delta.diff
 
     # All net counts must be non-negative
-    for key, count in net.items():
-        assert count >= 0, f"Negative net multiplicity for {dict(key)}: {count}"
+    for key, cnt in net.items():
+        assert cnt >= 0, f"Negative net multiplicity for {dict(key)}: {cnt}"  # type: ignore[call-overload]
