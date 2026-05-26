@@ -1,8 +1,12 @@
 """Pipeline topology: directed acyclic graph of job nodes."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Iterable
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 @dataclass

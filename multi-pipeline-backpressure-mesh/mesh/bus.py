@@ -4,13 +4,15 @@ Two implementations:
   - InMemoryBus  : zero-dependency, suitable for single-process demos / tests
   - RedisBus     : pub/sub over Redis, suitable for distributed deployments
 """
+
 from __future__ import annotations
 
 import asyncio
 import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Coroutine
+from collections.abc import Callable, Coroutine
+from typing import Any
 
 from .metrics import BackpressureSignal, ThrottleCommand
 
@@ -80,7 +82,7 @@ class RedisBus(BackpressureBus):
 
     def __init__(self, redis_url: str = "redis://localhost:6379") -> None:
         try:
-            import redis.asyncio as aioredis
+            import redis.asyncio as aioredis  # type: ignore[import-not-found]
         except ImportError as exc:
             raise ImportError("Install redis[hiredis] to use RedisBus") from exc
 
@@ -89,7 +91,7 @@ class RedisBus(BackpressureBus):
         self._publisher = aioredis.from_url(redis_url, decode_responses=True)
         self._subscriber_conn = aioredis.from_url(redis_url, decode_responses=True)
         self._pubsub = self._subscriber_conn.pubsub()
-        self._listener_task: asyncio.Task | None = None
+        self._listener_task: asyncio.Task[None] | None = None
 
     async def publish_signal(self, signal: BackpressureSignal) -> None:
         await self._publisher.publish(_SIGNAL_CHANNEL, json.dumps(signal.to_dict()))
@@ -107,18 +109,24 @@ class RedisBus(BackpressureBus):
         await self._pubsub.subscribe(**{channel: self._make_throttle_handler(callback)})
         self._ensure_listener()
 
-    def _make_signal_handler(self, cb: SignalCallback):
-        async def handler(msg):
+    def _make_signal_handler(
+        self, cb: SignalCallback
+    ) -> Callable[[dict[str, Any]], Coroutine[Any, Any, None]]:
+        async def handler(msg: dict[str, Any]) -> None:
             if msg["type"] == "message":
                 signal = BackpressureSignal.from_dict(json.loads(msg["data"]))
                 await cb(signal)
+
         return handler
 
-    def _make_throttle_handler(self, cb: ThrottleCallback):
-        async def handler(msg):
+    def _make_throttle_handler(
+        self, cb: ThrottleCallback
+    ) -> Callable[[dict[str, Any]], Coroutine[Any, Any, None]]:
+        async def handler(msg: dict[str, Any]) -> None:
             if msg["type"] == "message":
                 cmd = ThrottleCommand.from_dict(json.loads(msg["data"]))
                 await cb(cmd)
+
         return handler
 
     def _ensure_listener(self) -> None:

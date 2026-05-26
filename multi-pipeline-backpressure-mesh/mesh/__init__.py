@@ -1,9 +1,9 @@
 from .bus import BackpressureBus, InMemoryBus, RedisBus
 from .coordinator import BackpressureCoordinator
+from .metrics import BackpressureSignal, JobMetrics, ThrottleCommand
 from .sidecar import JobSidecar
 from .throttle import TokenBucketThrottle
-from .metrics import JobMetrics, BackpressureSignal, ThrottleCommand
-from .topology import PipelineTopology, JobNode
+from .topology import JobNode, PipelineTopology
 
 __all__ = [
     "BackpressureBus",

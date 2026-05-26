@@ -11,16 +11,20 @@ The sidecar requires *zero* changes to job internals — it only needs:
   - A callable that returns current JobMetrics (metrics_provider).
   - A reference to the job's TokenBucketThrottle (throttle).
 """
+
 from __future__ import annotations
 
 import asyncio
 import logging
 import time
-from typing import Awaitable, Callable, Optional
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING
 
-from .bus import BackpressureBus
 from .metrics import BackpressureLevel, BackpressureSignal, JobMetrics, ThrottleCommand
-from .throttle import TokenBucketThrottle
+
+if TYPE_CHECKING:
+    from .bus import BackpressureBus
+    from .throttle import TokenBucketThrottle
 
 logger = logging.getLogger(__name__)
 
@@ -57,9 +61,9 @@ class JobSidecar:
         self._throttle = throttle
         self._poll_interval = poll_interval
         self._pressure_threshold = pressure_threshold
-        self._task: Optional[asyncio.Task] = None
+        self._task: asyncio.Task[None] | None = None
         self._last_signal_at: float = 0.0
-        self._last_metrics: Optional[JobMetrics] = None
+        self._last_metrics: JobMetrics | None = None
 
     async def start(self) -> None:
         await self._bus.subscribe_throttle(self.job_id, self._on_throttle_command)
@@ -108,8 +112,8 @@ class JobSidecar:
     async def _get_metrics(self) -> JobMetrics:
         result = self._metrics_provider()
         if asyncio.iscoroutine(result):
-            return await result
-        return result
+            return await result  # type: ignore[no-any-return]
+        return result  # type: ignore[return-value]
 
     async def _on_throttle_command(self, cmd: ThrottleCommand) -> None:
         logger.info(
@@ -121,7 +125,7 @@ class JobSidecar:
         self._throttle.set_throttle_factor(cmd.throttle_factor)
 
     @property
-    def current_metrics(self) -> Optional[JobMetrics]:
+    def current_metrics(self) -> JobMetrics | None:
         return self._last_metrics
 
     @property
