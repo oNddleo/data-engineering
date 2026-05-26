@@ -3,21 +3,24 @@ Shadow runner — executes every record through both v1 (primary) and v2 (shadow
 compares outputs, and records divergence without affecting live responses.
 """
 
+from __future__ import annotations
+
 import hashlib
 import json
 import logging
 import threading
 import time
-from typing import Any, Callable, Dict, Optional
+from typing import IO, TYPE_CHECKING, Any
 
-from .comparator import DivergenceTracker
-from .config import DeploymentConfig
-from .pipeline import BasePipeline
+if TYPE_CHECKING:
+    from .comparator import DivergenceTracker
+    from .config import DeploymentConfig
+    from .pipeline import BasePipeline
 
 logger = logging.getLogger(__name__)
 
 
-def _stable_hash(record: Dict[str, Any]) -> int:
+def _stable_hash(record: dict[str, Any]) -> int:
     """Deterministic integer hash of a record used for traffic routing."""
     raw = json.dumps(record, sort_keys=True, default=str).encode()
     return int(hashlib.md5(raw).hexdigest(), 16)
@@ -58,10 +61,10 @@ class ShadowRunner:
 
         self._v2_percentage: float = config.initial_v2_percentage
         self._lock = threading.Lock()
-        self._shadow_log_file = None
+        self._shadow_log_file: IO[str] | None = None
 
         if config.shadow_log_path:
-            self._shadow_log_file = open(config.shadow_log_path, "a")
+            self._shadow_log_file = open(config.shadow_log_path, "a")  # noqa: SIM115
 
         # Per-run stats
         self._records_processed: int = 0
@@ -81,7 +84,6 @@ class ShadowRunner:
     def v2_percentage(self, value: float) -> None:
         value = max(0.0, min(1.0, value))
         with self._lock:
-            old = self._v2_percentage
             self._v2_percentage = value
         logger.info("Traffic split updated: v1=%.0f%% v2=%.0f%%", (1 - value) * 100, value * 100)
 
@@ -89,7 +91,7 @@ class ShadowRunner:
     # Core processing
     # ------------------------------------------------------------------
 
-    def process(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def process(self, record: dict[str, Any]) -> dict[str, Any]:
         """
         Process one record and return the authoritative response.
 
@@ -128,8 +130,8 @@ class ShadowRunner:
     # ------------------------------------------------------------------
 
     def _safe_process(
-        self, pipeline: BasePipeline, record: Dict[str, Any]
-    ) -> tuple:
+        self, pipeline: BasePipeline, record: dict[str, Any]
+    ) -> tuple[dict[str, Any], Exception | None]:
         """Run pipeline.process and capture exceptions without raising."""
         try:
             result = pipeline.process(record)
@@ -145,8 +147,8 @@ class ShadowRunner:
     def _shadow_compare(
         self,
         shadow: BasePipeline,
-        record: Dict[str, Any],
-        primary_output: Dict[str, Any],
+        record: dict[str, Any],
+        primary_output: dict[str, Any],
         v2_is_primary: bool,
     ) -> None:
         shadow_output, shadow_err = self._safe_process(shadow, record)
@@ -185,7 +187,7 @@ class ShadowRunner:
         if self._shadow_log_file:
             self._shadow_log_file.close()
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         return {
             "records_processed": self._records_processed,
             "v2_percentage": round(self._v2_percentage, 4),

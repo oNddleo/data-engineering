@@ -6,13 +6,15 @@ divergence score in [0.0, 1.0] where 0.0 means identical and 1.0 means
 completely different.
 """
 
-import math
-from typing import Any, Dict, List, Optional, Set, Tuple
+from __future__ import annotations
 
+import math
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Low-level field comparisons
 # ---------------------------------------------------------------------------
+
 
 def _numeric_close(a: float, b: float, rel_tol: float = 1e-6, abs_tol: float = 1e-9) -> bool:
     return math.isclose(a, b, rel_tol=rel_tol, abs_tol=abs_tol)
@@ -39,15 +41,20 @@ def _field_divergence(v1_val: Any, v2_val: Any, numeric_tolerance: float = 1e-6)
     if isinstance(v1_val, bool) and isinstance(v2_val, bool):
         return 0.0 if v1_val == v2_val else 1.0
 
-    if isinstance(v1_val, (int, float)) and isinstance(v2_val, (int, float)):
-        return 0.0 if _numeric_close(float(v1_val), float(v2_val), rel_tol=numeric_tolerance) else 1.0
+    if isinstance(v1_val, int | float) and isinstance(v2_val, int | float):
+        return (
+            0.0 if _numeric_close(float(v1_val), float(v2_val), rel_tol=numeric_tolerance) else 1.0
+        )
 
-    if isinstance(v1_val, (list, tuple)) and isinstance(v2_val, (list, tuple)):
+    if isinstance(v1_val, list | tuple) and isinstance(v2_val, list | tuple):
         if len(v1_val) != len(v2_val):
             return 1.0
         if len(v1_val) == 0:
             return 0.0
-        scores = [_field_divergence(a, b, numeric_tolerance) for a, b in zip(v1_val, v2_val)]
+        scores = [
+            _field_divergence(a, b, numeric_tolerance)
+            for a, b in zip(v1_val, v2_val, strict=False)
+        ]
         return sum(scores) / len(scores)
 
     if isinstance(v1_val, dict) and isinstance(v2_val, dict):
@@ -60,10 +67,11 @@ def _field_divergence(v1_val: Any, v2_val: Any, numeric_tolerance: float = 1e-6)
 # Dict-level divergence
 # ---------------------------------------------------------------------------
 
+
 def dict_divergence(
-    v1_output: Dict[str, Any],
-    v2_output: Dict[str, Any],
-    ignore_keys: Optional[Set[str]] = None,
+    v1_output: dict[str, Any],
+    v2_output: dict[str, Any],
+    ignore_keys: set[str] | None = None,
     numeric_tolerance: float = 1e-6,
 ) -> float:
     """
@@ -100,6 +108,7 @@ def dict_divergence(
 # Rolling divergence tracker
 # ---------------------------------------------------------------------------
 
+
 class DivergenceTracker:
     """
     Maintains a rolling window of per-record divergence scores and exposes
@@ -114,14 +123,14 @@ class DivergenceTracker:
     def __init__(
         self,
         window_size: int = 1000,
-        ignore_keys: Optional[Set[str]] = None,
+        ignore_keys: set[str] | None = None,
         numeric_tolerance: float = 1e-6,
     ) -> None:
         self.window_size = window_size
         self.ignore_keys = ignore_keys or set()
         self.numeric_tolerance = numeric_tolerance
 
-        self._scores: List[float] = []
+        self._scores: list[float] = []
         self._total_compared: int = 0
         self._total_divergent: int = 0  # score > 0
 
@@ -131,8 +140,8 @@ class DivergenceTracker:
 
     def record(
         self,
-        v1_output: Dict[str, Any],
-        v2_output: Dict[str, Any],
+        v1_output: dict[str, Any],
+        v2_output: dict[str, Any],
     ) -> float:
         """
         Compare one pair of outputs, update the rolling window, and return
@@ -179,7 +188,7 @@ class DivergenceTracker:
             return 0.0
         return sum(self._scores) / len(self._scores)
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         """Return a dict snapshot of current tracker state."""
         return {
             "total_compared": self._total_compared,

@@ -1,21 +1,22 @@
 """Tests for ShadowRunner routing and divergence recording."""
 
+from __future__ import annotations
+
 import time
-import pytest
-from typing import Any, Dict
+from typing import Any
 
 from pipeline_deployer import BasePipeline, DeploymentConfig, ShadowRunner
 from pipeline_deployer.comparator import DivergenceTracker
-
 
 # ---------------------------------------------------------------------------
 # Stub pipelines
 # ---------------------------------------------------------------------------
 
+
 class ConstantPipeline(BasePipeline):
     """Always returns a fixed output regardless of input."""
 
-    def __init__(self, version_tag: str, output: Dict[str, Any]):
+    def __init__(self, version_tag: str, output: dict[str, Any]) -> None:
         self._version = version_tag
         self._output = output
 
@@ -23,21 +24,21 @@ class ConstantPipeline(BasePipeline):
     def version(self) -> str:
         return self._version
 
-    def process(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def process(self, record: dict[str, Any]) -> dict[str, Any]:
         return dict(self._output)
 
 
 class EchoPipeline(BasePipeline):
     """Echoes the input record back as output."""
 
-    def __init__(self, version_tag: str):
+    def __init__(self, version_tag: str) -> None:
         self._version = version_tag
 
     @property
     def version(self) -> str:
         return self._version
 
-    def process(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def process(self, record: dict[str, Any]) -> dict[str, Any]:
         return dict(record)
 
 
@@ -48,7 +49,7 @@ class BrokenPipeline(BasePipeline):
     def version(self) -> str:
         return "broken"
 
-    def process(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def process(self, record: dict[str, Any]) -> dict[str, Any]:
         raise RuntimeError("Pipeline exploded")
 
 
@@ -56,7 +57,13 @@ class BrokenPipeline(BasePipeline):
 # Helpers
 # ---------------------------------------------------------------------------
 
-def make_runner(v1, v2, v2_pct=0.0, window=100):
+
+def make_runner(
+    v1: BasePipeline,
+    v2: BasePipeline,
+    v2_pct: float = 0.0,
+    window: int = 100,
+) -> tuple[ShadowRunner, DivergenceTracker]:
     config = DeploymentConfig(initial_v2_percentage=v2_pct)
     tracker = DivergenceTracker(window_size=window)
     runner = ShadowRunner(v1=v1, v2=v2, config=config, tracker=tracker)
@@ -67,8 +74,9 @@ def make_runner(v1, v2, v2_pct=0.0, window=100):
 # Tests
 # ---------------------------------------------------------------------------
 
+
 class TestShadowRunnerRouting:
-    def test_v1_is_primary_at_zero_percent(self):
+    def test_v1_is_primary_at_zero_percent(self) -> None:
         v1 = ConstantPipeline("v1", {"result": "from-v1"})
         v2 = ConstantPipeline("v2", {"result": "from-v2"})
         runner, _ = make_runner(v1, v2, v2_pct=0.0)
@@ -77,7 +85,7 @@ class TestShadowRunnerRouting:
         outputs = [runner.process({"id": i}) for i in range(50)]
         assert all(o["result"] == "from-v1" for o in outputs)
 
-    def test_v2_is_primary_at_hundred_percent(self):
+    def test_v2_is_primary_at_hundred_percent(self) -> None:
         v1 = ConstantPipeline("v1", {"result": "from-v1"})
         v2 = ConstantPipeline("v2", {"result": "from-v2"})
         runner, _ = make_runner(v1, v2, v2_pct=1.0)
@@ -85,7 +93,7 @@ class TestShadowRunnerRouting:
         outputs = [runner.process({"id": i}) for i in range(50)]
         assert all(o["result"] == "from-v2" for o in outputs)
 
-    def test_mixed_split_both_versions_serve(self):
+    def test_mixed_split_both_versions_serve(self) -> None:
         v1 = ConstantPipeline("v1", {"result": "from-v1"})
         v2 = ConstantPipeline("v2", {"result": "from-v2"})
         runner, _ = make_runner(v1, v2, v2_pct=0.5)
@@ -99,7 +107,7 @@ class TestShadowRunnerRouting:
         assert "from-v1" in results
         assert "from-v2" in results
 
-    def test_v2_percentage_setter_clamps(self):
+    def test_v2_percentage_setter_clamps(self) -> None:
         v1 = EchoPipeline("v1")
         v2 = EchoPipeline("v2")
         runner, _ = make_runner(v1, v2)
@@ -110,7 +118,7 @@ class TestShadowRunnerRouting:
 
 
 class TestShadowRunnerDivergence:
-    def test_identical_outputs_zero_divergence(self):
+    def test_identical_outputs_zero_divergence(self) -> None:
         v1 = EchoPipeline("v1")
         v2 = EchoPipeline("v2")
         runner, tracker = make_runner(v1, v2, v2_pct=0.0)
@@ -121,7 +129,7 @@ class TestShadowRunnerDivergence:
         time.sleep(0.1)  # let shadow threads finish
         assert tracker.window_divergence_rate == 0.0
 
-    def test_different_outputs_divergence_detected(self):
+    def test_different_outputs_divergence_detected(self) -> None:
         v1 = ConstantPipeline("v1", {"x": 1})
         v2 = ConstantPipeline("v2", {"x": 2})
         runner, tracker = make_runner(v1, v2, v2_pct=0.0)
@@ -132,7 +140,7 @@ class TestShadowRunnerDivergence:
         time.sleep(0.1)
         assert tracker.window_divergence_rate == 1.0
 
-    def test_broken_shadow_does_not_crash_primary(self):
+    def test_broken_shadow_does_not_crash_primary(self) -> None:
         """A crash in the shadow pipeline must not propagate to the caller."""
         v1 = ConstantPipeline("v1", {"ok": True})
         v2 = BrokenPipeline()
@@ -143,12 +151,18 @@ class TestShadowRunnerDivergence:
         assert out == {"ok": True}
         assert runner._v2_errors == 1
 
-    def test_stats_keys_present(self):
+    def test_stats_keys_present(self) -> None:
         v1 = EchoPipeline("v1")
         v2 = EchoPipeline("v2")
         runner, _ = make_runner(v1, v2)
         runner.process({"a": 1})
         s = runner.stats()
-        for key in ("records_processed", "v2_percentage", "v1_errors", "v2_errors",
-                    "window_divergence_rate", "mean_divergence_score"):
+        for key in (
+            "records_processed",
+            "v2_percentage",
+            "v1_errors",
+            "v2_errors",
+            "window_divergence_rate",
+            "mean_divergence_score",
+        ):
             assert key in s, f"Missing key: {key}"

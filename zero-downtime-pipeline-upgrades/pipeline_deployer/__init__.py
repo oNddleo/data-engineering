@@ -7,12 +7,14 @@ gradually shifts traffic to v2 only when the diff is below a configurable
 threshold.
 """
 
-from .config import DeploymentConfig
-from .pipeline import BasePipeline
+from __future__ import annotations
+
 from .comparator import DivergenceTracker, dict_divergence
-from .shadow_runner import ShadowRunner
-from .traffic_shifter import TrafficShifter, ShiftState
+from .config import DeploymentConfig
 from .orchestrator import DeploymentOrchestrator
+from .pipeline import BasePipeline
+from .shadow_runner import ShadowRunner
+from .traffic_shifter import ShiftState, TrafficShifter
 
 __all__ = [
     "DeploymentConfig",

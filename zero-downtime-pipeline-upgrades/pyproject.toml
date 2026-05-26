@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zero-downtime-pipeline-upgrades"
+version = "1.0.0"
+description = "Zero-downtime deployment system for stateful data pipelines: shadow mode, output divergence comparison, and gradual traffic shifting."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-timeout>=2.1",
+    "ruff>=0.7.0",
+    "mypy>=1.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["pipeline_deployer"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 99
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "TCH", "ANN"]
+ignore = ["ANN101", "ANN102", "ANN401"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true

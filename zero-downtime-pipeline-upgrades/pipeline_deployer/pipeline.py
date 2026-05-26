@@ -2,8 +2,10 @@
 Abstract base class every pipeline version must implement.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any
 
 
 class BasePipeline(ABC):
@@ -24,7 +26,7 @@ class BasePipeline(ABC):
         """Human-readable version tag, e.g. ``'v1'`` or ``'v2.3.1'``."""
 
     @abstractmethod
-    def process(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def process(self, record: dict[str, Any]) -> dict[str, Any]:
         """
         Process a single record and return the pipeline's output.
 
@@ -36,19 +38,19 @@ class BasePipeline(ABC):
             this against the other version's output.
         """
 
-    def setup(self) -> None:
+    def setup(self) -> None:  # noqa: B027
         """
         Called once before any records are processed.
         Override to open connections, load models, warm caches, etc.
         """
 
-    def teardown(self) -> None:
+    def teardown(self) -> None:  # noqa: B027
         """
         Called once after processing is complete.
         Override to flush state, close connections, etc.
         """
 
-    def snapshot_state(self) -> Dict[str, Any]:
+    def snapshot_state(self) -> dict[str, Any]:
         """
         Return a serialisable snapshot of internal state.
         Used by the orchestrator for checkpointing before traffic shifts.
@@ -56,7 +58,7 @@ class BasePipeline(ABC):
         """
         return {}
 
-    def restore_state(self, snapshot: Dict[str, Any]) -> None:
+    def restore_state(self, snapshot: dict[str, Any]) -> None:  # noqa: B027
         """
         Restore internal state from a snapshot produced by ``snapshot_state``.
         """
