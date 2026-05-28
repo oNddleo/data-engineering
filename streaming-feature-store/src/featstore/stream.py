@@ -3,12 +3,15 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from featstore.registry import FeatureRegistry
-from featstore.store import FeatureStore
 from featstore.transforms import FeatureTransform, IdentityTransform, get_transform
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from featstore.registry import FeatureRegistry
+    from featstore.store import FeatureStore
 
 
 @dataclass

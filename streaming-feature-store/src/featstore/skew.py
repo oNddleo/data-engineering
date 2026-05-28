@@ -3,9 +3,10 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from featstore.batch import DistributionStats
+if TYPE_CHECKING:
+    from featstore.batch import DistributionStats
 
 
 @dataclass
@@ -56,15 +57,18 @@ def _ks_two_sample(a: list[float], b: list[float]) -> float:
     i = j = 0
     max_diff = 0.0
     while i < na and j < nb:
-        ecdf_a = (i + 1) / na
-        ecdf_b = (j + 1) / nb
+        if sa[i] < sb[j]:
+            i += 1
+        elif sb[j] < sa[i]:
+            j += 1
+        else:
+            i += 1
+            j += 1
+        ecdf_a = i / na
+        ecdf_b = j / nb
         diff = abs(ecdf_a - ecdf_b)
         if diff > max_diff:
             max_diff = diff
-        if sa[i] <= sb[j]:
-            i += 1
-        else:
-            j += 1
     return max_diff
 
 
@@ -85,7 +89,7 @@ def _psi_from_histograms(
     if batch_total <= 0 or stream_total <= 0:
         return 0.0
     psi = 0.0
-    for (_, _, bc), (_, _, sc) in zip(batch_hist, stream_hist):
+    for (_, _, bc), (_, _, sc) in zip(batch_hist, stream_hist, strict=False):
         p_batch = bc / batch_total + eps
         p_stream = sc / stream_total + eps
         psi += (p_stream - p_batch) * math.log(p_stream / p_batch)

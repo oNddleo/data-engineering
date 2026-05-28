@@ -4,7 +4,6 @@ Tests for SagaOrchestrator — happy path, context propagation, retry, recovery.
 
 from __future__ import annotations
 
-import asyncio
 import pytest
 from typing import Any
 
@@ -214,7 +213,7 @@ async def test_step_exhausts_retries_and_triggers_rollback(orchestrator: SagaOrc
 
 @pytest.mark.asyncio
 async def test_completed_saga_persisted(store: SagaStore, orchestrator: SagaOrchestrator) -> None:
-    result = await orchestrator.run([PassStep()], saga_id="persist-ok")
+    await orchestrator.run([PassStep()], saga_id="persist-ok")
     record = store.load("persist-ok")
     assert record is not None
     assert record.status == SagaStatus.COMPLETED
@@ -222,7 +221,7 @@ async def test_completed_saga_persisted(store: SagaStore, orchestrator: SagaOrch
 
 @pytest.mark.asyncio
 async def test_failed_saga_persisted(store: SagaStore, orchestrator: SagaOrchestrator) -> None:
-    result = await orchestrator.run([PassStep(), FailStep()], saga_id="persist-fail")
+    await orchestrator.run([PassStep(), FailStep()], saga_id="persist-fail")
     record = store.load("persist-fail")
     assert record is not None
     assert record.status in (SagaStatus.COMPENSATED, SagaStatus.FAILED)

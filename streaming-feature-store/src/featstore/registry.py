@@ -5,9 +5,7 @@ import threading
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    pass
-
-from featstore.types import FeatureSpec
+    from featstore.types import FeatureSpec
 
 
 class DuplicateFeatureError(Exception):

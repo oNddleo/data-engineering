@@ -13,15 +13,12 @@ from __future__ import annotations
 import time
 from typing import List
 
-import pytest
 
 from chandy_lamport import (
     AggregatorNode,
     Channel,
     DataMessage,
     GlobalSnapshot,
-    MergeNode,
-    NodeSnapshot,
     Pipeline,
     SinkNode,
     SnapshotCoordinator,

@@ -4,11 +4,14 @@ from __future__ import annotations
 import json
 import math
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from featstore.registry import FeatureRegistry
 from featstore.transforms import FeatureTransform, IdentityTransform, get_transform
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from featstore.registry import FeatureRegistry
 
 _NUM_BUCKETS = 20
 

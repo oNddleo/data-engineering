@@ -25,12 +25,10 @@ from __future__ import annotations
 
 import logging
 import threading
-import time
 import uuid
 from typing import Dict, List, Optional
 
 from .channel import Channel
-from .message import DataMessage
 from .node import (
     AggregatorNode,
     MergeNode,
@@ -202,15 +200,15 @@ class Pipeline:
             for ch_name, msgs in ns.channel_states.items():
                 if not msgs:
                     continue
-                ch = channel_map.get(ch_name)
-                if ch is None:
+                target = channel_map.get(ch_name)
+                if target is None:
                     log.error(f"[Recovery] Unknown channel {ch_name}")
                     continue
                 log.info(
                     f"[Recovery] Re-injecting {len(msgs)} in-transit msg(s) → {ch_name}"
                 )
                 for m in msgs:
-                    ch.send(m)
+                    target.send(m)
                 total_replayed += len(msgs)
 
         log.info(f"[Recovery] Replayed {total_replayed} in-transit message(s) total")

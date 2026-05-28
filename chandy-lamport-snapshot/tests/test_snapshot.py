@@ -11,15 +11,11 @@ Verifies:
 """
 from __future__ import annotations
 
-import threading
 import time
-from collections import defaultdict
 from typing import List
 
-import pytest
 
 from chandy_lamport import (
-    AggregatorNode,
     Channel,
     DataMessage,
     GlobalSnapshot,

@@ -35,7 +35,7 @@ import copy
 import logging
 import threading
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from .channel import Channel
 from .message import DataMessage, Marker
@@ -67,7 +67,7 @@ class Node:
 
         # Per-snapshot bookkeeping
         # snap_id → {state, channel_states, channels_done}
-        self._snaps: Dict[str, dict] = {}
+        self._snaps: Dict[str, dict[str, Any]] = {}
         self._snap_lock = threading.RLock()
         self._coordinator: Optional[SnapshotCoordinator] = None
 
@@ -76,7 +76,7 @@ class Node:
         self._thread: Optional[threading.Thread] = None
 
         # Exactly-once deduplication: set of msg_ids already processed
-        self._seen: set = set()
+        self._seen: set[str] = set()
 
     # ── subclass interface ────────────────────────────────────────────────────
 
@@ -191,9 +191,9 @@ class Node:
             return
 
         with self._snap_lock:
-            snap = self._snaps.pop(snap_id, None)
-        if snap is None:
-            return
+            if snap_id not in self._snaps:
+                return
+            snap = self._snaps.pop(snap_id)
 
         ns = NodeSnapshot(
             node_id=self.node_id,
@@ -239,7 +239,7 @@ class Node:
                 busy = True
                 if isinstance(msg, Marker):
                     self._on_marker(msg, ch)
-                else:
+                elif isinstance(msg, DataMessage):
                     # Record BEFORE processing so in-transit capture is accurate
                     ch.record_if_needed(msg)
                     self._handle_data(msg)
@@ -288,7 +288,7 @@ class SourceNode(Node):
     def init_state(self) -> Any:
         return {"next_seq": 1}
 
-    def _run(self) -> None:  # type: ignore[override]
+    def _run(self) -> None:
         while not self._stop.is_set():
             with self._state_lock:
                 seq = self._state["next_seq"]
@@ -309,7 +309,7 @@ class SourceNode(Node):
 class TransformNode(Node):
     """Applies a pure function to each message's content."""
 
-    def __init__(self, node_id: str, fn) -> None:
+    def __init__(self, node_id: str, fn: Callable[[Any], Any]) -> None:
         super().__init__(node_id)
         self._fn = fn
 
@@ -324,7 +324,7 @@ class TransformNode(Node):
 class SlowTransformNode(TransformNode):
     """TransformNode with artificial per-message latency (demo purposes)."""
 
-    def __init__(self, node_id: str, fn, delay: float = 0.1) -> None:
+    def __init__(self, node_id: str, fn: Callable[[Any], Any], delay: float = 0.1) -> None:
         super().__init__(node_id, fn)
         self._delay = delay
 

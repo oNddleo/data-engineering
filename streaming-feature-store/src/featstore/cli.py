@@ -74,7 +74,7 @@ def _cmd_get(args: argparse.Namespace) -> int:
             for k, v in rec.items():
                 if k in ("entity_id", "ts") or v is None:
                     continue
-                store.put(entity, k, float(v) if isinstance(v, (int, float)) else v, ts)
+                store.put(entity, k, float(v) if isinstance(v, int | float) else v, ts)
 
     as_of: datetime | None = None
     if args.as_of:

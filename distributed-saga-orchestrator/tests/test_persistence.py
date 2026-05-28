@@ -17,8 +17,6 @@ import tempfile
 import time
 from pathlib import Path
 
-import pytest
-
 from saga.persistence import SagaRecord, SagaStatus, SagaStore
 from saga.step import StepStatus
 

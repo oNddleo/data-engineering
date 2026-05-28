@@ -7,11 +7,8 @@ from dataclasses import asdict
 from typing import Any
 
 from .exceptions import (
-    SagaAlreadyRunningError,
     SagaNotFoundError,
     SagaNotRecoverableError,
-    StepCompensationError,
-    StepExecutionError,
 )
 from .persistence import SagaRecord, SagaStatus, SagaStore
 from .step import SagaStep, StepRecord, StepStatus
@@ -48,7 +45,7 @@ class SagaResult:
         return self._record.failure_reason
 
     @property
-    def compensation_errors(self) -> list[dict]:
+    def compensation_errors(self) -> list[dict[str, Any]]:
         return list(self._record.compensation_errors)
 
     @property
@@ -201,7 +198,7 @@ class SagaOrchestrator:
         record: SagaRecord,
         context: dict[str, Any],
     ) -> None:
-        compensation_errors: list[dict] = []
+        compensation_errors: list[dict[str, Any]] = []
 
         for idx in reversed(completed):
             step = steps[idx]
@@ -240,5 +237,5 @@ class SagaOrchestrator:
             logger.info("Saga %s fully compensated", record.saga_id)
 
     @staticmethod
-    def _get_step_rec(record: SagaRecord, idx: int) -> dict:
+    def _get_step_rec(record: SagaRecord, idx: int) -> dict[str, Any]:
         return record.step_records[idx]

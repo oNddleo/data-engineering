@@ -85,11 +85,14 @@ class SagaStep(ABC):
         for attempt in range(1, policy.max_attempts + 1):
             t0 = time.monotonic()
             try:
-                result = self.execute(context)
-                if inspect.isawaitable(result):
-                    result = await result
+                raw = self.execute(context)
+                output: dict[str, Any]
+                if inspect.isawaitable(raw):
+                    output = await raw
+                else:
+                    output = raw
                 duration_ms = (time.monotonic() - t0) * 1000
-                return StepResult(success=True, output=result or {}, duration_ms=duration_ms)
+                return StepResult(success=True, output=output or {}, duration_ms=duration_ms)
             except policy.retryable_exceptions as exc:
                 last_error = exc
                 duration_ms = (time.monotonic() - t0) * 1000
