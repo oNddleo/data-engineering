@@ -39,7 +39,7 @@ class Runtime:
         default_factory=lambda: defaultdict(deque)
     )
     stats: RuntimeStats = field(default_factory=RuntimeStats)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def __post_init__(self) -> None:
         self.graph.validate()

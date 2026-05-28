@@ -23,7 +23,7 @@ class EventualDeliveryWatcher:
     max_steps_to_delivery: int = 1000
     _insert_steps: dict[Record, int] = field(default_factory=dict)
     _delivery_steps: dict[Record, int] = field(default_factory=dict)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def observe(self, state: State, step: int) -> list[str]:
         """Update tracking; return list of overdue records."""

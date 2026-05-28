@@ -5,7 +5,10 @@ invariants after every step, emits incidents on violations.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 from tlavp.invariants.liveness import EventualDeliveryWatcher
 from tlavp.invariants.safety import check_all
@@ -28,7 +31,7 @@ class Incident:
     state_snapshot: dict[str, Any]
 
 
-ACTION_MAP = {
+ACTION_MAP: dict[str, Callable[[StateMachine, dict[str, Any]], bool | None]] = {
     "pg_insert":        lambda sm, e: pg_insert(sm.state, e["record"]),
     "debezium_publish": lambda sm, e: debezium_publish(sm.state, e["record"]),
     "flink_consume":    lambda sm, e: flink_consume(sm.state),

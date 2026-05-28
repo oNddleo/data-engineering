@@ -3,12 +3,10 @@ Tests for failure injection and recovery behaviour.
 """
 from __future__ import annotations
 
-import uuid
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from src.recovery.failure_injector import FailureInjector, PermanentFailure, TransientFailure
 
 

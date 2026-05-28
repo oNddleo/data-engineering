@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -58,11 +59,18 @@ def test_generate_position_strictly_increasing() -> None:
 
 
 def _run(*args: str) -> subprocess.CompletedProcess[str]:
+    # Prepend this project's src/ to PYTHONPATH so the subprocess finds the
+    # correct `cdc` package even when another project providing the same
+    # package name is installed in the same environment.
+    src = str(Path(__file__).parent.parent / "src")
+    env = os.environ.copy()
+    env["PYTHONPATH"] = src + os.pathsep + env.get("PYTHONPATH", "")
     return subprocess.run(
         [sys.executable, "-m", "cdc.cli", *args],
         capture_output=True,
         text=True,
         check=False,
+        env=env,
     )
 
 

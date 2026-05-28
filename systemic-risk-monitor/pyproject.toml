@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "riskmonitor"
+version = "0.1.0"
+description = "Systemic risk monitoring for interbank exposure networks"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+riskmonitor = "riskmonitor.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 99
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "TCH", "ANN"]
+ignore = ["ANN101", "ANN102", "ANN401"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["riskmonitor"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

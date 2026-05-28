@@ -35,7 +35,7 @@ class ProgressCoordinator:
     _per_worker_pending: dict[int, dict[tuple[str, Timestamp], int]] = field(
         default_factory=lambda: defaultdict(dict)
     )
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
     _last_frontier: Antichain = field(default_factory=Antichain)
     advances: int = 0
 

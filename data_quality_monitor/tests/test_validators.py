@@ -1,15 +1,15 @@
 """Unit tests for validator logic (no real GE/Soda runtime required)."""
 from __future__ import annotations
-import pytest
-import pandas as pd
-from unittest.mock import AsyncMock, MagicMock, patch
 
-from src.models import MicroBatch, BatchMetadata, ValidationStatus, ValidatorBackend
+from unittest.mock import MagicMock, patch
+
+import pandas as pd
+import pytest
+from src.models import BatchMetadata, MicroBatch, ValidationStatus
 from src.validators.great_expectations_validator import (
     GreatExpectationsValidator,
     _parse_ge_results,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

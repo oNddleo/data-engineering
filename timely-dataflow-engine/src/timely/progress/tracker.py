@@ -31,7 +31,7 @@ class ProgressTracker:
 
     counts: dict[PointStamp, int] = field(default_factory=lambda: defaultdict(int))
     stats: TrackerStats = field(default_factory=TrackerStats)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def update(self, op: str, ts: Timestamp, delta: int) -> None:
         ps = (op, ts)

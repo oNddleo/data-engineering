@@ -1,11 +1,11 @@
 """Tests for the JobController downstream gate."""
 from __future__ import annotations
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime
 
-from src.models import ValidationResult, ValidationStatus, ValidatorBackend
+from unittest.mock import AsyncMock
+
+import pytest
 from src.blocking.job_controller import JobController
+from src.models import ValidationResult, ValidationStatus, ValidatorBackend
 
 
 def _make_result(status: ValidationStatus, table: str = "orders") -> ValidationResult:

@@ -25,7 +25,7 @@ class WriteAmpStats:
     buffer_inserts: int = 0
     flushed_messages: int = 0
     splits: int = 0
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def record_leaf_apply(self) -> None:
         with self._lock:

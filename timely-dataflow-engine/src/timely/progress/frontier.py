@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class Frontier:
     tracker: ProgressTracker
     _last_global: Antichain = field(default_factory=Antichain)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def at_operator(self, op: str) -> Antichain:
         """Antichain of minimal active timestamps at operator `op`."""

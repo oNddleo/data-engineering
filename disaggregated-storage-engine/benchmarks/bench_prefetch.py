@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Iterable
 
 from disagg.client.cache import ClientCache
 from disagg.prefetch.markov import MarkovPrefetcher
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from disagg.core.page import PageId
 
 
-def bench(workload_name: str, workload_iter) -> dict:
+def bench(workload_name: str, workload_iter: Iterable[PageId]) -> dict[str, Any]:
     server = PageServer(capacity_pages=2048)
     transport = SimulatedTransport(server=server, latency_us=0.0)
     cache = ClientCache(client_id=1, transport=transport, capacity=256)

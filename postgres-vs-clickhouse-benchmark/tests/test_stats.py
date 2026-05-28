@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
@@ -63,4 +65,6 @@ def test_property_p99_le_max(samples):
     s = summarise(samples)
     assert s.p99 <= s.max
     assert s.p50 <= s.p95 <= s.p99
-    assert s.min <= s.mean <= s.max
+    # Use tolerance for mean comparison — float sum/n may exceed min/max by ε.
+    assert math.isclose(s.min, s.mean, rel_tol=1e-9) or s.min <= s.mean
+    assert math.isclose(s.mean, s.max, rel_tol=1e-9) or s.mean <= s.max

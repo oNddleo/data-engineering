@@ -10,13 +10,13 @@ Given a How-provenance polynomial annotation, recover:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from prov.semiring.how import Polynomial
+    from prov.semiring.how import Monomial, Polynomial
 
 
-def lineage(poly: Polynomial) -> set:
+def lineage(poly: Polynomial) -> set[Any]:
     """All input tokens appearing in `poly`."""
     return poly.variables
 
@@ -31,7 +31,7 @@ def multiplicity(poly: Polynomial) -> int:
     return sum(c for c in poly.coeffs.values() if c != 0)
 
 
-def exact_probability(poly: Polynomial, probs: dict) -> float:
+def exact_probability(poly: Polynomial, probs: dict[Any, float]) -> float:
     """Compute exact P(any monomial holds) under arbitrary correlation.
 
     Each monomial `x^a * y^b * ...` corresponds to the event "x ∧ y ∧ ...".
@@ -50,7 +50,7 @@ def exact_probability(poly: Polynomial, probs: dict) -> float:
     p_total = 0.0
     n = len(variables)
     for assign in range(1 << n):
-        env: dict = {}
+        env: dict[Any, int] = {}
         prob: float = 1.0
         for i, v in enumerate(variables):
             on = bool((assign >> i) & 1)
@@ -67,7 +67,7 @@ def exact_probability(poly: Polynomial, probs: dict) -> float:
     return p_total
 
 
-def _eval_monomial(mono, env: dict) -> int:
+def _eval_monomial(mono: Monomial, env: dict[Any, int]) -> int:
     out = 1
     for tok, p in mono.factors:
         out *= env.get(tok, 0) ** p

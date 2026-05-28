@@ -41,15 +41,15 @@ class PageServer:
 
     def dispatch(self, op: str, **kwargs: object) -> object:
         if op == "read":
-            return self.read(int(kwargs["client_id"]), kwargs["page_id"])  # type: ignore[arg-type]
+            return self.read(int(kwargs["client_id"]), kwargs["page_id"])  # type: ignore[call-overload]
         if op == "write":
             return self.write(
                 int(kwargs["client_id"]),
-                kwargs["page_id"],  # type: ignore[arg-type]
-                kwargs["data"],     # type: ignore[arg-type]
+                kwargs["page_id"],  # type: ignore[call-overload]
+                kwargs["data"],     # type: ignore[call-overload]
             )
         if op == "release":
-            self.release(int(kwargs["client_id"]), kwargs["page_id"])  # type: ignore[arg-type]
+            self.release(int(kwargs["client_id"]), kwargs["page_id"])  # type: ignore[call-overload]
             return None
         raise ValueError(f"unknown op: {op}")
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from typing import Any
 
 from disagg.client.cache import ClientCache
 from disagg.core.page import PageId
@@ -10,7 +11,7 @@ from disagg.server.page_server import PageServer
 from disagg.transport.simulated import SimulatedTransport
 
 
-def bench(latency_us: float, n_reads: int = 1000, n_unique: int = 100) -> dict:
+def bench(latency_us: float, n_reads: int = 1000, n_unique: int = 100) -> dict[str, Any]:
     server = PageServer(capacity_pages=2 * n_unique)
     transport = SimulatedTransport(server=server, latency_us=latency_us, jitter_us=0.0)
     cache = ClientCache(client_id=1, transport=transport, capacity=n_unique // 2)

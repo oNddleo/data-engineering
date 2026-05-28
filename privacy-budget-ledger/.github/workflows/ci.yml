@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package and dev tools
+        working-directory: privacy-budget-ledger
+        run: pip install -e . ruff mypy hypothesis pytest
+
+      - name: Ruff check
+        working-directory: privacy-budget-ledger
+        run: python -m ruff check src/privledger/ tests/
+
+      - name: Ruff format check
+        working-directory: privacy-budget-ledger
+        run: python -m ruff format --check src/privledger/ tests/
+
+      - name: Mypy
+        working-directory: privacy-budget-ledger
+        run: python -m mypy --strict --package privledger
+
+      - name: Pytest
+        working-directory: privacy-budget-ledger
+        run: python -m pytest tests/ -q

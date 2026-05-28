@@ -15,7 +15,7 @@ from __future__ import annotations
 import struct
 import threading
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from art_mvcc.art.tree import ART
 from art_mvcc.mvcc.epoch import EpochManager
@@ -28,7 +28,7 @@ def encode_int_key(k: int) -> bytes:
 
 
 def decode_int_key(b: bytes) -> int:
-    return struct.unpack(">q", b)[0]
+    return cast(int, struct.unpack(">q", b)[0])
 
 
 class MVCCArt:
@@ -99,7 +99,7 @@ class MVCCArt:
     def _get_or_create_chain(self, key: bytes) -> VersionChain:
         """Internal: caller must hold appropriate locks."""
         with self._index_lock:
-            chain = self._index.get(key)
+            chain = cast(VersionChain | None, self._index.get(key))
             if chain is None:
                 chain = VersionChain()
                 self._index.put(key, chain)
@@ -126,7 +126,7 @@ class MVCCArt:
 
     def chain(self, key: bytes) -> VersionChain | None:
         with self._index_lock:
-            return self._index.get(key)
+            return cast(VersionChain | None, self._index.get(key))
 
 
 # ---------------------------------------------------------------------------

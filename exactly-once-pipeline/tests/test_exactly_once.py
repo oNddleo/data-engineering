@@ -7,8 +7,6 @@ from __future__ import annotations
 import uuid
 from decimal import Decimal
 
-import pytest
-
 from src.models import PaymentEvent, TransactionStep
 
 

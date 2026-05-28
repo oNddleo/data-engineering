@@ -30,7 +30,7 @@ def naive_pagerank(
     return ranks, max_iter
 
 
-def bench(label: str, edges: dict[int, list[int]], n_nodes: int) -> dict:
+def bench(label: str, edges: dict[int, list[int]], n_nodes: int) -> dict[str, object]:
     # Timely
     t0 = time.perf_counter()
     ranks_t, iters_t = pagerank(edges, n_nodes)

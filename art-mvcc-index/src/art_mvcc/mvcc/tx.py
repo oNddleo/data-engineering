@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from art_mvcc.mvcc.store import MVCCArt
+    from art_mvcc.mvcc.version import VersionChain
 
 
 _TXN_ID_COUNTER = itertools.count(1)
@@ -86,7 +87,7 @@ class Transaction:
 
         # First pass: place tentatives, check for conflicts. We hold each
         # chain's lock per-key to detect write-write conflicts atomically.
-        prepared: list = []
+        prepared: list[VersionChain] = []
         try:
             for key, (value, deleted) in self._writes.items():
                 chain = self.db._get_or_create_chain(key)

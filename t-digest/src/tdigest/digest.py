@@ -152,7 +152,7 @@ def quantile(td: BuildableTDigest | TDigest, q: float) -> float:
     hi_w, hi_v = total, vmax
 
     # Find the two adjacent anchor points that straddle target.
-    all_points = [(lo_w, lo_v)] + mids + [(hi_w, hi_v)]
+    all_points = [(lo_w, lo_v), *mids, (hi_w, hi_v)]
     for j in range(len(all_points) - 1):
         w0, v0 = all_points[j]
         w1, v1 = all_points[j + 1]

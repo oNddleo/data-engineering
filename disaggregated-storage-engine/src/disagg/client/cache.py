@@ -11,7 +11,7 @@ from __future__ import annotations
 import threading
 from collections import OrderedDict
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from disagg.core.page import Page, PageId
 
@@ -63,7 +63,7 @@ class ClientCache:
             self._cache[page_id] = page
             self._cache.move_to_end(page_id)
             self._evict_locked()
-        return page
+        return cast(Page, page)
 
     def write(self, page_id: PageId, data: bytes) -> None:
         self.stats.writes += 1

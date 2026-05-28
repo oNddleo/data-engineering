@@ -1,0 +1,45 @@
+name: dqmonitor CI
+
+on:
+  push:
+    paths:
+      - "data_quality_monitor/**"
+  pull_request:
+    paths:
+      - "data_quality_monitor/**"
+
+defaults:
+  run:
+    working-directory: data_quality_monitor
+
+jobs:
+  lint-type-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install package and dev tools
+        run: |
+          pip install -e . ruff mypy hypothesis pytest
+
+      - name: Ruff lint
+        run: python -m ruff check src/dqmonitor/ tests/test_dqmonitor.py
+
+      - name: Ruff format check
+        run: python -m ruff format --check src/dqmonitor/ tests/test_dqmonitor.py
+
+      - name: mypy --strict
+        run: python -m mypy --strict --package dqmonitor
+
+      - name: pytest
+        run: python -m pytest tests/test_dqmonitor.py -q --tb=short
