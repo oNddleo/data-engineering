@@ -206,7 +206,7 @@ class AggregatePush(PushOperator):
         super().__init__()
         self._group_by = group_by
         self._aggregates = aggregates
-        self._groups: dict[tuple, dict] = {}
+        self._groups: dict[tuple[Any, ...], dict[str, Any]] = {}
 
     def push(self, row: Row) -> None:
         key = tuple(row.get(c) for c in self._group_by)

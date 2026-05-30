@@ -221,9 +221,9 @@ class Parser:
         limit: int | None = None
         offset: int = 0
         if self._consume(TT.LIMIT):
-            limit = int(self._expect(TT.INTEGER).value)  # type: ignore[arg-type]
+            limit = int(str(self._expect(TT.INTEGER).value))
         if self._consume(TT.OFFSET):
-            offset = int(self._expect(TT.INTEGER).value)  # type: ignore[arg-type]
+            offset = int(str(self._expect(TT.INTEGER).value))
 
         return SqlQuery(
             distinct=distinct,
@@ -397,7 +397,7 @@ class Parser:
         """Arithmetic expression (add/sub level)."""
         left = self._term()
         while self._match(TT.PLUS, TT.MINUS):
-            op = self._advance().value
+            op = str(self._advance().value)
             right = self._term()
             left = SqlBinOp(left, op, right)
         return left
@@ -406,7 +406,7 @@ class Parser:
         """Arithmetic expression (mul/div level)."""
         left = self._primary()
         while self._match(TT.STAR, TT.SLASH):
-            op = self._advance().value
+            op = str(self._advance().value)
             right = self._primary()
             left = SqlBinOp(left, op, right)
         return left
@@ -416,10 +416,10 @@ class Parser:
 
         if tok.type == TT.INTEGER:
             self._advance()
-            return SqlLiteral(int(tok.value))  # type: ignore[arg-type]
+            return SqlLiteral(int(str(tok.value)))
         if tok.type == TT.FLOAT:
             self._advance()
-            return SqlLiteral(float(tok.value))  # type: ignore[arg-type]
+            return SqlLiteral(float(str(tok.value)))
         if tok.type == TT.STRING:
             self._advance()
             return SqlLiteral(str(tok.value))

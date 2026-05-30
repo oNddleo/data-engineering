@@ -37,14 +37,14 @@ class ColumnStats:
             span = self.max_val - self.min_val
             if span == 0:
                 return 1.0
-            return max(0.0, min(1.0, (hi - lo) / span))
+            return float(max(0.0, min(1.0, (hi - lo) / span)))
         except (TypeError, ZeroDivisionError):
             return 0.5
 
     def selectivity_for_op(self, op: str, value: Any) -> float:
         """Return selectivity for a comparison predicate (col op value)."""
         if self.histogram is not None:
-            return self.histogram.for_op(op, value)
+            return float(self.histogram.for_op(op, value))
         match op:
             case "=":
                 return self.selectivity_eq(value)

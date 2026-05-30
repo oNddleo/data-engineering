@@ -1,7 +1,8 @@
 """Logical query plan node hierarchy."""
 from __future__ import annotations
+from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional
 from .expressions import Expr
 
 
@@ -146,7 +147,7 @@ class NestedLoopJoinNode(PlanNode):
 class BufferNode(PlanNode):
     """Wraps pre-materialized rows; inserted by adaptive engine when a
     subtree is replaced by push-based execution."""
-    rows: list[dict] = field(default_factory=list)
+    rows: list[dict[str, Any]] = field(default_factory=list)
     source_repr: str = ""
 
     def children(self) -> list[PlanNode]:
@@ -160,7 +161,7 @@ class BufferNode(PlanNode):
 # Visitor helpers
 # ------------------------------------------------------------------
 
-def walk(node: PlanNode):
+def walk(node: PlanNode) -> Iterator[PlanNode]:
     """Pre-order traversal of the plan tree."""
     yield node
     for child in node.children():

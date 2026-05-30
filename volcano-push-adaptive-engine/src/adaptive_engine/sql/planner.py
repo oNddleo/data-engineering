@@ -17,6 +17,8 @@ Algorithm
 """
 from __future__ import annotations
 
+from typing import Any
+
 from ..catalog import Catalog
 from ..expressions import (
     AndExpr, BinOp, ColRef, Expr, Literal, NotExpr, OrExpr,
@@ -140,10 +142,10 @@ def _extract_equi_keys(
 # ------------------------------------------------------------------
 
 def _select_columns(
-    items: list,
+    items: list[Any],
     catalog: Catalog,
     from_table: str,
-    joins: list,
+    joins: list[Any],
 ) -> list[str] | None:
     """Return projected column list, or None for SELECT *."""
     all_star = all(isinstance(i.expr, SqlLiteral) and i.expr.value == "*" for i in items)
@@ -257,5 +259,5 @@ def _agg_alias(agg: SqlAgg) -> str:
     return f"{agg.func}_{arg}"
 
 
-def _collect_aggs(items: list) -> list[SqlAgg]:
+def _collect_aggs(items: list[Any]) -> list[SqlAgg]:
     return [i.expr for i in items if isinstance(i.expr, SqlAgg)]

@@ -114,7 +114,7 @@ class VolcanoExecutor:
 
     def _aggregate(self, node: AggregateNode) -> Iterator[Row]:
         assert node.child
-        groups: dict[tuple, dict] = {}
+        groups: dict[tuple[Any, ...], dict[str, Any]] = {}
 
         for row in self._iter(node.child):
             group_key = tuple(row.get(c) for c in node.group_by)
