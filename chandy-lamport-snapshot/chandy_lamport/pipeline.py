@@ -21,6 +21,7 @@ Recovery procedure:
   5. Restart all nodes.
   6. Source nodes resume from their checkpointed offset + 1.
 """
+
 from __future__ import annotations
 
 import logging
@@ -47,10 +48,12 @@ class Pipeline:
 
     def __init__(self, source_total: int = 20, source_interval: float = 0.06) -> None:
         # Nodes
-        self.source_a = SourceNode("SourceA", total=source_total,
-                                   interval=source_interval)
-        self.source_b = SourceNode("SourceB", total=source_total,
-                                   interval=source_interval)
+        self.source_a = SourceNode(
+            "SourceA", total=source_total, interval=source_interval
+        )
+        self.source_b = SourceNode(
+            "SourceB", total=source_total, interval=source_interval
+        )
         self.slow_tx = SlowTransformNode("SlowTx", fn=lambda x: x * 2, delay=0.12)
         self.merge = MergeNode("Merge")
         self.aggregator = AggregatorNode("Aggregator")
@@ -80,8 +83,12 @@ class Pipeline:
         self.sink.add_in_channel(self.ch_agg_sink)
 
         self._all_nodes: List[Node] = [
-            self.source_a, self.source_b, self.slow_tx,
-            self.merge, self.aggregator, self.sink,
+            self.source_a,
+            self.source_b,
+            self.slow_tx,
+            self.merge,
+            self.aggregator,
+            self.sink,
         ]
         self._source_nodes: List[Node] = [self.source_a, self.source_b]
 
@@ -174,8 +181,11 @@ class Pipeline:
             n.stop()
 
         all_channels = [
-            self.ch_a_merge, self.ch_b_slow, self.ch_slow_merge,
-            self.ch_merge_agg, self.ch_agg_sink,
+            self.ch_a_merge,
+            self.ch_b_slow,
+            self.ch_slow_merge,
+            self.ch_merge_agg,
+            self.ch_agg_sink,
         ]
 
         # 2. Drain channels

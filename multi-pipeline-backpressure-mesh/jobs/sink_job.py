@@ -1,12 +1,15 @@
 """Slow sink job — the typical source of backpressure in production pipelines."""
+
 from __future__ import annotations
 
 import asyncio
 import logging
-import time
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from .base_job import BaseStreamingJob
+
+if TYPE_CHECKING:
+    from mesh.metrics import JobMetrics
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +27,7 @@ class SinkJob(BaseStreamingJob):
     def __init__(
         self,
         job_id: str,
-        upstream_queue: asyncio.Queue,
+        upstream_queue: asyncio.Queue[Any],
         sink_rate: float = 200.0,
         source_rate: float = 2000.0,
         queue_capacity: int = 500,
@@ -50,14 +53,14 @@ class SinkJob(BaseStreamingJob):
         self._degraded = False
         logger.info("SinkJob %s: sink recovered → %.0f rec/s", self.job_id, self._sink_rate)
 
-    async def _read_record(self) -> Optional[Any]:
+    async def _read_record(self) -> Any | None:
         try:
             return self._upstream.get_nowait()
         except asyncio.QueueEmpty:
             await asyncio.sleep(0.001)
             return None
 
-    async def _process(self, record: Any) -> Optional[Any]:
+    async def _process(self, record: Any) -> Any | None:
         # Simulate write latency to external system
         effective_rate = self._degraded_rate if self._degraded else self._sink_rate
         if effective_rate > 0:
@@ -67,7 +70,7 @@ class SinkJob(BaseStreamingJob):
     async def _write_record(self, record: Any) -> None:
         pass  # terminal job, output absorbed
 
-    def get_metrics(self):
+    def get_metrics(self) -> JobMetrics:
         m = super().get_metrics()
         # Sink reports its output queue as "full" to signal the pressure back upstream
         if self._degraded:

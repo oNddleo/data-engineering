@@ -1,9 +1,10 @@
 """Mid-pipeline transform job — reads from upstream queue, applies transform, writes downstream."""
+
 from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from .base_job import BaseStreamingJob
 
@@ -19,8 +20,8 @@ class TransformJob(BaseStreamingJob):
     def __init__(
         self,
         job_id: str,
-        upstream_queue: asyncio.Queue,
-        downstream_queue: Optional[asyncio.Queue] = None,
+        upstream_queue: asyncio.Queue[Any],
+        downstream_queue: asyncio.Queue[Any] | None = None,
         processing_delay_ms: float = 0.5,
         source_rate: float = 2000.0,
         queue_capacity: int = 1000,
@@ -30,14 +31,14 @@ class TransformJob(BaseStreamingJob):
         self._downstream = downstream_queue or self._output_queue
         self._processing_delay_ms = processing_delay_ms
 
-    async def _read_record(self) -> Optional[Any]:
+    async def _read_record(self) -> Any | None:
         try:
             return self._upstream.get_nowait()
         except asyncio.QueueEmpty:
             await asyncio.sleep(0.001)
             return None
 
-    async def _process(self, record: Any) -> Optional[Any]:
+    async def _process(self, record: Any) -> Any | None:
         if self._processing_delay_ms > 0:
             await asyncio.sleep(self._processing_delay_ms / 1000.0)
         record["transformed_by"] = self.job_id

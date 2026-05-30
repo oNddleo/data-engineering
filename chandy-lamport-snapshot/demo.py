@@ -35,16 +35,16 @@ import logging
 import time
 
 logging.basicConfig(
-    level=logging.WARNING,       # set to DEBUG for full protocol trace
+    level=logging.WARNING,  # set to DEBUG for full protocol trace
     format="%(levelname)-8s %(name)s  %(message)s",
 )
 
-TOTAL_MSGS = 20          # messages each source will emit
-SNAPSHOT_AFTER = 0.8     # seconds of run time before snapshot
-FAILURE_AFTER  = 0.6     # seconds after snapshot before injecting failure
-DRAIN_AFTER    = 3.5     # seconds after recovery to let pipeline finish
+TOTAL_MSGS = 20  # messages each source will emit
+SNAPSHOT_AFTER = 0.8  # seconds of run time before snapshot
+FAILURE_AFTER = 0.6  # seconds after snapshot before injecting failure
+DRAIN_AFTER = 3.5  # seconds after recovery to let pipeline finish
 
-SEP  = "─" * 64
+SEP = "─" * 64
 SEP2 = "═" * 64
 
 
@@ -74,7 +74,7 @@ def main() -> None:
     pipeline = Pipeline(source_total=TOTAL_MSGS, source_interval=0.07)
     pipeline.start()
     print(f"  Pipeline running.  Each source will emit 1 … {TOTAL_MSGS}.")
-    print(f"  SlowTransform doubles SourceB values with a 120 ms delay per message.")
+    print("  SlowTransform doubles SourceB values with a 120 ms delay per message.")
 
     time.sleep(SNAPSHOT_AFTER)
     print(f"\n  ({SNAPSHOT_AFTER}s elapsed — taking snapshot now)\n")
@@ -93,7 +93,9 @@ def main() -> None:
         for msgs in ns.channel_states.values()
     )
     if in_transit_total:
-        print(f"  ✓ Captured {in_transit_total} in-transit message(s) in channel states.")
+        print(
+            f"  ✓ Captured {in_transit_total} in-transit message(s) in channel states."
+        )
         for ns in snapshot.node_snapshots.values():
             for ch_name, msgs in ns.channel_states.items():
                 if msgs:
@@ -113,7 +115,7 @@ def main() -> None:
     print(f"  Sink received {sink_count_before} message(s) so far.")
     print("\n  *** Killing Aggregator node (simulated crash) ***")
     pipeline.stop_node(pipeline.aggregator)
-    time.sleep(0.3)   # let a few more messages pile up in channels
+    time.sleep(0.3)  # let a few more messages pile up in channels
 
     # ── 4. Recovery ────────────────────────────────────────────────────────────
 
@@ -144,11 +146,14 @@ def main() -> None:
     print(f"\n  Sink received {len(seqs)} message(s) total.")
 
     from collections import Counter
+
     seq_counts = Counter(seqs)
 
-    missing  = [s for s in range(1, TOTAL_MSGS + 1) if seq_counts[s] == 0]
-    extra    = [s for s in range(1, TOTAL_MSGS + 1) if seq_counts[s] > 2]
-    print(f"\n  origin_seq counts  (expected each = 2, got {len(seq_counts)} distinct):")
+    missing = [s for s in range(1, TOTAL_MSGS + 1) if seq_counts[s] == 0]
+    extra = [s for s in range(1, TOTAL_MSGS + 1) if seq_counts[s] > 2]
+    print(
+        f"\n  origin_seq counts  (expected each = 2, got {len(seq_counts)} distinct):"
+    )
     for s in sorted(seq_counts):
         mark = "✓" if seq_counts[s] == 2 else "✗"
         print(f"    seq {s:3d} → {seq_counts[s]} occurrence(s)  {mark}")
@@ -170,19 +175,23 @@ def main() -> None:
     # Expected sum from SourceB (doubled): sum(2,4,..2N) = N(N+1)
     N = TOTAL_MSGS
     expected_sum = N * (N + 1) // 2 + N * (N + 1)
-    actual_sum   = final_agg.get("sum", "?")
+    actual_sum = final_agg.get("sum", "?")
 
     print(f"\n  Aggregator final sum   : {actual_sum}")
-    print(f"  Expected sum (theory)  : {expected_sum}  "
-          f"[ΣA=1..{N} + ΣB=2..{2*N} step 2]")
+    print(
+        f"  Expected sum (theory)  : {expected_sum}  "
+        f"[ΣA=1..{N} + ΣB=2..{2*N} step 2]"
+    )
 
     sum_ok = actual_sum == expected_sum
     print(f"  Sum correct            : {'✓' if sum_ok else '✗'}")
 
     overall_ok = not missing and not extra
     print()
-    banner("RESULT: Exactly-once semantics " +
-           ("PRESERVED ✓" if overall_ok else "VIOLATED ✗"))
+    banner(
+        "RESULT: Exactly-once semantics "
+        + ("PRESERVED ✓" if overall_ok else "VIOLATED ✗")
+    )
 
     if not overall_ok:
         print("  (Tip: increase TOTAL_MSGS or adjust timing for clearer results.)")

@@ -2,8 +2,7 @@
 Example pipeline v1 — basic word-count with a simple tokeniser.
 """
 
-import re
-from typing import Any, Dict
+from typing import Any
 
 from pipeline_deployer import BasePipeline
 
@@ -22,7 +21,7 @@ class WordCountV1(BasePipeline):
         self._total_words = 0
         self._doc_count = 0
 
-    def process(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def process(self, record: dict[str, Any]) -> dict[str, Any]:
         text: str = record.get("text", "")
         # naive split — does not strip punctuation
         tokens = text.split()
@@ -38,9 +37,9 @@ class WordCountV1(BasePipeline):
             "avg_words_per_doc": self._total_words / self._doc_count,
         }
 
-    def snapshot_state(self) -> Dict[str, Any]:
+    def snapshot_state(self) -> dict[str, Any]:
         return {"total_words": self._total_words, "doc_count": self._doc_count}
 
-    def restore_state(self, snapshot: Dict[str, Any]) -> None:
+    def restore_state(self, snapshot: dict[str, Any]) -> None:
         self._total_words = snapshot.get("total_words", 0)
         self._doc_count = snapshot.get("doc_count", 0)

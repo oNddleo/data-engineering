@@ -7,6 +7,7 @@ Simulates the Flink/Spark model:
 The job itself has no knowledge of the backpressure mesh.  All coordination
 happens externally via the sidecar that wraps the job's throttle handle.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -14,7 +15,7 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from collections import deque
-from typing import Any, Optional
+from typing import Any
 
 from mesh.metrics import JobMetrics
 from mesh.throttle import TokenBucketThrottle
@@ -30,8 +31,8 @@ class BaseStreamingJob(ABC):
         queue_capacity: int = 1000,
     ) -> None:
         self.job_id = job_id
-        self._input_queue: asyncio.Queue = asyncio.Queue(maxsize=queue_capacity)
-        self._output_queue: asyncio.Queue = asyncio.Queue(maxsize=queue_capacity)
+        self._input_queue: asyncio.Queue[Any] = asyncio.Queue(maxsize=queue_capacity)
+        self._output_queue: asyncio.Queue[Any] = asyncio.Queue(maxsize=queue_capacity)
         self._queue_capacity = queue_capacity
 
         # The throttle lives here but is driven exclusively by the external sidecar
@@ -44,7 +45,7 @@ class BaseStreamingJob(ABC):
         self._window_out = 0
         self._lag_samples: deque[float] = deque(maxlen=100)
 
-        self._task: Optional[asyncio.Task] = None
+        self._task: asyncio.Task[None] | None = None
 
     async def start(self) -> None:
         self._task = asyncio.create_task(self._run(), name=f"job-{self.job_id}")
@@ -88,10 +89,10 @@ class BaseStreamingJob(ABC):
                 logger.exception("Job %s processing error", self.job_id)
 
     @abstractmethod
-    async def _read_record(self) -> Optional[Any]: ...
+    async def _read_record(self) -> Any | None: ...
 
     @abstractmethod
-    async def _process(self, record: Any) -> Optional[Any]: ...
+    async def _process(self, record: Any) -> Any | None: ...
 
     @abstractmethod
     async def _write_record(self, record: Any) -> None: ...

@@ -92,7 +92,9 @@ class SagaStep(ABC):
                 else:
                     output = raw
                 duration_ms = (time.monotonic() - t0) * 1000
-                return StepResult(success=True, output=output or {}, duration_ms=duration_ms)
+                return StepResult(
+                    success=True, output=output or {}, duration_ms=duration_ms
+                )
             except policy.retryable_exceptions as exc:
                 last_error = exc
                 duration_ms = (time.monotonic() - t0) * 1000

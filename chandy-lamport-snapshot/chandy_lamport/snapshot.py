@@ -1,4 +1,5 @@
 """Snapshot data structures and coordinator."""
+
 from __future__ import annotations
 
 import threading
@@ -50,15 +51,21 @@ class GlobalSnapshot:
         self.node_snapshots[ns.node_id] = ns
 
     def describe(self) -> str:
-        lines = [f"\n{'='*60}", f"  Global Snapshot  [{self.snapshot_id[:8]}]", f"{'='*60}"]
+        lines = [
+            f"\n{'='*60}",
+            f"  Global Snapshot  [{self.snapshot_id[:8]}]",
+            f"{'='*60}",
+        ]
         for ns in self.node_snapshots.values():
             lines.append(f"  {ns}")
         lines.append(f"{'='*60}\n")
         return "\n".join(lines)
 
     def __repr__(self) -> str:
-        return (f"GlobalSnapshot(id={self.snapshot_id[:8]}, "
-                f"nodes={list(self.node_snapshots.keys())}, complete={self.complete})")
+        return (
+            f"GlobalSnapshot(id={self.snapshot_id[:8]}, "
+            f"nodes={list(self.node_snapshots.keys())}, complete={self.complete})"
+        )
 
 
 class SnapshotCoordinator:

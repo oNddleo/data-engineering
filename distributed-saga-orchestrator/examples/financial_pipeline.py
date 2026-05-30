@@ -24,7 +24,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
-import sys
 from typing import Any
 
 from saga import RetryPolicy, SagaOrchestrator, SagaStep, SagaStore
@@ -40,6 +39,7 @@ logger = logging.getLogger("financial_pipeline")
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _log(step: str, msg: str) -> None:
     logger.info("    [%s] %s", step, msg)
 
@@ -51,9 +51,12 @@ class ValidateTransferRequest(SagaStep):
     retry_policy = RetryPolicy(max_attempts=3, backoff_base_seconds=0.1)
 
     async def execute(self, ctx: dict[str, Any]) -> dict[str, Any]:
-        _log(self.name, f"Validating transfer {ctx['transfer_id']!r}: "
-                        f"{ctx['source_account']} → {ctx['dest_account']} "
-                        f"{ctx['amount']} {ctx['currency']}")
+        _log(
+            self.name,
+            f"Validating transfer {ctx['transfer_id']!r}: "
+            f"{ctx['source_account']} → {ctx['dest_account']} "
+            f"{ctx['amount']} {ctx['currency']}",
+        )
         if ctx["amount"] <= 0:
             raise ValueError("Transfer amount must be positive")
         if ctx["source_account"] == ctx["dest_account"]:
@@ -71,8 +74,11 @@ class ValidateTransferRequest(SagaStep):
 # ---------------------------------------------------------------------------
 class ReserveSourceFunds(SagaStep):
     async def execute(self, ctx: dict[str, Any]) -> dict[str, Any]:
-        _log(self.name, f"Placing hold of {ctx['amount']} {ctx['currency']} "
-                        f"on {ctx['source_account']}")
+        _log(
+            self.name,
+            f"Placing hold of {ctx['amount']} {ctx['currency']} "
+            f"on {ctx['source_account']}",
+        )
         reservation_id = f"RSV-{ctx['transfer_id'][:8].upper()}"
         return {"reservation_id": reservation_id, "funds_reserved": True}
 
@@ -102,8 +108,8 @@ class FetchExchangeRate(SagaStep):
 # Step 4 – Calculate Fees and Tax (read-only)
 # ---------------------------------------------------------------------------
 class CalculateFeesAndTax(SagaStep):
-    FEE_RATE = 0.005   # 0.5 %
-    TAX_RATE = 0.001   # 0.1 %
+    FEE_RATE = 0.005  # 0.5 %
+    TAX_RATE = 0.001  # 0.1 %
 
     async def execute(self, ctx: dict[str, Any]) -> dict[str, Any]:
         amount = ctx["amount"]
@@ -144,16 +150,22 @@ class DebitSourceAccount(SagaStep):
             raise RuntimeError(
                 f"Core banking timeout: could not debit {ctx['source_account']}"
             )
-        _log(self.name, f"Debiting {total_debit} {ctx['currency']} "
-                        f"from {ctx['source_account']}")
+        _log(
+            self.name,
+            f"Debiting {total_debit} {ctx['currency']} "
+            f"from {ctx['source_account']}",
+        )
         debit_txn = f"DBT-{ctx['transfer_id'][:8].upper()}"
         return {"debit_txn_id": debit_txn, "source_debited": True}
 
     async def compensate(self, ctx: dict[str, Any]) -> None:
         txn = ctx.get("debit_txn_id", "unknown")
         total_debit = round(ctx["amount"] + ctx.get("fee", 0) + ctx.get("tax", 0), 4)
-        _log(self.name, f"Reversing debit {txn}: crediting {total_debit} "
-                        f"back to {ctx['source_account']}")
+        _log(
+            self.name,
+            f"Reversing debit {txn}: crediting {total_debit} "
+            f"back to {ctx['source_account']}",
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -169,7 +181,10 @@ class CreditDestinationAccount(SagaStep):
 
     async def compensate(self, ctx: dict[str, Any]) -> None:
         txn = ctx.get("credit_txn_id", "unknown")
-        _log(self.name, f"Reversing credit {txn}: debiting back from {ctx['dest_account']}")
+        _log(
+            self.name,
+            f"Reversing credit {txn}: debiting back from {ctx['dest_account']}",
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -218,19 +233,20 @@ class SendNotifications(SagaStep):
 # Pipeline runner
 # ---------------------------------------------------------------------------
 
+
 def build_steps(fail_at: int | None) -> list[SagaStep]:
     """Build ordered step list; inject failure at *fail_at* (1-based)."""
     return [
-        ValidateTransferRequest(),                        # 1
-        ReserveSourceFunds(),                             # 2
-        FetchExchangeRate(),                              # 3
-        CalculateFeesAndTax(),                            # 4
-        CreateAuditTrailEntry(),                          # 5
-        DebitSourceAccount(fail=fail_at == 6),            # 6
-        CreditDestinationAccount(),                       # 7
-        SettleWithClearingHouse(),                        # 8
-        UpdateLedgerBalances(),                           # 9
-        SendNotifications(),                              # 10
+        ValidateTransferRequest(),  # 1
+        ReserveSourceFunds(),  # 2
+        FetchExchangeRate(),  # 3
+        CalculateFeesAndTax(),  # 4
+        CreateAuditTrailEntry(),  # 5
+        DebitSourceAccount(fail=fail_at == 6),  # 6
+        CreditDestinationAccount(),  # 7
+        SettleWithClearingHouse(),  # 8
+        UpdateLedgerBalances(),  # 9
+        SendNotifications(),  # 10
     ]
 
 
@@ -276,12 +292,17 @@ async def run_transfer(
     logger.info("=" * 60)
     if result.succeeded:
         logger.info("✅  Transfer %s COMPLETED", transfer_id)
-        logger.info("    Net deposited : %s %s",
-                    result.context.get("net_dest_amount"), dest_currency)
+        logger.info(
+            "    Net deposited : %s %s",
+            result.context.get("net_dest_amount"),
+            dest_currency,
+        )
         logger.info("    Settlement    : %s", result.context.get("settlement_ref"))
         logger.info("    Ledger batch  : %s", result.context.get("ledger_batch_id"))
     else:
-        logger.warning("❌  Transfer %s FAILED (status=%s)", transfer_id, result.status.value)
+        logger.warning(
+            "❌  Transfer %s FAILED (status=%s)", transfer_id, result.status.value
+        )
         logger.warning("    Failed at step : %s", result.failure_step)
         logger.warning("    Reason         : %s", result.failure_reason)
         if result.compensation_errors:
@@ -309,8 +330,12 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Financial Transfer Saga demo")
-    parser.add_argument("--fail-at", type=int, default=None,
-                        help="Force failure at step N (1–10) to demo rollback")
+    parser.add_argument(
+        "--fail-at",
+        type=int,
+        default=None,
+        help="Force failure at step N (1–10) to demo rollback",
+    )
     parser.add_argument("--amount", type=float, default=5000.0)
     args = parser.parse_args()
 

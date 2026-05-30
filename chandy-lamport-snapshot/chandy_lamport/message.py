@@ -1,4 +1,5 @@
 """Message types for the distributed pipeline."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

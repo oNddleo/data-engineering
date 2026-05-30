@@ -29,6 +29,7 @@ Recovery:
     messages in order.  Source nodes resume emission from their checkpointed
     sequence number + 1.
 """
+
 from __future__ import annotations
 
 import copy
@@ -62,7 +63,7 @@ class Node:
         self._state: Any = None
         self._state_lock = threading.Lock()
 
-        self.in_channels: Dict[str, Channel] = {}   # channel.name → Channel
+        self.in_channels: Dict[str, Channel] = {}  # channel.name → Channel
         self.out_channels: List[Channel] = []
 
         # Per-snapshot bookkeeping
@@ -220,7 +221,7 @@ class Node:
         if output is not None:
             out_msg = DataMessage(
                 content=output,
-                msg_id=msg.msg_id,        # preserve ID for end-to-end tracing
+                msg_id=msg.msg_id,  # preserve ID for end-to-end tracing
                 origin_seq=msg.origin_seq,
                 sender_id=self.node_id,
             )
@@ -324,7 +325,9 @@ class TransformNode(Node):
 class SlowTransformNode(TransformNode):
     """TransformNode with artificial per-message latency (demo purposes)."""
 
-    def __init__(self, node_id: str, fn: Callable[[Any], Any], delay: float = 0.1) -> None:
+    def __init__(
+        self, node_id: str, fn: Callable[[Any], Any], delay: float = 0.1
+    ) -> None:
         super().__init__(node_id, fn)
         self._delay = delay
 
@@ -379,17 +382,18 @@ class SinkNode(Node):
 
     def __init__(self, node_id: str) -> None:
         super().__init__(node_id)
-        self._results: List[Any] = []           # thread-safe via state_lock
+        self._results: List[Any] = []  # thread-safe via state_lock
         self._origin_seqs: List[int] = []
 
     def init_state(self) -> Any:
         return {"received_seqs": [], "count": 0}
 
     def process(self, content: Any, state: Any) -> Tuple[Any, Any]:
-        state["received_seqs"].append(content.get("origin_seq", -1)
-                                      if isinstance(content, dict) else -1)
+        state["received_seqs"].append(
+            content.get("origin_seq", -1) if isinstance(content, dict) else -1
+        )
         state["count"] += 1
-        return None, state   # terminal; nothing to forward
+        return None, state  # terminal; nothing to forward
 
     def _handle_data(self, msg: DataMessage) -> None:
         if msg.msg_id in self._seen:

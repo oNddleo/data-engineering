@@ -25,7 +25,10 @@ from saga.step import StepStatus
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_record(saga_id: str = "test-1", status: SagaStatus = SagaStatus.RUNNING) -> SagaRecord:
+
+def _make_record(
+    saga_id: str = "test-1", status: SagaStatus = SagaStatus.RUNNING
+) -> SagaRecord:
     return SagaRecord(
         saga_id=saga_id,
         saga_type="unit_test",
@@ -41,6 +44,7 @@ def _make_record(saga_id: str = "test-1", status: SagaStatus = SagaStatus.RUNNIN
 # ---------------------------------------------------------------------------
 # Basic save / load
 # ---------------------------------------------------------------------------
+
 
 def test_save_and_load_round_trip() -> None:
     store = SagaStore()
@@ -97,6 +101,7 @@ def test_updated_at_advances_on_second_save() -> None:
 # Nullable / optional fields
 # ---------------------------------------------------------------------------
 
+
 def test_failure_fields_saved_and_loaded() -> None:
     store = SagaStore()
     rec = _make_record(status=SagaStatus.COMPENSATED)
@@ -129,6 +134,7 @@ def test_null_optional_fields_round_trip() -> None:
 # list_by_status
 # ---------------------------------------------------------------------------
 
+
 def test_list_by_status_returns_matching_records() -> None:
     store = SagaStore()
     r1 = _make_record("s1", SagaStatus.RUNNING)
@@ -152,6 +158,7 @@ def test_list_by_status_empty_when_none_match() -> None:
 # list_by_type
 # ---------------------------------------------------------------------------
 
+
 def test_list_by_type_filters_correctly() -> None:
     store = SagaStore()
 
@@ -172,6 +179,7 @@ def test_list_by_type_filters_correctly() -> None:
 # ---------------------------------------------------------------------------
 # Complex context / step_records serialisation
 # ---------------------------------------------------------------------------
+
 
 def test_nested_context_survives_serialisation() -> None:
     store = SagaStore()
@@ -217,6 +225,7 @@ def test_step_records_with_full_fields_survive() -> None:
 # ---------------------------------------------------------------------------
 # File-based store
 # ---------------------------------------------------------------------------
+
 
 def test_file_based_store_persists_across_reopen() -> None:
     with tempfile.TemporaryDirectory() as tmp:

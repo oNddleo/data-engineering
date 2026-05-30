@@ -1,4 +1,5 @@
 """Thread-safe FIFO channel with Chandy-Lamport recording support."""
+
 from __future__ import annotations
 
 import threading
