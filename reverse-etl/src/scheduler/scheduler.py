@@ -1,6 +1,6 @@
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
-from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.schedulers.background import BackgroundScheduler  # type: ignore[import-not-found]
+from apscheduler.triggers.cron import CronTrigger  # type: ignore[import-not-found]
+from apscheduler.triggers.interval import IntervalTrigger  # type: ignore[import-not-found]
 from ..models import PipelineConfig
 from ..pipeline import run_pipeline
 from ..logger import get_logger
@@ -52,7 +52,7 @@ class PipelineScheduler:
         self._scheduler.shutdown(wait=True)
         logger.info("Scheduler stopped")
 
-    def list_jobs(self) -> list[dict]:
+    def list_jobs(self) -> list[dict[str, str]]:
         return [
             {
                 "id": job.id,

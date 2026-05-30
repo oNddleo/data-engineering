@@ -17,7 +17,7 @@ from typing import Any, List, Optional, Tuple
 @dataclass
 class _Node:
     key: int
-    values: list = field(default_factory=list)
+    values: list[Any] = field(default_factory=list)
     left: Optional[_Node] = field(default=None, repr=False)
     right: Optional[_Node] = field(default=None, repr=False)
     height: int = 1
@@ -43,6 +43,7 @@ def _bf(n: _Node) -> int:
 
 def _rot_r(y: _Node) -> _Node:
     x = y.left
+    assert x is not None
     y.left = x.right
     x.right = y
     _upd(y)
@@ -52,6 +53,7 @@ def _rot_r(y: _Node) -> _Node:
 
 def _rot_l(x: _Node) -> _Node:
     y = x.right
+    assert y is not None
     x.right = y.left
     y.left = x
     _upd(x)
@@ -62,10 +64,12 @@ def _rot_l(x: _Node) -> _Node:
 def _balance(n: _Node) -> _Node:
     _upd(n)
     if _bf(n) > 1:
+        assert n.left is not None
         if _bf(n.left) < 0:
             n.left = _rot_l(n.left)
         return _rot_r(n)
     if _bf(n) < -1:
+        assert n.right is not None
         if _bf(n.right) > 0:
             n.right = _rot_r(n.right)
         return _rot_l(n)
@@ -149,7 +153,7 @@ def _succ(node: Optional[_Node], key: int) -> Optional[_Node]:
     return best
 
 
-def _range(node: Optional[_Node], lo: int, hi: int, out: list) -> None:
+def _range(node: Optional[_Node], lo: int, hi: int, out: list[Tuple[int, list[Any]]]) -> None:
     if node is None:
         return
     if node.key > lo:
@@ -206,19 +210,19 @@ class IntervalTree:
         """Remove the first occurrence of *value* under *key*.  O(log n)."""
         self._root = _delete(self._root, key, value)
 
-    def predecessor(self, key: int) -> Optional[Tuple[int, list]]:
+    def predecessor(self, key: int) -> Optional[Tuple[int, list[Any]]]:
         """Return (k, values) for the largest stored key ≤ *key*, or None."""
         n = _pred(self._root, key)
         return (n.key, n.values) if n else None
 
-    def successor(self, key: int) -> Optional[Tuple[int, list]]:
+    def successor(self, key: int) -> Optional[Tuple[int, list[Any]]]:
         """Return (k, values) for the smallest stored key ≥ *key*, or None."""
         n = _succ(self._root, key)
         return (n.key, n.values) if n else None
 
-    def range_query(self, lo: int, hi: int) -> List[Tuple[int, list]]:
+    def range_query(self, lo: int, hi: int) -> List[Tuple[int, list[Any]]]:
         """Return all (key, values) pairs with lo ≤ key ≤ hi, sorted by key."""
-        out: list = []
+        out: list[Tuple[int, list[Any]]] = []
         _range(self._root, lo, hi, out)
         return out
 

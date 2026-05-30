@@ -90,7 +90,7 @@ def schedule_cmd(config_dir: str) -> None:
     scheduler.register_all(pipelines)
     scheduler.start()
 
-    def _shutdown(sig, frame):
+    def _shutdown(sig: int, frame: object) -> None:
         console.print("\n[yellow]Shutting down scheduler...[/yellow]")
         scheduler.stop()
         sys.exit(0)

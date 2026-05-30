@@ -1,5 +1,5 @@
 from pathlib import Path
-import yaml
+import yaml  # type: ignore[import-untyped]
 from .models import PipelineConfig, RunResult
 from .sources import SOURCE_REGISTRY
 from .destinations import DESTINATION_REGISTRY

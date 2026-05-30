@@ -12,9 +12,9 @@ class BigQuerySource(BaseSource):
         self._project = params.get("project", settings.bigquery_project)
         self._credentials_file = params.get("credentials_file", settings.bigquery_credentials_file)
 
-    def _get_client(self):
-        from google.cloud import bigquery
-        from google.oauth2 import service_account
+    def _get_client(self) -> Any:
+        from google.cloud import bigquery  # type: ignore[import-untyped]
+        from google.oauth2 import service_account  # type: ignore[import-untyped]
 
         if self._credentials_file:
             creds = service_account.Credentials.from_service_account_file(

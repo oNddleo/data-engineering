@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, cast
 
 from .event import Event, JoinResult, STREAM_LEFT
 from .interval_tree import IntervalTree
@@ -146,7 +146,7 @@ class AsOfJoinEngine:
         if ts < left_time - self.lookback_window:
             return None
         # Among events sharing the same timestamp take the most recently inserted one.
-        return events[-1]
+        return cast(Event, events[-1])
 
     # ------------------------------------------------------------------
     # Right (build) stream

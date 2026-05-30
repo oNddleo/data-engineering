@@ -17,7 +17,7 @@ class HubSpotDestination(BaseDestination):
     """
 
     def __init__(self, params: dict[str, Any]) -> None:
-        import hubspot  # lazy import — optional dependency
+        import hubspot  # type: ignore[import-not-found]  # lazy import — optional dependency
         super().__init__(params)
         token = params.get("access_token", settings.hubspot_access_token)
         self._client = hubspot.Client.create(access_token=token)
