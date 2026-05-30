@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 
-import aiosqlite
+import aiosqlite  # type: ignore[import-not-found]
 
 from .models import CompatibilityMode, MigrationScript, MigrationStep, SchemaType, SchemaVersion, SubjectConfig
 
@@ -167,7 +167,7 @@ class Storage:
             "DELETE FROM schema_versions WHERE subject = ? AND version = ?", (subject, version)
         )
         await self.db.commit()
-        return cur.rowcount > 0
+        return bool(cur.rowcount > 0)
 
     def _row_to_schema_version(self, row: aiosqlite.Row) -> SchemaVersion:
         return SchemaVersion(
