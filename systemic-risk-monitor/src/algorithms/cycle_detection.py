@@ -21,9 +21,9 @@ log = logging.getLogger(__name__)
 @dataclass
 class Cycle:
     nodes: list[str]
-    total_exposure: float   # sum of edge weights around the cycle ($M)
-    min_edge: float         # bottleneck — smallest single exposure in cycle
-    risk_score: float       # normalized [0, 1]
+    total_exposure: float  # sum of edge weights around the cycle ($M)
+    min_edge: float  # bottleneck — smallest single exposure in cycle
+    risk_score: float  # normalized [0, 1]
 
 
 def build_digraph(edges: list[dict]) -> nx.DiGraph:

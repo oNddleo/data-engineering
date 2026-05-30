@@ -60,7 +60,6 @@ def test_re_encrypt_roundtrip(engine, kms_client, sample_row):
     assert decrypted["ssn"] == "123-45-6789"
 
     # Cannot decrypt updated record with old CMK
-    from cryptography.exceptions import InvalidTag
     with pytest.raises(Exception):
         engine.decrypt_record(updated, old_cmk)
 
@@ -88,6 +87,7 @@ def test_tampered_ciphertext_rejected(engine, kms_client, sample_row):
 
     # Flip a byte in the SSN ciphertext
     import base64
+
     ct_bytes = bytearray(base64.b64decode(record.encrypted_columns["ssn"]["ct"]))
     ct_bytes[5] ^= 0xFF
     record.encrypted_columns["ssn"]["ct"] = base64.b64encode(bytes(ct_bytes)).decode()

@@ -5,7 +5,10 @@ import pytest
 
 def _register_with_records(pipeline, customer_id, n=3):
     pipeline.register_customer(customer_id)
-    rows = [{"ssn": f"999-00-{i:04d}", "email": f"user{i}@delete.me", "product_id": f"p{i}"} for i in range(n)]
+    rows = [
+        {"ssn": f"999-00-{i:04d}", "email": f"user{i}@delete.me", "product_id": f"p{i}"}
+        for i in range(n)
+    ]
     return pipeline.ingest_batch(customer_id, rows)
 
 
@@ -19,6 +22,7 @@ def test_rtbf_makes_data_unreadable(pipeline, rtbf_executor):
 
     # Attempting to read now raises
     from src.pipeline.ingest import CustomerForgottenError
+
     with pytest.raises(CustomerForgottenError):
         pipeline.read("cust_forget", record_ids[0])
 
@@ -37,6 +41,7 @@ def test_rtbf_physical_deletion(pipeline, rtbf_executor, store):
 
 def test_rtbf_audit_log_written(pipeline, rtbf_executor, tmp_path):
     import json
+
     _register_with_records(pipeline, "cust_audit")
 
     rtbf_executor.execute("cust_audit")

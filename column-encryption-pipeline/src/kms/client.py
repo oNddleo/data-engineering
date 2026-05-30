@@ -2,11 +2,10 @@
 KMS client facade — routes to LocalKMS or real AWS KMS based on config.
 """
 
-from typing import Optional
 from ..config import get_config
 from .local_kms import LocalKMS
 
-_local_kms_instance: Optional[LocalKMS] = None
+_local_kms_instance: LocalKMS | None = None
 
 
 def _get_local_kms() -> LocalKMS:
@@ -20,8 +19,9 @@ def _get_local_kms() -> LocalKMS:
     return _local_kms_instance
 
 
-def _get_aws_kms():
+def _get_aws_kms() -> object:
     import boto3
+
     cfg = get_config()
     kwargs = dict(region_name=cfg.aws_region)
     if cfg.kms_endpoint_url:
@@ -40,7 +40,7 @@ class KMSClient:
     In aws mode wraps boto3 KMS using the same method signatures.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         cfg = get_config()
         self._mode = cfg.kms_mode
 
@@ -96,10 +96,14 @@ class KMSClient:
         resp = _get_aws_kms().decrypt(CiphertextBlob=ciphertext_blob, KeyId=key_id)
         return resp["Plaintext"]
 
-    def re_encrypt_data_key(self, ciphertext_blob: bytes, source_key_id: str, dest_key_id: str) -> bytes:
+    def re_encrypt_data_key(
+        self, ciphertext_blob: bytes, source_key_id: str, dest_key_id: str
+    ) -> bytes:
         """Re-encrypts DEK from source CMK to dest CMK without exposing plaintext to caller."""
         if self._mode == "local":
-            return _get_local_kms().re_encrypt_data_key(ciphertext_blob, source_key_id, dest_key_id)
+            return _get_local_kms().re_encrypt_data_key(
+                ciphertext_blob, source_key_id, dest_key_id
+            )
         resp = _get_aws_kms().re_encrypt(
             CiphertextBlob=ciphertext_blob,
             SourceKeyId=source_key_id,

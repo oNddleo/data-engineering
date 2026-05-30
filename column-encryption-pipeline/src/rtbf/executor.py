@@ -18,7 +18,6 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 from ..config import get_config
 from ..kms.client import KMSClient
@@ -33,7 +32,7 @@ class RTBFResult:
     customer_id: str
     executed_at: str
     keys_deleted: list[str]
-    records_deleted: int        # 0 if physical deletion was not requested
+    records_deleted: int  # 0 if physical deletion was not requested
     success: bool
     errors: list[str] = field(default_factory=list)
 
@@ -65,8 +64,8 @@ class RTBFExecutor:
         kms_client: KMSClient | None = None,
         registry: KeyRegistry | None = None,
         store: RecordStore | None = None,
-        audit_log_path: Optional[str] = None,
-    ):
+        audit_log_path: str | None = None,
+    ) -> None:
         cfg = get_config()
         self._kms = kms_client or KMSClient()
         self._registry = registry or KeyRegistry(cfg.key_registry_path)
@@ -109,7 +108,9 @@ class RTBFExecutor:
             )
 
         if customer.forgotten:
-            logger.warning("RTBF already executed for %s at %s", customer_id, customer.forgotten_at)
+            logger.warning(
+                "RTBF already executed for %s at %s", customer_id, customer.forgotten_at
+            )
             return RTBFResult(
                 customer_id=customer_id,
                 executed_at=executed_at,
@@ -128,7 +129,9 @@ class RTBFExecutor:
                     keys_deleted.append(cmk_id)
                     logger.info(
                         "RTBF: deleted CMK %s (version %d) for customer %s",
-                        cmk_id, version.version, customer_id,
+                        cmk_id,
+                        version.version,
+                        customer_id,
                     )
                 except Exception as exc:
                     msg = f"Failed to delete CMK {cmk_id}: {exc}"
@@ -143,7 +146,9 @@ class RTBFExecutor:
         if delete_records:
             try:
                 records_deleted = self._store.delete_all_records(customer_id)
-                logger.info("RTBF: deleted %d S3 objects for customer %s", records_deleted, customer_id)
+                logger.info(
+                    "RTBF: deleted %d S3 objects for customer %s", records_deleted, customer_id
+                )
             except Exception as exc:
                 msg = f"Failed to delete S3 objects: {exc}"
                 errors.append(msg)
@@ -187,10 +192,24 @@ class RTBFExecutor:
                 erased = state.lower() in ("deleted", "pendingdeletion")
                 if not erased:
                     all_erased = False
-                key_states.append({"cmk_id": version.cmk_id, "version": version.version, "state": state, "erased": erased})
+                key_states.append(
+                    {
+                        "cmk_id": version.cmk_id,
+                        "version": version.version,
+                        "state": state,
+                        "erased": erased,
+                    }
+                )
             except Exception:
                 # Key not found = effectively deleted
-                key_states.append({"cmk_id": version.cmk_id, "version": version.version, "state": "not_found", "erased": True})
+                key_states.append(
+                    {
+                        "cmk_id": version.cmk_id,
+                        "version": version.version,
+                        "state": "not_found",
+                        "erased": True,
+                    }
+                )
 
         return {
             "verified": all_erased,

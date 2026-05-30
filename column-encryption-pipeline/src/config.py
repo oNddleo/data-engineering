@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass, field
-from typing import Optional
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,13 +16,9 @@ class Config:
     local_kms_master_key_path: str = field(
         default_factory=lambda: os.getenv("LOCAL_KMS_MASTER_KEY_PATH", "./data/master.key")
     )
-    kms_endpoint_url: Optional[str] = field(
-        default_factory=lambda: os.getenv("KMS_ENDPOINT_URL")
-    )
+    kms_endpoint_url: str | None = field(default_factory=lambda: os.getenv("KMS_ENDPOINT_URL"))
     aws_region: str = field(default_factory=lambda: os.getenv("AWS_REGION", "us-east-1"))
-    aws_access_key_id: str = field(
-        default_factory=lambda: os.getenv("AWS_ACCESS_KEY_ID", "test")
-    )
+    aws_access_key_id: str = field(default_factory=lambda: os.getenv("AWS_ACCESS_KEY_ID", "test"))
     aws_secret_access_key: str = field(
         default_factory=lambda: os.getenv("AWS_SECRET_ACCESS_KEY", "test")
     )
@@ -32,12 +28,8 @@ class Config:
     local_storage_path: str = field(
         default_factory=lambda: os.getenv("LOCAL_STORAGE_PATH", "./data/records")
     )
-    s3_endpoint_url: Optional[str] = field(
-        default_factory=lambda: os.getenv("S3_ENDPOINT_URL")
-    )
-    s3_bucket: str = field(
-        default_factory=lambda: os.getenv("S3_BUCKET", "encrypted-pii-records")
-    )
+    s3_endpoint_url: str | None = field(default_factory=lambda: os.getenv("S3_ENDPOINT_URL"))
+    s3_bucket: str = field(default_factory=lambda: os.getenv("S3_BUCKET", "encrypted-pii-records"))
 
     # Key registry
     key_registry_path: str = field(
@@ -53,7 +45,7 @@ class Config:
     )
 
 
-_config: Optional[Config] = None
+_config: Config | None = None
 
 
 def get_config() -> Config:

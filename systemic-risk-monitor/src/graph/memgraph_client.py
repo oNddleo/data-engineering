@@ -13,10 +13,8 @@ is maintained as a materialized view updated on each ingest.
 
 import asyncio
 import logging
-from contextlib import asynccontextmanager
-from typing import Any
 
-from neo4j import AsyncGraphDatabase, AsyncDriver, AsyncSession
+from neo4j import AsyncDriver, AsyncGraphDatabase
 
 from src.config import settings
 from src.generator.transaction_generator import Institution, Transaction
@@ -25,18 +23,20 @@ log = logging.getLogger(__name__)
 
 
 class MemgraphClient:
-    def __init__(self):
+    def __init__(self) -> None:
         uri = f"bolt://{settings.memgraph_host}:{settings.memgraph_port}"
-        self._driver: AsyncDriver = AsyncGraphDatabase.driver(
-            uri, auth=("", ""), encrypted=False
-        )
+        self._driver: AsyncDriver = AsyncGraphDatabase.driver(uri, auth=("", ""), encrypted=False)
 
     async def verify_connectivity(self, retries: int = 10, delay: float = 3.0) -> None:
         for attempt in range(retries):
             try:
                 async with self._driver.session() as session:
                     await session.run("RETURN 1")
-                log.info("Connected to Memgraph at %s:%s", settings.memgraph_host, settings.memgraph_port)
+                log.info(
+                    "Connected to Memgraph at %s:%s",
+                    settings.memgraph_host,
+                    settings.memgraph_port,
+                )
                 return
             except Exception as exc:
                 log.warning("Memgraph not ready (attempt %d/%d): %s", attempt + 1, retries, exc)
@@ -46,12 +46,8 @@ class MemgraphClient:
     async def setup_schema(self) -> None:
         """Create indexes and constraints for the interbank graph."""
         async with self._driver.session() as session:
-            await session.run(
-                "CREATE INDEX ON :Institution(id);"
-            )
-            await session.run(
-                "CREATE INDEX ON :Institution(tier);"
-            )
+            await session.run("CREATE INDEX ON :Institution(id);")
+            await session.run("CREATE INDEX ON :Institution(tier);")
         log.info("Schema indexes created")
 
     async def upsert_institution(self, inst: Institution) -> None:
@@ -171,6 +167,7 @@ class MemgraphClient:
     async def prune_old_transfers(self, max_age_seconds: int = 3600) -> int:
         """Remove raw TRANSFERS edges older than max_age_seconds to keep the graph lean."""
         import time
+
         cutoff = time.time() - max_age_seconds
         async with self._driver.session() as session:
             result = await session.run(

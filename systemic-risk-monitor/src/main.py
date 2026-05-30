@@ -21,21 +21,20 @@ Architecture
 
 import asyncio
 import logging
-import sys
 import time
 from typing import Any
 
 from rich.console import Console
 from rich.logging import RichHandler
 
+import src.api.server as api_server
+from src.alerts.alert_engine import Alert, AlertEngine, Severity
+from src.algorithms.centrality import compute_concentration, compute_node_metrics
+from src.algorithms.contagion import worst_case_cascade
+from src.algorithms.cycle_detection import detect_cycles
 from src.config import settings
 from src.generator.transaction_generator import InstitutionRegistry, TransactionGenerator
 from src.graph.memgraph_client import MemgraphClient
-from src.algorithms.cycle_detection import detect_cycles
-from src.algorithms.centrality import compute_node_metrics, compute_concentration
-from src.algorithms.contagion import worst_case_cascade
-from src.alerts.alert_engine import AlertEngine, Alert, Severity
-import src.api.server as api_server
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level),
@@ -46,8 +45,8 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 console = Console()
 
-RISK_ANALYSIS_INTERVAL = 5.0   # seconds between full graph analyses
-PRUNE_INTERVAL = 300.0         # seconds between TRANSFERS edge pruning
+RISK_ANALYSIS_INTERVAL = 5.0  # seconds between full graph analyses
+PRUNE_INTERVAL = 300.0  # seconds between TRANSFERS edge pruning
 
 
 async def ingest_loop(
@@ -159,7 +158,6 @@ def _log_summary(metrics: dict, cycles: list) -> None:
     n_cycles = len(cycles)
     conc = metrics["concentration"]
     cascade = metrics["worst_cascade"]
-    worst = metrics["recent_alerts"]
 
     severity_counts: dict[str, int] = {}
     for a in metrics["recent_alerts"]:
@@ -202,16 +200,14 @@ async def main() -> None:
     alert_engine = AlertEngine()
     state["alert_engine"] = alert_engine
 
-    def _console_alert(alert: Alert):
+    def _console_alert(alert: Alert) -> None:
         color = {
             Severity.CRITICAL: "bold red",
             Severity.HIGH: "red",
             Severity.MEDIUM: "yellow",
             Severity.INFO: "blue",
         }.get(alert.severity, "white")
-        console.print(
-            f"[{color}][{alert.severity}][/{color}] [{alert.category}] {alert.title}"
-        )
+        console.print(f"[{color}][{alert.severity}][/{color}] [{alert.category}] {alert.title}")
 
     alert_engine.subscribe(_console_alert)
 
@@ -229,6 +225,7 @@ async def main() -> None:
 
     # ---- API server in a thread (uvicorn is sync-friendly) ----
     import threading
+
     api_thread = threading.Thread(
         target=api_server.start,
         args=(state,),
