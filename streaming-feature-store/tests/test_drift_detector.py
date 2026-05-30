@@ -1,7 +1,6 @@
 """Tests for the drift detection engine."""
-import numpy as np
-import pytest
 
+import numpy as np
 from feature_store.drift_detector import DriftDetector, _psi
 from feature_store.registry import FeatureType
 
@@ -32,12 +31,14 @@ class TestPSI:
 class TestDriftDetector:
     def _make_continuous_training(self, n=2000, mean=0.0, std=1.0):
         import pandas as pd
+
         rng = np.random.default_rng(0)
         return pd.DataFrame({"feat_a": rng.normal(mean, std, n)})
 
     def test_no_drift_identical(self):
         detector = make_detector()
         import pandas as pd
+
         rng = np.random.default_rng(1)
         training_df = pd.DataFrame({"feat_a": rng.normal(0, 1, 2000)})
         production_vals = {"feat_a": rng.normal(0, 1, 1000).tolist()}
@@ -48,6 +49,7 @@ class TestDriftDetector:
     def test_drift_detected_large_shift(self):
         detector = make_detector()
         import pandas as pd
+
         rng = np.random.default_rng(2)
         training_df = pd.DataFrame({"feat_a": rng.normal(0, 1, 2000)})
         # Production has severely shifted distribution
@@ -59,6 +61,7 @@ class TestDriftDetector:
     def test_categorical_no_drift(self):
         detector = make_detector()
         import pandas as pd
+
         cats = ["a", "b", "c", "d"]
         rng = np.random.default_rng(3)
         training_vals = rng.choice(cats, 2000, p=[0.4, 0.3, 0.2, 0.1]).tolist()
@@ -74,6 +77,7 @@ class TestDriftDetector:
     def test_categorical_drift_detected(self):
         detector = make_detector()
         import pandas as pd
+
         cats = ["a", "b", "c", "d"]
         rng = np.random.default_rng(4)
         training_vals = rng.choice(cats, 2000, p=[0.4, 0.3, 0.2, 0.1]).tolist()
@@ -90,6 +94,7 @@ class TestDriftDetector:
     def test_insufficient_production_samples_skipped(self):
         detector = make_detector()
         import pandas as pd
+
         training_df = pd.DataFrame({"feat_a": np.random.normal(0, 1, 2000)})
         production_vals = {"feat_a": [1.0, 2.0]}  # too few samples
         report = detector.compare(training_df, production_vals, {"feat_a": FeatureType.CONTINUOUS})
@@ -98,7 +103,9 @@ class TestDriftDetector:
     def test_report_to_dict_serialisable(self):
         detector = make_detector()
         import json
+
         import pandas as pd
+
         rng = np.random.default_rng(5)
         training_df = pd.DataFrame({"feat_a": rng.normal(0, 1, 500)})
         production_vals = {"feat_a": rng.normal(0, 1, 500).tolist()}

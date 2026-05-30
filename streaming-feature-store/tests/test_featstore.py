@@ -1,4 +1,5 @@
 """Comprehensive tests for the featstore package (40+ tests)."""
+
 from __future__ import annotations
 
 import json
@@ -327,7 +328,9 @@ class TestBatchProcessor:
         import random
 
         rng = random.Random(42)
-        records = [{"entity_id": f"u{i}", "ts": "t0", "v": rng.uniform(0, 100)} for i in range(200)]
+        records = [
+            {"entity_id": f"u{i}", "ts": "t0", "v": rng.uniform(0, 100)} for i in range(200)
+        ]
         inp = tmp_path / "in.jsonl"
         out = tmp_path / "out.jsonl"
         self._write_jsonl(inp, records)
@@ -517,7 +520,9 @@ class TestSkewDetector:
         stream = self._make_stats(stream_samples, name="f")
         detector = SkewDetector(ks_threshold=0.1, psi_threshold=0.2)
         with pytest.raises(SkewAlert) as exc_info:
-            detector.check(batch, stream, batch_samples=batch_samples, stream_samples=stream_samples)
+            detector.check(
+                batch, stream, batch_samples=batch_samples, stream_samples=stream_samples
+            )
         assert exc_info.value.report.ks_statistic > 0.1
 
     def test_skew_report_to_dict(self) -> None:

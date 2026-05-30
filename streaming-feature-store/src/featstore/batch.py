@@ -1,4 +1,5 @@
 """Batch processor: read JSONL records, apply transforms, write output JSONL."""
+
 from __future__ import annotations
 
 import json

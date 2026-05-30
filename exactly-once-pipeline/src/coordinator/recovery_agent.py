@@ -5,6 +5,7 @@ is exceeded).
 
 Run this as a sidecar to the main pipeline components.
 """
+
 from __future__ import annotations
 
 import time
@@ -39,15 +40,17 @@ class RecoveryAgent:
             step = saga["current_step"]
 
             if retries >= MAX_RETRIES:
-                log.error("recovery_agent.compensating",
-                          idempotency_key=key, retries=retries, step=step)
+                log.error(
+                    "recovery_agent.compensating", idempotency_key=key, retries=retries, step=step
+                )
                 coordinator.compensate(
                     key,
                     f"Exceeded max retries ({MAX_RETRIES}) at step {step}",
                 )
             else:
-                log.warning("recovery_agent.requeuing",
-                            idempotency_key=key, retries=retries, step=step)
+                log.warning(
+                    "recovery_agent.requeuing", idempotency_key=key, retries=retries, step=step
+                )
                 self._reset_outbox(key)
 
     def _reset_outbox(self, idempotency_key: str) -> None:

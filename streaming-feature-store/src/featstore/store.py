@@ -1,4 +1,5 @@
 """Online feature store with point-in-time correct lookups."""
+
 from __future__ import annotations
 
 import bisect

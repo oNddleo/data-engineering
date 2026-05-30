@@ -7,6 +7,7 @@ Usage:
     injector = FailureInjector(step="warehouse", rate=0.5) # 50 % fail
     injector.maybe_raise("kafka", idempotency_key)
 """
+
 from __future__ import annotations
 
 import random

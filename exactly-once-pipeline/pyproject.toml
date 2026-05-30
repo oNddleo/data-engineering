@@ -25,6 +25,9 @@ src = ["src"]
 select = ["E", "F", "I", "UP", "B", "TCH", "ANN"]
 ignore = ["ANN101", "ANN102", "ANN401"]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN", "S101"]
+
 [tool.mypy]
 strict = true
 files = ["src/exactlyonce"]

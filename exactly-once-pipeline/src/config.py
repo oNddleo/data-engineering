@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     outbox_max_retries: int = 5
 
     # Failure injection (for demo)
-    inject_failure_step: str = ""   # e.g. "kafka", "warehouse", "notification"
+    inject_failure_step: str = ""  # e.g. "kafka", "warehouse", "notification"
     inject_failure_rate: float = 0.3
 
 

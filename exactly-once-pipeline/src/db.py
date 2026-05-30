@@ -1,9 +1,13 @@
 """Postgres connection pool and typed query helpers."""
+
 from __future__ import annotations
 
 import json
 from contextlib import contextmanager
-from typing import Any, Generator
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 import psycopg2
 import psycopg2.extras

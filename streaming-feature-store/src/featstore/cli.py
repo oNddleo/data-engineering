@@ -1,4 +1,5 @@
 """CLI entry-point for featstore."""
+
 from __future__ import annotations
 
 import argparse
@@ -30,9 +31,7 @@ def _cmd_ingest(args: argparse.Namespace) -> int:
                 if not line:
                     continue
                 rec: dict[str, Any] = json.loads(line)
-                feature_cols = [
-                    k for k in rec if k not in (args.entity_col, args.ts_col)
-                ]
+                feature_cols = [k for k in rec if k not in (args.entity_col, args.ts_col)]
                 break
 
     registry = FeatureRegistry()
@@ -122,14 +121,9 @@ def _cmd_skew_check(args: argparse.Namespace) -> int:
             continue
         try:
             report = detector.check(batch_stats[feat], stream_stats[feat])
-            print(
-                f"  {feat}: KS={report.ks_statistic:.4f} PSI={report.psi:.4f} OK"
-            )
+            print(f"  {feat}: KS={report.ks_statistic:.4f} PSI={report.psi:.4f} OK")
         except SkewAlert as exc:
-            print(
-                f"  {feat}: KS={exc.report.ks_statistic:.4f} "
-                f"PSI={exc.report.psi:.4f} ALERT"
-            )
+            print(f"  {feat}: KS={exc.report.ks_statistic:.4f} " f"PSI={exc.report.psi:.4f} ALERT")
             exit_code = 2
     return exit_code
 

@@ -8,12 +8,13 @@ Recovery guarantee:
     transactional.id ensure the duplicate message is deduplicated by
     the broker, so consumers never see it twice.
 """
+
 from __future__ import annotations
 
 import json
 import signal
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
@@ -34,14 +35,16 @@ class OutboxPoller:
 
     # ── Kafka producer with transactions ──────────────────────────────
     def _make_producer(self) -> Producer:
-        return Producer({
-            "bootstrap.servers": settings.kafka_bootstrap_servers,
-            "transactional.id": settings.kafka_transactional_id,
-            "enable.idempotence": True,
-            "acks": "all",
-            "retries": 2147483647,
-            "max.in.flight.requests.per.connection": 5,
-        })
+        return Producer(
+            {
+                "bootstrap.servers": settings.kafka_bootstrap_servers,
+                "transactional.id": settings.kafka_transactional_id,
+                "enable.idempotence": True,
+                "acks": "all",
+                "retries": 2147483647,
+                "max.in.flight.requests.per.connection": 5,
+            }
+        )
 
     # ── Main loop ──────────────────────────────────────────────────────
     def start(self) -> None:
@@ -50,8 +53,7 @@ class OutboxPoller:
         signal.signal(signal.SIGINT, self._shutdown)
         signal.signal(signal.SIGTERM, self._shutdown)
 
-        log.info("outbox_poller.started",
-                 interval_ms=settings.outbox_poll_interval_ms)
+        log.info("outbox_poller.started", interval_ms=settings.outbox_poll_interval_ms)
 
         while self._running:
             try:
@@ -124,12 +126,15 @@ class OutboxPoller:
                 else:
                     payload = payload_str  # psycopg2 already parsed JSONB
 
-                message = json.dumps({
-                    "idempotency_key": idempotency_key,
-                    "event_type": event_type,
-                    "aggregate_id": aggregate_id,
-                    "payload": payload,
-                }, default=str)
+                message = json.dumps(
+                    {
+                        "idempotency_key": idempotency_key,
+                        "event_type": event_type,
+                        "aggregate_id": aggregate_id,
+                        "payload": payload,
+                    },
+                    default=str,
+                )
 
                 self._producer.produce(
                     topic=settings.kafka_payment_topic,
@@ -146,7 +151,7 @@ class OutboxPoller:
             # Mark as published inside the same outer Postgres transaction
             cur.execute(
                 "UPDATE outbox SET published_at = %s WHERE id = ANY(%s)",
-                (datetime.now(timezone.utc), published_ids),
+                (datetime.now(UTC), published_ids),
             )
             log.info("outbox_poller.published", count=len(published_ids))
 
@@ -156,9 +161,7 @@ class OutboxPoller:
             self._increment_retry(cur, [r[0] for r in rows], str(exc))
             raise
 
-    def _increment_retry(
-        self, cur: Any, ids: list[int], error: str
-    ) -> None:
+    def _increment_retry(self, cur: Any, ids: list[int], error: str) -> None:
         cur.execute(
             """
             UPDATE outbox
@@ -174,6 +177,9 @@ class OutboxPoller:
         if err:
             log.error("outbox_poller.delivery_failed", error=str(err))
         else:
-            log.debug("outbox_poller.delivered",
-                      topic=msg.topic(), partition=msg.partition(),
-                      offset=msg.offset())
+            log.debug(
+                "outbox_poller.delivered",
+                topic=msg.topic(),
+                partition=msg.partition(),
+                offset=msg.offset(),
+            )

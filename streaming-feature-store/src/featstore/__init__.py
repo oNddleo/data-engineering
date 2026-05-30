@@ -1,4 +1,5 @@
 """featstore — stdlib-only streaming feature store."""
+
 from __future__ import annotations
 
 from featstore.batch import BatchProcessor, DistributionStats

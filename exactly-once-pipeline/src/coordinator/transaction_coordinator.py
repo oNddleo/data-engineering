@@ -18,10 +18,9 @@ Saga state machine:
                   ↓
              COMPENSATING → (ledger reversed) → COMPENSATED
 """
+
 from __future__ import annotations
 
-import json
-from datetime import datetime, timezone
 from typing import Any
 
 import structlog
@@ -71,8 +70,9 @@ class TransactionCoordinator:
                 )
                 log.info("coordinator.saga_completed", idempotency_key=idempotency_key)
             else:
-                log.info("coordinator.step_advanced", step=step.value,
-                         idempotency_key=idempotency_key)
+                log.info(
+                    "coordinator.step_advanced", step=step.value, idempotency_key=idempotency_key
+                )
 
     # ── Failure recording ──────────────────────────────────────────────
     def record_failure(
@@ -96,9 +96,12 @@ class TransactionCoordinator:
                     """,
                     (error, idempotency_key),
                 )
-                log.error("coordinator.permanent_failure",
-                          step=step.value, idempotency_key=idempotency_key,
-                          error=error)
+                log.error(
+                    "coordinator.permanent_failure",
+                    step=step.value,
+                    idempotency_key=idempotency_key,
+                    error=error,
+                )
             else:
                 cur.execute(
                     """
@@ -109,9 +112,12 @@ class TransactionCoordinator:
                     """,
                     (error, idempotency_key),
                 )
-                log.warning("coordinator.transient_failure",
-                            step=step.value, idempotency_key=idempotency_key,
-                            error=error)
+                log.warning(
+                    "coordinator.transient_failure",
+                    step=step.value,
+                    idempotency_key=idempotency_key,
+                    error=error,
+                )
 
     # ── Compensation (rollback) ────────────────────────────────────────
     def compensate(self, idempotency_key: str, reason: str) -> None:
@@ -120,8 +126,7 @@ class TransactionCoordinator:
         In production this would debit/credit accounts; here we mark the
         ledger row as COMPENSATED and record the saga outcome.
         """
-        log.warning("coordinator.compensating",
-                    idempotency_key=idempotency_key, reason=reason)
+        log.warning("coordinator.compensating", idempotency_key=idempotency_key, reason=reason)
 
         with transaction() as cur:
             cur.execute(

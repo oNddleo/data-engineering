@@ -1,6 +1,7 @@
 """
 Tests for failure injection and recovery behaviour.
 """
+
 from __future__ import annotations
 
 from decimal import Decimal

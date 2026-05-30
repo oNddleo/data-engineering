@@ -1,4 +1,5 @@
 """Skew detection: KS statistic and PSI between batch and stream distributions."""
+
 from __future__ import annotations
 
 import math
@@ -125,9 +126,7 @@ class SkewDetector:
         else:
             # Approximate KS from distribution means / stds
             mean_diff = abs(batch_stats.mean - stream_stats.mean)
-            pooled_std = max(
-                (batch_stats.std + stream_stats.std) / 2.0, 1e-8
-            )
+            pooled_std = max((batch_stats.std + stream_stats.std) / 2.0, 1e-8)
             ks = min(mean_diff / pooled_std, 1.0)
 
         psi = _psi_from_histograms(
