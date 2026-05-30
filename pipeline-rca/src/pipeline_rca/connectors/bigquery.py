@@ -11,7 +11,7 @@ from pipeline_rca.models import MetricPoint
 class BigQueryConnector(BaseConnector):
     def __init__(self, project: str, dataset: str) -> None:
         try:
-            from google.cloud import bigquery  # type: ignore[import]
+            from google.cloud import bigquery
         except ImportError as exc:
             raise ImportError(
                 "Install the BigQuery extra: pip install 'pipeline-rca[bigquery]'"

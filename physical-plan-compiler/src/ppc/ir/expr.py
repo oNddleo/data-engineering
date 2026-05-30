@@ -125,7 +125,7 @@ class BinaryOp(Expr):
     right: Expr
 
     @cached_property
-    def dtype(self) -> DataType:  # type: ignore[override]
+    def dtype(self) -> DataType:
         if self.op in COMPARE_OPS or self.op in LOGIC_OPS:
             return BOOLEAN
         return promote(self.left.dtype, self.right.dtype)
@@ -152,7 +152,7 @@ class UnaryOp(Expr):
     operand: Expr
 
     @cached_property
-    def dtype(self) -> DataType:  # type: ignore[override]
+    def dtype(self) -> DataType:
         if self.op == "NOT":
             return BOOLEAN
         return self.operand.dtype
@@ -238,8 +238,8 @@ def expr_ne(self: Expr, other: object) -> BinaryOp:
     return BinaryOp(op="!=", left=self, right=other)
 
 
-Expr.eq = expr_eq
-Expr.ne = expr_ne
+Expr.eq = expr_eq  # type: ignore[attr-defined]
+Expr.ne = expr_ne  # type: ignore[attr-defined]
 
 
 def AND(left: Expr, right: Expr) -> BinaryOp:

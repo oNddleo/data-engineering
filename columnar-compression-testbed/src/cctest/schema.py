@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 
@@ -55,7 +55,7 @@ class SchemaDiff:
         return "\n".join(lines) if lines else "  (no changes)"
 
 
-def schema_from_arrays(columns: dict[str, np.ndarray]) -> dict[str, str]:
+def schema_from_arrays(columns: dict[str, np.ndarray[Any, np.dtype[Any]]]) -> dict[str, str]:
     return {name: str(arr.dtype) for name, arr in columns.items()}
 
 
@@ -87,7 +87,7 @@ class SchemaEvolutionTracker:
     def current(self) -> dict[str, str]:
         return dict(self._current)
 
-    def observe(self, columns: dict[str, np.ndarray], selector=None) -> SchemaDiff:
+    def observe(self, columns: dict[str, np.ndarray[Any, np.dtype[Any]]], selector: Any = None) -> SchemaDiff:
         """
         Register a new batch of columns.  If the schema changed, notify
         *selector* (an EncodingSelector) to evict stale codec choices.

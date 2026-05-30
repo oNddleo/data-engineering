@@ -1,6 +1,7 @@
 import logging
+from typing import Any
 
-import structlog
+import structlog  # type: ignore[import-not-found]
 
 
 def configure_logging(level: str = "INFO") -> None:
@@ -16,5 +17,5 @@ def configure_logging(level: str = "INFO") -> None:
     )
 
 
-def get_logger(name: str) -> structlog.BoundLogger:
+def get_logger(name: str) -> Any:
     return structlog.get_logger(name)

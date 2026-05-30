@@ -24,7 +24,7 @@ class RankIVM:
     """
 
     _partitions: dict[object, list[float]] = field(default_factory=dict)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def insert(self, partition: object, t: float) -> None:
         with self._lock:
@@ -56,7 +56,7 @@ class DenseRankIVM:
     """DENSE_RANK() OVER (PARTITION BY p ORDER BY t)."""
 
     _partitions: dict[object, list[float]] = field(default_factory=dict)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def insert(self, partition: object, t: float) -> None:
         with self._lock:

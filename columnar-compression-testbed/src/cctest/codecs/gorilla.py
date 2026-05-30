@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import struct
 
+from typing import Any
+
 import numpy as np
 
 from ._bits import BitReader, BitWriter
@@ -26,10 +28,10 @@ from .base import Codec, EncodedColumn
 class GorillaFloatCodec(Codec):
     name = "gorilla_float"
 
-    def supports_dtype(self, dtype: np.dtype) -> bool:
+    def supports_dtype(self, dtype: np.dtype[Any]) -> bool:
         return dtype.kind == "f"
 
-    def encode(self, data: np.ndarray) -> EncodedColumn:
+    def encode(self, data: np.ndarray[Any, np.dtype[Any]]) -> EncodedColumn:
         values = data.astype(np.float64)
         n = len(values)
         bw = BitWriter()
@@ -95,7 +97,7 @@ class GorillaFloatCodec(Codec):
             original_len=n,
         )
 
-    def decode(self, encoded: EncodedColumn) -> np.ndarray:
+    def decode(self, encoded: EncodedColumn) -> np.ndarray[Any, np.dtype[Any]]:
         br = BitReader(encoded.data)
         n = br.read_bits(32)
         if n == 0:
@@ -185,10 +187,10 @@ class GorillaDeltaCodec(Codec):
     """Delta-of-delta encoding for monotone integer columns (e.g. timestamps)."""
     name = "gorilla_delta"
 
-    def supports_dtype(self, dtype: np.dtype) -> bool:
+    def supports_dtype(self, dtype: np.dtype[Any]) -> bool:
         return dtype.kind in ("i", "u")
 
-    def encode(self, data: np.ndarray) -> EncodedColumn:
+    def encode(self, data: np.ndarray[Any, np.dtype[Any]]) -> EncodedColumn:
         values = data.astype(np.int64)
         n = len(values)
         bw = BitWriter()
@@ -223,7 +225,7 @@ class GorillaDeltaCodec(Codec):
             original_len=n,
         )
 
-    def decode(self, encoded: EncodedColumn) -> np.ndarray:
+    def decode(self, encoded: EncodedColumn) -> np.ndarray[Any, np.dtype[Any]]:
         br = BitReader(encoded.data)
         n = br.read_bits(32)
         if n == 0:

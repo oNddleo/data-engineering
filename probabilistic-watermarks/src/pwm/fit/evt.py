@@ -23,7 +23,7 @@ class POTFitter:
     burn_in: int = 200
     _exceedances: list[float] = field(default_factory=list)
     _seen: list[float] = field(default_factory=list)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
     _xi: float = 0.0                 # shape
     _sigma: float = 1.0              # scale
 

@@ -15,9 +15,9 @@ import uuid
 from pathlib import Path
 
 import duckdb
-import pyarrow as pa
-import pyarrow.compute as pc
-import pyarrow.parquet as pq
+import pyarrow as pa  # type: ignore[import-untyped]
+import pyarrow.compute as pc  # type: ignore[import-untyped]
+import pyarrow.parquet as pq  # type: ignore[import-untyped]
 
 from cow_mor_bench.data.generator import primary_key_for
 from cow_mor_bench.data.schemas import (

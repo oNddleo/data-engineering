@@ -10,16 +10,16 @@ from __future__ import annotations
 import time
 from typing import Any
 
-import msgpack
-import redis
-import redis.asyncio as aioredis
+import msgpack  # type: ignore[import-untyped]
+import redis  # type: ignore[import-not-found]
+import redis.asyncio as aioredis  # type: ignore[import-not-found]
 import structlog
 
 log = structlog.get_logger(__name__)
 
 # msgpack doesn't ship with feature_store, fallback to json bytes
 try:
-    import msgpack
+    import msgpack  # type: ignore[import-untyped]
     _USE_MSGPACK = True
 except ImportError:
     import json as _json

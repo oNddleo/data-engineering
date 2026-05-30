@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from typing import Literal
 
-import pyarrow as pa
-import pyarrow.compute as pc
+import pyarrow as pa  # type: ignore[import-untyped]
+import pyarrow.compute as pc  # type: ignore[import-untyped]
 
 from .catalog import Catalog
 from .expressions import ColumnRef

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
+from typing import Any
 
 from .config import HPAConfig
 from .models import ScalingAction
@@ -27,7 +28,7 @@ class HPAClient:
     #  Public API                                                          #
     # ------------------------------------------------------------------ #
 
-    def get_hpa(self, name: str, namespace: str | None = None) -> dict:
+    def get_hpa(self, name: str, namespace: str | None = None) -> dict[str, Any]:
         ns = namespace or self._cfg.namespace
         autoscaling = self._client.AutoscalingV2Api()
         hpa = autoscaling.read_namespaced_horizontal_pod_autoscaler(name, ns)
@@ -173,11 +174,11 @@ class HPAClient:
 
     def _current_min(self, hpa_name: str, namespace: str | None) -> int:
         try:
-            return self.get_hpa(hpa_name, namespace)["min_replicas"]
+            return int(self.get_hpa(hpa_name, namespace)["min_replicas"])
         except Exception:
             return 1
 
-    def _build_client(self):
+    def _build_client(self) -> Any:
         try:
             from kubernetes import client
             from kubernetes import config as k8s_config
@@ -196,7 +197,7 @@ class _StubK8sClient:
     """No-op stub used in testing / local dev without a real cluster."""
 
     class _FakeAPI:
-        def read_namespaced_horizontal_pod_autoscaler(self, name, ns):
+        def read_namespaced_horizontal_pod_autoscaler(self, name: str, ns: str) -> Any:
             from types import SimpleNamespace
             return SimpleNamespace(
                 metadata=SimpleNamespace(name=name, namespace=ns),
@@ -204,8 +205,8 @@ class _StubK8sClient:
                 status=SimpleNamespace(current_replicas=1, desired_replicas=1),
             )
 
-        def patch_namespaced_horizontal_pod_autoscaler(self, name, ns, body):
+        def patch_namespaced_horizontal_pod_autoscaler(self, name: str, ns: str, body: Any) -> None:
             logger.debug("STUB patch HPA %s/%s %s", ns, name, body)
 
-    def AutoscalingV2Api(self):
+    def AutoscalingV2Api(self) -> _FakeAPI:
         return self._FakeAPI()

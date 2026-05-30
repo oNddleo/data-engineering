@@ -49,7 +49,7 @@ class Schema:
     def of(cls, *columns: Column, rows: int | None = None) -> Schema:
         return cls(columns=tuple(columns), rows=rows)
 
-    def __iter__(self) -> Iterable[Column]:  # type: ignore[override]
+    def __iter__(self) -> Iterable[Column]:
         return iter(self.columns)
 
     def __len__(self) -> int:

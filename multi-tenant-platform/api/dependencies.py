@@ -6,8 +6,8 @@ from uuid import UUID
 
 import redis.asyncio as aioredis
 from fastapi import Depends, HTTPException, Request, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.api_keys import verify_api_key
 from core.config import settings

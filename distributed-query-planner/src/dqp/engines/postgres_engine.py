@@ -200,8 +200,8 @@ class PostgresEngine(EngineBase):
         if self._conn_string is None:
             raise RuntimeError("PostgresEngine requires a conn_string to execute scans")
         try:
-            import psycopg2
-            import psycopg2.extras
+            import psycopg2  # type: ignore[import-untyped]
+            import psycopg2.extras  # type: ignore[import-untyped]
         except ImportError as exc:
             raise ImportError(
                 "psycopg2-binary is required; install with: pip install psycopg2-binary"

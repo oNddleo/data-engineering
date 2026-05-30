@@ -1,7 +1,7 @@
 """In-memory table catalog backed by Apache Arrow Tables."""
 from __future__ import annotations
 
-import pyarrow as pa
+import pyarrow as pa  # type: ignore[import-untyped]
 from typing import Dict
 
 

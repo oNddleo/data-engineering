@@ -34,7 +34,7 @@ def create_app(manager: "StateBackendManager") -> FastAPI:
     # ------------------------------------------------------------------
 
     @app.get("/health", tags=["meta"])
-    async def health() -> dict:
+    async def health() -> dict[str, Any]:
         topo = manager.current_topology
         version = topo.version if topo else 0
         return {"status": "ok", "version": version}
@@ -44,14 +44,14 @@ def create_app(manager: "StateBackendManager") -> FastAPI:
     # ------------------------------------------------------------------
 
     @app.get("/topology", tags=["topology"])
-    async def get_topology() -> dict:
+    async def get_topology() -> dict[str, Any]:
         topo = manager.current_topology
         if topo is None:
             return {"version": 0, "operators": {}}
         return topo.to_dict()
 
     @app.get("/topology/migrations", tags=["topology"])
-    async def get_migrations() -> dict:
+    async def get_migrations() -> dict[str, Any]:
         migrator = manager.migrator
         if migrator is None:
             return {"active": None, "history": []}
@@ -87,7 +87,7 @@ def create_app(manager: "StateBackendManager") -> FastAPI:
         state_name: str,
         limit: int = Query(default=100, ge=1, le=10_000),
         cursor: str | None = Query(default=None),
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Paginate over record keys in the given state.
 
@@ -133,12 +133,12 @@ def create_app(manager: "StateBackendManager") -> FastAPI:
         state_name: str,
         limit: int = Query(default=100, ge=1, le=10_000),
         cursor: str | None = Query(default=None),
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Scan all entries in a state, returning decoded key-value pairs."""
         cf = _require_cf(manager, op_id, state_name)
         start_key = base64.b64decode(cursor) if cursor else None
 
-        entries: list[dict] = []
+        entries: list[dict[str, Any]] = []
         last_raw_k: bytes | None = None
 
         for raw_k, raw_v in manager.backend.scan(
@@ -175,7 +175,7 @@ def create_app(manager: "StateBackendManager") -> FastAPI:
         return {"entries": entries, "next_cursor": next_cursor}
 
     @app.get("/operators/{op_id}/{state_name}/{key}", tags=["state"])
-    async def get_state_entry(op_id: str, state_name: str, key: str) -> dict:
+    async def get_state_entry(op_id: str, state_name: str, key: str) -> dict[str, Any]:
         """
         Decode and return the current value for *key*.
 

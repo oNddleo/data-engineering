@@ -82,7 +82,7 @@ class PostgresSampler(SamplerBase):
 
     def __init__(self, conn_string: str) -> None:
         try:
-            import psycopg2  # noqa: F401
+            import psycopg2  # type: ignore[import-untyped]  # noqa: F401
         except ImportError as exc:
             raise ImportError(
                 "psycopg2-binary is required for PostgresSampler. "
@@ -91,8 +91,8 @@ class PostgresSampler(SamplerBase):
         self._conn_string = conn_string
 
     def sample(self, table_name: str, fraction: float) -> List[Dict[str, Any]]:
-        import psycopg2
-        import psycopg2.extras
+        import psycopg2  # type: ignore[import-untyped]
+        import psycopg2.extras  # type: ignore[import-untyped]
 
         pct = min(max(fraction * 100, 0.0001), 100.0)
         conn = psycopg2.connect(self._conn_string)

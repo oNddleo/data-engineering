@@ -139,7 +139,7 @@ def _extract_tables_from_sql(sql: str) -> list[str]:
 
 def _sqllineage_tables(sql: str) -> list[str]:
     """Use sqllineage for more accurate extraction when available."""
-    from sqllineage.runner import LineageRunner  # type: ignore[import]
+    from sqllineage.runner import LineageRunner
 
     runner = LineageRunner(sql)
     return [str(t) for t in runner.source_tables()]

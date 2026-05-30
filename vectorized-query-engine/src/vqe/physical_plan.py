@@ -16,8 +16,8 @@ import collections
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple
 
-import pyarrow as pa
-import pyarrow.compute as pc
+import pyarrow as pa  # type: ignore[import-untyped]
+import pyarrow.compute as pc  # type: ignore[import-untyped]
 
 from .catalog import Catalog
 from .expressions import AggExpr, ColumnRef, Expr

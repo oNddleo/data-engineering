@@ -16,7 +16,7 @@ class LognormalFitter:
     _n: int = 0
     _mu: float = 0.0
     _m2: float = 0.0  # sum of squared deviations from mean
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def observe(self, value: float) -> None:
         if value <= 0:

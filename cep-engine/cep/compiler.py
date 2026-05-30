@@ -29,7 +29,7 @@ import numpy as np
 from .pattern import Pattern, StepPredicate
 
 try:
-    import numba  # noqa: F401
+    import numba  # type: ignore[import-untyped]  # noqa: F401
     from numba import njit as _njit  # noqa: F401
 
     _NUMBA_AVAILABLE = True

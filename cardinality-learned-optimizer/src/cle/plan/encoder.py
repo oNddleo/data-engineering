@@ -4,7 +4,7 @@ from __future__ import annotations
 import math
 from typing import Optional
 
-import torch
+import torch  # type: ignore[import-not-found]
 from torch import Tensor
 
 from .node import PlanNode

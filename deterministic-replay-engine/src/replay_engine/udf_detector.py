@@ -124,4 +124,4 @@ class UDFDetector:
         try:
             return json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
         except (TypeError, ValueError):
-            return a == b
+            return bool(a == b)

@@ -26,11 +26,11 @@ def _normalize_type(t: Any) -> set[str]:
     return {"any"}
 
 
-def _get_required(schema: dict) -> set[str]:
+def _get_required(schema: dict[str, Any]) -> set[str]:
     return set(schema.get("required", []))
 
 
-def _get_properties(schema: dict) -> dict[str, Any]:
+def _get_properties(schema: dict[str, Any]) -> dict[str, Any]:
     return schema.get("properties", {})
 
 
@@ -55,8 +55,8 @@ class CompatibilityChecker:
 
     def check(
         self,
-        new_schema: dict,
-        old_schema: dict,
+        new_schema: dict[str, Any],
+        old_schema: dict[str, Any],
         mode: CompatibilityMode,
     ) -> CompatibilityResult:
         errors: list[CompatibilityError] = []
@@ -84,7 +84,7 @@ class CompatibilityChecker:
 
     # ── Backward: new reads old data ──────────────────────────────────────
 
-    def _check_backward(self, new: dict, old: dict) -> list[CompatibilityError]:
+    def _check_backward(self, new: dict[str, Any], old: dict[str, Any]) -> list[CompatibilityError]:
         """
         Rules for BACKWARD compatibility:
         - May add new OPTIONAL fields (with default)
@@ -123,7 +123,7 @@ class CompatibilityChecker:
 
     # ── Forward: old reads new data ───────────────────────────────────────
 
-    def _check_forward(self, new: dict, old: dict) -> list[CompatibilityError]:
+    def _check_forward(self, new: dict[str, Any], old: dict[str, Any]) -> list[CompatibilityError]:
         """
         Rules for FORWARD compatibility:
         - May remove optional fields (old consumers just won't see them in new data)
@@ -161,8 +161,8 @@ class CompatibilityChecker:
     def _check_type_compatible(
         self,
         field: str,
-        old_schema: dict,
-        new_schema: dict,
+        old_schema: dict[str, Any],
+        new_schema: dict[str, Any],
         direction: str,
     ) -> list[CompatibilityError]:
         errors: list[CompatibilityError] = []
@@ -236,7 +236,7 @@ class CompatibilityChecker:
 
 
 def check_compatibility(
-    new_schema: dict,
+    new_schema: dict[str, Any],
     existing_versions: list[SchemaVersion],
     mode: CompatibilityMode,
 ) -> CompatibilityResult:

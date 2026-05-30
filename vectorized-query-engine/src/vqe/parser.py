@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-import pyarrow as pa
+import pyarrow as pa  # type: ignore[import-untyped]
 import sqlglot
 import sqlglot.expressions as sge
 

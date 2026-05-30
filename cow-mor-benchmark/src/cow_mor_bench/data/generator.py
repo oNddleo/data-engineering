@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 
 import numpy as np
-import pyarrow as pa
+import pyarrow as pa  # type: ignore[import-untyped]
 
 
 _RNG = np.random.default_rng(42)

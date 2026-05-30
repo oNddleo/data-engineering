@@ -6,7 +6,7 @@ import struct
 import time
 from typing import Any
 
-import msgpack
+import msgpack  # type: ignore[import-untyped]
 
 # Tombstone marker written on explicit clear() calls.
 TOMBSTONE = b"\x00"

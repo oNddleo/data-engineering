@@ -22,7 +22,7 @@ class RowNumberIVM:
     """Per-partition rankings under incremental insert/delete."""
 
     _partitions: dict[object, list[tuple[float, object]]] = field(default_factory=dict)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def insert(
         self, partition: object, t: float, row_id: object

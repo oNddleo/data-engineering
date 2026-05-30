@@ -89,7 +89,7 @@ class TopologyDescriptor:
         )
         return added, removed, changed
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a JSON-compatible dict."""
         return {
             "version": self.version,
@@ -105,7 +105,7 @@ class TopologyDescriptor:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "TopologyDescriptor":
+    def from_dict(cls, data: dict[str, Any]) -> "TopologyDescriptor":
         """Deserialize from a dict produced by :meth:`to_dict`."""
         operators = {
             oid: OperatorDescriptor(

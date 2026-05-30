@@ -36,7 +36,7 @@ class TDigest:
     delta: float = 100.0
     _bins: list[_Bin] = field(default_factory=list)
     _n: int = 0
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     @property
     def max_bins(self) -> int:

@@ -116,5 +116,5 @@ class WAL:
     def __enter__(self) -> WAL:
         return self
 
-    def __exit__(self, *_) -> None:
+    def __exit__(self, *_: object) -> None:
         self.close()

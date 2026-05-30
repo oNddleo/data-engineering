@@ -9,14 +9,14 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import click
-import yaml
+import yaml  # type: ignore[import-untyped]
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
 from pipeline_rca.attribution.root_cause import RootCauseAttributor
 from pipeline_rca.lineage.tracer import LineageTracer
-from pipeline_rca.models import MetricPoint
+from pipeline_rca.models import MetricPoint, RootCauseReport
 from pipeline_rca.monitors.metric_monitor import MetricMonitor, build_synthetic_degradation
 from pipeline_rca.monitors.schema_monitor import SchemaStore
 from pipeline_rca.reporting.generator import ReportGenerator
@@ -214,7 +214,7 @@ def run(config_path: str, metric: tuple[str, ...], output_dir: str, save: bool) 
 # helpers
 # ------------------------------------------------------------------
 
-def _display_report_summary(report: "RootCauseReport") -> None:  # noqa: F821
+def _display_report_summary(report: RootCauseReport) -> None:
 
     pct = abs(report.degradation.relative_change * 100)
     panel = Panel(

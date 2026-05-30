@@ -110,7 +110,7 @@ class SpeedLayer:
     def _consume_kafka(self, on_message: Callable[[Event], None] | None) -> None:
         """Consume from Kafka topic, applying each event to the real-time view."""
         try:
-            from kafka import KafkaConsumer  # type: ignore[import]
+            from kafka import KafkaConsumer  # type: ignore[import-not-found]
         except ImportError:
             logger.error("kafka-python not installed; cannot start Kafka consumer")
             return

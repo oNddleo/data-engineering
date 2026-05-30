@@ -12,6 +12,8 @@ pg_hint_plan hint syntax reference:
 """
 from __future__ import annotations
 
+from typing import Any
+
 from ..plan.node import PlanNode
 
 
@@ -70,7 +72,7 @@ def _collect_tables(node: PlanNode) -> list[str]:
 # 15 canonical hint combinations from the Bao paper.
 # Each is a frozenset of disabled operators.
 
-BAO_HINT_SETS: list[dict] = [
+BAO_HINT_SETS: list[dict[str, Any]] = [
     # 0: default (no hints)
     {},
     # 1-4: disable one join method
@@ -94,7 +96,7 @@ BAO_HINT_SETS: list[dict] = [
 ]
 
 
-def hint_set_to_sql(hint_set: dict) -> str:
+def hint_set_to_sql(hint_set: dict[str, Any]) -> str:
     """Convert a hint set dict to pg_hint_plan GUC string."""
     parts = []
     for op in hint_set.get("disable", []):
@@ -104,7 +106,7 @@ def hint_set_to_sql(hint_set: dict) -> str:
     return " SET " + " SET ".join(parts)
 
 
-def hint_set_to_pg_hints(hint_set: dict) -> str:
+def hint_set_to_pg_hints(hint_set: dict[str, Any]) -> str:
     """Build a pg_hint_plan comment block for the hint set."""
     # pg_hint_plan uses /*+ ... */ syntax but for disabling operators we use GUCs
     # Alternative: use Set() hints in pg_hint_plan
@@ -124,7 +126,7 @@ def hint_set_to_pg_hints(hint_set: dict) -> str:
     return " ".join(parts)
 
 
-def apply_hint_set_to_connection(conn_pool, hint_set: dict) -> None:
+def apply_hint_set_to_connection(conn_pool: Any, hint_set: dict[str, Any]) -> None:
     """Apply hint set GUCs to current session."""
     guc_map = {
         "HashJoin": "enable_hashjoin",
@@ -139,7 +141,7 @@ def apply_hint_set_to_connection(conn_pool, hint_set: dict) -> None:
             conn_pool.execute(f"SET {guc} = off")
 
 
-def reset_hint_set(conn_pool) -> None:
+def reset_hint_set(conn_pool: Any) -> None:
     for guc in [
         "enable_hashjoin", "enable_mergejoin", "enable_nestloop",
         "enable_seqscan", "enable_indexscan",

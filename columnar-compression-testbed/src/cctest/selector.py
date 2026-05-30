@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 
@@ -48,7 +48,7 @@ class EncodingSelector:
     # Public API
     # ------------------------------------------------------------------
 
-    def select(self, name: str, column: np.ndarray) -> Codec:
+    def select(self, name: str, column: np.ndarray[Any, np.dtype[Any]]) -> Codec:
         """Return the best codec for *column*, using cache when available."""
         key = (name, str(column.dtype))
         if key in self._cache:
@@ -57,7 +57,7 @@ class EncodingSelector:
         self._cache[key] = record
         return record.codec
 
-    def force_reevaluate(self, name: str, column: np.ndarray) -> Codec:
+    def force_reevaluate(self, name: str, column: np.ndarray[Any, np.dtype[Any]]) -> Codec:
         """Discard cached choice and re-run benchmark."""
         key = (name, str(column.dtype))
         self._cache.pop(key, None)
@@ -86,10 +86,10 @@ class EncodingSelector:
     # Internal
     # ------------------------------------------------------------------
 
-    def _candidates(self, dtype: np.dtype) -> list[Codec]:
+    def _candidates(self, dtype: np.dtype[Any]) -> list[Codec]:
         return [c for c in self._codecs if c.supports_dtype(dtype)]
 
-    def _sample(self, column: np.ndarray) -> np.ndarray:
+    def _sample(self, column: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
         n = min(self._cfg.sample_size, len(column))
         if n == len(column):
             return column
@@ -98,7 +98,7 @@ class EncodingSelector:
         idx.sort()
         return column[idx]
 
-    def _evaluate(self, name: str, column: np.ndarray) -> SelectionRecord:
+    def _evaluate(self, name: str, column: np.ndarray[Any, np.dtype[Any]]) -> SelectionRecord:
         candidates = self._candidates(column.dtype)
         if not candidates:
             raise ValueError(f"No codec supports dtype {column.dtype} for column {name!r}")

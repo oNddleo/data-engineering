@@ -39,7 +39,7 @@ def _fetch_replies(client: Any, channel: str, thread_ts: str) -> str:
         return ""
 
 
-@dlt.source(name="slack")
+@dlt.source(name="slack")  # type: ignore[misc]
 def slack_source(
     bot_token: str = dlt.secrets.value,
     channel_limit: int = 50,
@@ -54,7 +54,7 @@ def slack_source(
             "channels:read, groups:read, im:read, mpim:read, users:read"
         )
 
-    @dlt.resource(
+    @dlt.resource(  # type: ignore[misc]
         name="messages",
         primary_key="id",
         write_disposition="merge",
@@ -65,8 +65,8 @@ def slack_source(
         ),
     ) -> Iterator[dict[str, Any]]:
         try:
-            from slack_sdk import WebClient  # type: ignore[import]
-            from slack_sdk.errors import SlackApiError  # type: ignore[import]
+            from slack_sdk import WebClient
+            from slack_sdk.errors import SlackApiError  # type: ignore[import-not-found]
         except ImportError as exc:
             raise ImportError(
                 "slack-sdk is required for the Slack source. "
@@ -84,7 +84,7 @@ def slack_source(
 
         # Enumerate all joined conversations
         cursor = None
-        channels: list[dict] = []
+        channels: list[dict[str, Any]] = []
         while True:
             resp = client.conversations_list(
                 types="public_channel,private_channel,im,mpim",

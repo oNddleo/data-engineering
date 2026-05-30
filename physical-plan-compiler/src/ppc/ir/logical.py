@@ -133,7 +133,7 @@ class LogicalAggregate(LogicalNode):
     aggregates: tuple[AggFunc, ...]
 
     @cached_property
-    def schema(self) -> Schema:  # type: ignore[override]
+    def schema(self) -> Schema:
         cols: list[Column] = []
         for g in self.group_by:
             cols.append(self.child.schema[g.name])
@@ -198,7 +198,7 @@ class LogicalJoin(LogicalNode):
     join_type: str = "INNER"
 
     @cached_property
-    def schema(self) -> Schema:  # type: ignore[override]
+    def schema(self) -> Schema:
         merged = self.left.schema.union(self.right.schema)
         # Row estimate: cross product * predicate selectivity (default 1 / max NDV)
         left_rows = self.left.schema.rows

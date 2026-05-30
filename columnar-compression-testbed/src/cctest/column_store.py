@@ -13,7 +13,7 @@ re-evaluated automatically.
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 
@@ -39,7 +39,7 @@ class ColumnStore:
     # Write path
     # ------------------------------------------------------------------
 
-    def insert(self, columns: dict[str, np.ndarray]) -> None:
+    def insert(self, columns: dict[str, np.ndarray[Any, np.dtype[Any]]]) -> None:
         """Compress and store *columns*.  Schema changes trigger re-evaluation."""
         diff = self._tracker.observe(columns, selector=self._selector)
         if diff.has_changes:
@@ -55,7 +55,7 @@ class ColumnStore:
     # Read path
     # ------------------------------------------------------------------
 
-    def retrieve(self, columns: Optional[list[str]] = None) -> dict[str, np.ndarray]:
+    def retrieve(self, columns: Optional[list[str]] = None) -> dict[str, np.ndarray[Any, np.dtype[Any]]]:
         """Decompress and concatenate all stored chunks for each column."""
         names = columns if columns is not None else list(self._store.keys())
         result: dict[str, np.ndarray] = {}

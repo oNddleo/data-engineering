@@ -7,7 +7,7 @@ import logging
 import threading
 from typing import Any, Callable
 
-import msgpack
+import msgpack  # type: ignore[import-untyped]
 
 from .backend.base import StorageBackend
 from .backend.memory_backend import MemoryBackend

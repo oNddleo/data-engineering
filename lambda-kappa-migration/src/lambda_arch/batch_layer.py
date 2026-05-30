@@ -7,7 +7,7 @@ import logging
 from collections.abc import Iterable
 from pathlib import Path
 
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 
 from src.config import HISTORICAL_DIR
 from src.lambda_arch.models import (

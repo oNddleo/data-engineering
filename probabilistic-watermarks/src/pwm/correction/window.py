@@ -20,7 +20,7 @@ class TumblingWindowState:
     window_size: float = 60.0
     _values: dict[tuple[object, float], object] = field(default_factory=dict)
     _closed: set[tuple[object, float]] = field(default_factory=set)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def _window_of(self, event_time: float) -> float:
         return (event_time // self.window_size) * self.window_size

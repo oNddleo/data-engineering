@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 @dataclass
 class LagLeadIVM:
     _partitions: dict[object, list[tuple[float, object]]] = field(default_factory=dict)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def insert(self, partition: object, t: float, value: object) -> None:
         with self._lock:

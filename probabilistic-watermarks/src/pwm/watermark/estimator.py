@@ -41,7 +41,7 @@ class PerKeyDelayEstimator:
     delta: float = 1e-3                                     # target lateness rate
     source: QuantileSource = "tdigest"                      # which quantile estimator
     _keys: dict[object, _KeyState] = field(default_factory=dict)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def observe(self, key: object, event_time: float, arrival_time: float) -> None:
         if arrival_time < event_time:

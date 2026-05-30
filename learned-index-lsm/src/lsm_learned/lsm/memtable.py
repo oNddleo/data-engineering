@@ -7,7 +7,7 @@ Keys and values are both int64.  When ``size >= capacity`` the caller
 
 from __future__ import annotations
 
-from sortedcontainers import SortedDict
+from sortedcontainers import SortedDict  # type: ignore[import-untyped]
 
 _TOMBSTONE = object()  # sentinel for deleted keys
 
@@ -43,7 +43,7 @@ class MemTable:
             return None
         if v is _TOMBSTONE:
             return None
-        return v  # type: ignore[return-value]
+        return v  # type: ignore[no-any-return]
 
     def contains(self, key: int) -> bool:
         return key in self._data and self._data[key] is not _TOMBSTONE

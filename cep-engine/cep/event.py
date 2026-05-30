@@ -1,5 +1,5 @@
 import time
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 
@@ -22,7 +22,7 @@ def make_event(
     value: float = 0.0,
     flags: int = 0,
     timestamp: Optional[int] = None,
-) -> np.void:
+) -> Any:
     ev = np.zeros(1, dtype=EVENT_DTYPE)[0]
     ev["timestamp"] = timestamp if timestamp is not None else time.time_ns()
     ev["type_id"] = type_id

@@ -18,7 +18,7 @@ curve", AIP Conf. Proc. 707, 381–387.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
 
-def _validate_coords(coords: NDArray[np.integer], bits: int) -> None:
+def _validate_coords(coords: NDArray[np.integer[Any]], bits: int) -> None:
     if coords.ndim != 2:
         raise ValueError(f"coords must be 2-D (got shape {coords.shape})")
     if bits < 1 or bits > 32:
@@ -37,7 +37,7 @@ def _validate_coords(coords: NDArray[np.integer], bits: int) -> None:
         raise ValueError(f"coordinate exceeds 2^{bits}; increase bits")
 
 
-def z_order_index(coords: NDArray[np.integer], bits: int = 16) -> NDArray[np.uint64]:
+def z_order_index(coords: NDArray[np.integer[Any]], bits: int = 16) -> NDArray[np.uint64]:
     """Morton-interleaved 1-D index for non-negative integer coordinates.
 
     Layout-friendly property: rows with consecutive ``z_order_index`` values
@@ -56,7 +56,7 @@ def z_order_index(coords: NDArray[np.integer], bits: int = 16) -> NDArray[np.uin
     return out
 
 
-def hilbert_index(coords: NDArray[np.integer], bits: int = 16) -> NDArray[np.uint64]:
+def hilbert_index(coords: NDArray[np.integer[Any]], bits: int = 16) -> NDArray[np.uint64]:
     """Classical 2-D Hilbert curve index.
 
     Implements the iterative bit-by-bit rotate/reflect algorithm, vectorised
@@ -83,7 +83,7 @@ def hilbert_index(coords: NDArray[np.integer], bits: int = 16) -> NDArray[np.uin
     return out
 
 
-def hilbert_index_nd(coords: NDArray[np.integer], bits: int = 16) -> NDArray[np.uint64]:
+def hilbert_index_nd(coords: NDArray[np.integer[Any]], bits: int = 16) -> NDArray[np.uint64]:
     """N-dimensional Hilbert index via Skilling's transposed-axes algorithm.
 
     Works for any ``d ≥ 1``. For ``d == 2`` it agrees with

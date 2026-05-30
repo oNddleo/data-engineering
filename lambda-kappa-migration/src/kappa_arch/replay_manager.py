@@ -97,7 +97,7 @@ class ReplayManager:
     def _publish_kafka(self, events: list[Event], topic: str) -> None:
         """Publish events to a Kafka topic, preserving original timestamps."""
         try:
-            from kafka import KafkaProducer  # type: ignore[import]
+            from kafka import KafkaProducer  # type: ignore[import-not-found]
         except ImportError:
             logger.error("kafka-python not installed; cannot publish to Kafka")
             return

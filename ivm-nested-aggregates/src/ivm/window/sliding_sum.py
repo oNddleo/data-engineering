@@ -21,7 +21,7 @@ class SlidingSumIVM:
     window_size: int = 5
     _partitions: dict[object, list[tuple[float, float]]] = field(default_factory=dict)
     _prefix: dict[object, list[float]] = field(default_factory=dict)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def insert(self, partition: object, t: float, value: float) -> None:
         with self._lock:

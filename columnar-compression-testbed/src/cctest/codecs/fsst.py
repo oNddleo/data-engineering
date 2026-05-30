@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import struct
 from collections import defaultdict
-from typing import Sequence
+from typing import Any, Sequence
 
 import numpy as np
 
@@ -78,7 +78,7 @@ class FSSTCodec(Codec):
     def __init__(self, sample_fraction: float = 0.1) -> None:
         self.sample_fraction = sample_fraction
 
-    def supports_dtype(self, dtype: np.dtype) -> bool:
+    def supports_dtype(self, dtype: np.dtype[Any]) -> bool:
         return dtype.kind in ("U", "O", "S")
 
     def _adaptive_max_symbols(self, n_strings: int, total_raw_bytes: int) -> int:
@@ -86,7 +86,7 @@ class FSSTCodec(Codec):
         budget = max(8, total_raw_bytes // (5 * 7))  # ~15% headroom
         return min(_MAX_SYMBOLS, n_strings // 4 + 1, budget)
 
-    def encode(self, data: np.ndarray) -> EncodedColumn:
+    def encode(self, data: np.ndarray[Any, np.dtype[Any]]) -> EncodedColumn:
         strings = [s.encode() if isinstance(s, str) else bytes(s) for s in data]
 
         if not strings:
@@ -134,7 +134,7 @@ class FSSTCodec(Codec):
             original_len=len(data),
         )
 
-    def decode(self, encoded: EncodedColumn) -> np.ndarray:
+    def decode(self, encoded: EncodedColumn) -> np.ndarray[Any, np.dtype[Any]]:
         raw = encoded.data
         n = encoded.metadata["n"]
         sym_bytes = encoded.metadata["sym_bytes"]

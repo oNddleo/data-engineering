@@ -43,7 +43,7 @@ class WatermarkAdvancer:
     lambda_min: float = 0.0                # ignore keys with rate < λ_min
     _w: float = 0.0
     _late_handler: Callable[[object, float, float], None] | None = None
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
     stats: WatermarkStats = field(default_factory=WatermarkStats)
 
     def on_record(self, key: object, event_time: float, arrival_time: float) -> tuple[str, float]:

@@ -4,6 +4,8 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
+from typing import Any
+
 import numpy as np
 
 
@@ -11,7 +13,7 @@ import numpy as np
 class EncodedColumn:
     codec_name: str
     data: bytes
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     original_dtype: str = ""
     original_len: int = 0
 
@@ -57,15 +59,15 @@ class Codec(ABC):
     name: str = "base"
 
     @abstractmethod
-    def encode(self, data: np.ndarray) -> EncodedColumn: ...
+    def encode(self, data: np.ndarray[Any, np.dtype[Any]]) -> EncodedColumn: ...
 
     @abstractmethod
-    def decode(self, encoded: EncodedColumn) -> np.ndarray: ...
+    def decode(self, encoded: EncodedColumn) -> np.ndarray[Any, np.dtype[Any]]: ...
 
-    def supports_dtype(self, dtype: np.dtype) -> bool:
+    def supports_dtype(self, dtype: np.dtype[Any]) -> bool:
         return True
 
-    def benchmark(self, data: np.ndarray, rounds: int = 5) -> BenchmarkResult:
+    def benchmark(self, data: np.ndarray[Any, np.dtype[Any]], rounds: int = 5) -> BenchmarkResult:
         original_bytes = data.nbytes
 
         encode_times = []

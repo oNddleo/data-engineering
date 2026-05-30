@@ -6,7 +6,7 @@ import asyncio
 import enum
 import logging
 import time
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
     from ..backend.base import StorageBackend
@@ -75,7 +75,7 @@ class MigrationTask:
         if self._task is not None:
             await self._task
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "old_version": self.old_topology.version,
             "new_version": self.new_topology.version,

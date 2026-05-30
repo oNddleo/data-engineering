@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -34,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 def _build_design_matrix(
     series: pd.DataFrame, intervention_idx: int
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray[Any, np.dtype[Any]], np.ndarray[Any, np.dtype[Any]]]:
     """
     Build X (design matrix) and y for the ITS regression.
 
@@ -160,9 +161,9 @@ class ITSAnalyzer:
 
     def _inference(
         self,
-        X: np.ndarray,
-        y: np.ndarray,
-        coeffs: np.ndarray,
+        X: np.ndarray[Any, np.dtype[Any]],
+        y: np.ndarray[Any, np.dtype[Any]],
+        coeffs: np.ndarray[Any, np.dtype[Any]],
         n: int,
         int_idx: int,
     ) -> tuple[float, tuple[float, float]]:

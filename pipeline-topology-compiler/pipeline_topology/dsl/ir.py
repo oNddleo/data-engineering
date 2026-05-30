@@ -174,6 +174,7 @@ class PipelineSpec:
                     base_type = FieldType.LONG
                     if agg.column and primary.get_field(agg.column):
                         base = primary.get_field(agg.column)
+                        assert base is not None
                         if agg.function in (AggFunction.SUM, AggFunction.AVG):
                             base_type = base.dtype if base.dtype.is_numeric() else FieldType.DOUBLE
                         elif agg.function == AggFunction.COUNT:

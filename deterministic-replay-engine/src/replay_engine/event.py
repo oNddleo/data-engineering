@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -92,7 +93,7 @@ class EventLog:
     def __len__(self) -> int:
         return len(self._events)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Event]:
         return iter(self._events)
 
     def __getitem__(self, event_id: str) -> Event:

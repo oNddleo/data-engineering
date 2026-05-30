@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Iterator
 
 try:
-    import lz4.frame as lz4
+    import lz4.frame as lz4  # type: ignore[import-untyped]
     _HAS_LZ4 = True
 except ImportError:
     _HAS_LZ4 = False
