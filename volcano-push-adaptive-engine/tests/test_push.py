@@ -1,4 +1,5 @@
 """Tests for push-based (pipeline) executor."""
+
 from adaptive_engine import (
     Catalog,
     PushCompiler,
@@ -18,8 +19,15 @@ def make_catalog() -> Catalog:
     catalog = Catalog()
     catalog.create_table(
         "products",
-        [{"id": i, "category": f"cat{i % 4}", "price": i * 5.0, "in_stock": i % 2 == 0}
-         for i in range(1, 41)],
+        [
+            {
+                "id": i,
+                "category": f"cat{i % 4}",
+                "price": i * 5.0,
+                "in_stock": i % 2 == 0,
+            }
+            for i in range(1, 41)
+        ],
     )
     catalog.create_table(
         "categories",
@@ -51,6 +59,7 @@ class TestPushFilter:
     def test_filter_in_stock(self):
         catalog = make_catalog()
         from adaptive_engine.expressions import BinOp, ColRef, Literal
+
         plan = FilterNode(
             child=ScanNode(table="products"),
             predicate=BinOp(ColRef("in_stock"), "=", Literal(True)),

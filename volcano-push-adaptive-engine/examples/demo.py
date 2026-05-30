@@ -2,6 +2,7 @@
 
 Run with:  python examples/demo.py
 """
+
 import random
 import sys
 from pathlib import Path
@@ -14,7 +15,6 @@ from adaptive_engine import (
     Catalog,
     FilterNode,
     HashJoinNode,
-    LimitNode,
     ProjectNode,
     ScanNode,
     SortNode,
@@ -73,6 +73,7 @@ def build_catalog() -> Catalog:
 # Demo 1: pure Volcano vs pure Push
 # ------------------------------------------------------------------
 
+
 def demo_volcano_vs_push(catalog: Catalog) -> None:
     print("\n" + "=" * 60)
     print("DEMO 1: Volcano vs Push — filter + project")
@@ -103,13 +104,16 @@ def demo_volcano_vs_push(catalog: Catalog) -> None:
 
     print(f"\nVolcano: {len(volcano_rows)} rows in {volcano_ms:.2f} ms")
     print(f"Push:    {len(push_rows)} rows in {push_ms:.2f} ms")
-    assert sorted(r["product_id"] for r in volcano_rows) == sorted(r["product_id"] for r in push_rows)
+    assert sorted(r["product_id"] for r in volcano_rows) == sorted(
+        r["product_id"] for r in push_rows
+    )
     print("✓ Both executors produce identical results")
 
 
 # ------------------------------------------------------------------
 # Demo 2: Adaptive engine detects hot path and mode-switches
 # ------------------------------------------------------------------
+
 
 def demo_adaptive_mode_switch(catalog: Catalog) -> None:
     print("\n" + "=" * 60)
@@ -138,7 +142,7 @@ def demo_adaptive_mode_switch(catalog: Catalog) -> None:
 
     engine = AdaptiveEngine(
         catalog,
-        hot_threshold=10.0,   # switch when actual > 10× estimate
+        hot_threshold=10.0,  # switch when actual > 10× estimate
         check_interval=25,
     )
     rows, report = engine.execute(plan)
@@ -159,6 +163,7 @@ def demo_adaptive_mode_switch(catalog: Catalog) -> None:
 # ------------------------------------------------------------------
 # Demo 3: Runtime re-optimization — join order / plan rewrite
 # ------------------------------------------------------------------
+
 
 def demo_reoptimization(catalog: Catalog) -> None:
     print("\n" + "=" * 60)
@@ -193,9 +198,11 @@ def demo_reoptimization(catalog: Catalog) -> None:
     rows, report = engine.execute(plan)
 
     print(f"\nQuery returned {len(rows)} shipped orders (sorted by price desc)")
-    print(f"Top 5 by price:")
+    print("Top 5 by price:")
     for r in rows[:5]:
-        print(f"  order={r['order_id']}  product={r['name']}  price=${r['price']}  qty={r['quantity']}")
+        print(
+            f"  order={r['order_id']}  product={r['name']}  price=${r['price']}  qty={r['quantity']}"
+        )
 
     print()
     print(report)
@@ -204,6 +211,7 @@ def demo_reoptimization(catalog: Catalog) -> None:
 # ------------------------------------------------------------------
 # Demo 4: Volcano-only for small datasets (no switching overhead)
 # ------------------------------------------------------------------
+
 
 def demo_small_dataset() -> None:
     print("\n" + "=" * 60)

@@ -1,9 +1,12 @@
 """ASCII table reporter for benchmark results."""
+
 from __future__ import annotations
 from .runner import BenchResult
 
 
-def render_table(results: list[BenchResult], title: str = "", description: str = "") -> str:
+def render_table(
+    results: list[BenchResult], title: str = "", description: str = ""
+) -> str:
     if not results:
         return "(no results)"
 
@@ -21,7 +24,24 @@ def render_table(results: list[BenchResult], title: str = "", description: str =
         f"{'winner':<8} │ "
         f"{'rows':>8}"
     )
-    sep = "  " + "─" * (col_w) + "─┼─" + "─" * 10 + "─┼─" + "─" * 10 + "─┼─" + "─" * 10 + "─┼─" + "─" * 7 + "─┼─" + "─" * 7 + "─┼─" + "─" * 8 + "─┼─" + "─" * 8
+    sep = (
+        "  "
+        + "─" * (col_w)
+        + "─┼─"
+        + "─" * 10
+        + "─┼─"
+        + "─" * 10
+        + "─┼─"
+        + "─" * 10
+        + "─┼─"
+        + "─" * 7
+        + "─┼─"
+        + "─" * 7
+        + "─┼─"
+        + "─" * 8
+        + "─┼─"
+        + "─" * 8
+    )
 
     lines = []
     if title:
@@ -35,7 +55,11 @@ def render_table(results: list[BenchResult], title: str = "", description: str =
     lines.append(sep)
 
     for r in results:
-        winner_marker = {"volcano": "volcano", "push": "push ✓", "adaptive": "adaptive ✓"}[r.winner]
+        winner_marker = {
+            "volcano": "volcano",
+            "push": "push ✓",
+            "adaptive": "adaptive ✓",
+        }[r.winner]
         lines.append(
             f"  {str(r.param_value):<{col_w}} │ "
             f"{r.volcano_ms:>9.2f}ms │ "
@@ -69,9 +93,12 @@ def render_table(results: list[BenchResult], title: str = "", description: str =
 
 def render_all(scenario_results: dict[str, list[BenchResult]]) -> str:
     from .scenarios import ALL_SCENARIOS
+
     desc_map = {s.name: s.description for s in ALL_SCENARIOS}
 
     parts = []
     for name, results in scenario_results.items():
-        parts.append(render_table(results, title=name, description=desc_map.get(name, "")))
+        parts.append(
+            render_table(results, title=name, description=desc_map.get(name, ""))
+        )
     return "\n".join(parts) + "\n"

@@ -11,6 +11,7 @@ Two responsibilities:
      * Push filters closer to their source
      * Upgrade NestedLoopJoin → HashJoin when the input size justifies it
 """
+
 from __future__ import annotations
 import itertools
 from typing import Any
@@ -40,6 +41,7 @@ def _new_id(prefix: str) -> str:
 # ------------------------------------------------------------------
 # Initial optimizer
 # ------------------------------------------------------------------
+
 
 class Optimizer:
     """Annotates a plan tree with estimated cardinalities and node IDs."""
@@ -187,6 +189,7 @@ def _pred_selectivity(pred: Any, tbl_stats: Any) -> float | None:
 # Runtime re-optimizer
 # ------------------------------------------------------------------
 
+
 class ReOptimizer:
     """Rewrites a plan subtree based on observed runtime statistics.
 
@@ -268,6 +271,7 @@ class ReOptimizer:
             #  if the predicate doesn't look like an equality)
             pred = node.predicate
             from .expressions import BinOp as _BinOp, ColRef as _ColRef
+
             if pred and isinstance(pred, _BinOp) and pred.op == "=":
                 left_key = pred.left.name if isinstance(pred.left, _ColRef) else ""
                 right_key = pred.right.name if isinstance(pred.right, _ColRef) else ""
@@ -290,13 +294,12 @@ class ReOptimizer:
         if isinstance(node.child, FilterNode):
             # Merge into a single AndExpr filter at the lower level
             from .expressions import AndExpr
+
             inner: FilterNode = node.child
             assert inner.predicate and node.predicate
             inner.predicate = AndExpr(inner.predicate, node.predicate)
             inner.selectivity = inner.selectivity * node.selectivity
             inner.estimated_rows = node.estimated_rows
-            self.reoptimizations.append(
-                f"Merged stacked filters into {inner.node_id}"
-            )
+            self.reoptimizations.append(f"Merged stacked filters into {inner.node_id}")
             return inner
         return node

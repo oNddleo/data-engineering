@@ -11,6 +11,7 @@ Usage:
     hist.selectivity_range(10, 50)    # P(10 <= col <= 50)
     hist.selectivity_lt(50)           # P(col < 50)
 """
+
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
@@ -183,6 +184,7 @@ class EquiDepthHistogram:
 # ------------------------------------------------------------------
 # Helpers
 # ------------------------------------------------------------------
+
 
 def _numeric_span(lo: Any, hi: Any) -> float:
     try:

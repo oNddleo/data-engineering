@@ -27,6 +27,7 @@ WHERE / ON conditions:
     col IS [NOT] NULL
     col BETWEEN lo AND hi        (desugared to col >= lo AND col <= hi)
 """
+
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
@@ -38,6 +39,7 @@ from .lexer import TT, AGG_FUNCS, Token, tokenize
 # SQL AST nodes
 # ------------------------------------------------------------------
 
+
 @dataclass
 class SelectItem:
     expr: "SqlExpr"
@@ -48,8 +50,8 @@ class SelectItem:
 class JoinClause:
     table: str
     alias: str | None
-    join_type: str          # "inner" | "left" | "right" | "full"
-    condition: "SqlExpr"    # ON condition
+    join_type: str  # "inner" | "left" | "right" | "full"
+    condition: "SqlExpr"  # ON condition
 
 
 @dataclass
@@ -71,10 +73,11 @@ class SqlQuery:
 # SQL expression nodes (separate from the engine's Expr hierarchy)
 # ------------------------------------------------------------------
 
+
 @dataclass
 class SqlColRef:
     name: str
-    table: str | None = None   # table qualifier
+    table: str | None = None  # table qualifier
 
     def __repr__(self) -> str:
         return f"{self.table}.{self.name}" if self.table else self.name
@@ -97,14 +100,14 @@ class SqlBinOp:
 
 @dataclass
 class SqlUnaryOp:
-    op: str   # "NOT" | "-"
+    op: str  # "NOT" | "-"
     operand: "SqlExpr"
 
 
 @dataclass
 class SqlAgg:
-    func: str        # "count" | "sum" | "avg" | "min" | "max"
-    arg: "SqlExpr | None"   # None means COUNT(*)
+    func: str  # "count" | "sum" | "avg" | "min" | "max"
+    arg: "SqlExpr | None"  # None means COUNT(*)
 
 
 @dataclass
@@ -120,6 +123,7 @@ SqlExpr = SqlColRef | SqlLiteral | SqlBinOp | SqlUnaryOp | SqlAgg | SqlIsNull
 # Errors
 # ------------------------------------------------------------------
 
+
 class ParseError(Exception):
     def __init__(self, msg: str, token: Token | None = None) -> None:
         loc = f" at position {token.pos} ({token!r})" if token else ""
@@ -130,6 +134,7 @@ class ParseError(Exception):
 # ------------------------------------------------------------------
 # Parser
 # ------------------------------------------------------------------
+
 
 class Parser:
     def __init__(self, tokens: list[Token]) -> None:
@@ -383,8 +388,12 @@ class Parser:
 
         # Standard comparison
         op_map = {
-            TT.EQ: "=", TT.NEQ: "!=", TT.LT: "<",
-            TT.LTE: "<=", TT.GT: ">", TT.GTE: ">=",
+            TT.EQ: "=",
+            TT.NEQ: "!=",
+            TT.LT: "<",
+            TT.LTE: "<=",
+            TT.GT: ">",
+            TT.GTE: ">=",
         }
         if self._peek().type in op_map:
             op = op_map[self._advance().type]
@@ -469,7 +478,17 @@ class Parser:
 
 # Keywords that are also valid identifiers in column/table position
 _KEYWORD_AS_IDENT: set[TT] = {
-    TT.COUNT, TT.SUM, TT.AVG, TT.MIN, TT.MAX,
-    TT.GROUP, TT.ORDER, TT.LIMIT, TT.OFFSET,
-    TT.ASC, TT.DESC, TT.HAVING, TT.DISTINCT,
+    TT.COUNT,
+    TT.SUM,
+    TT.AVG,
+    TT.MIN,
+    TT.MAX,
+    TT.GROUP,
+    TT.ORDER,
+    TT.LIMIT,
+    TT.OFFSET,
+    TT.ASC,
+    TT.DESC,
+    TT.HAVING,
+    TT.DISTINCT,
 }

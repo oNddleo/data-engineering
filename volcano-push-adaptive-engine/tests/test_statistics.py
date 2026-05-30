@@ -1,4 +1,5 @@
 """Tests for equi-depth histogram statistics."""
+
 import pytest
 from adaptive_engine.statistics import EquiDepthHistogram
 
@@ -94,6 +95,7 @@ class TestEquiDepthHistogram:
 
     def test_float_values(self):
         import random
+
         rng = random.Random(0)
         vals = [rng.uniform(0, 100) for _ in range(1000)]
         h = EquiDepthHistogram(vals, n_buckets=20)
@@ -112,6 +114,7 @@ class TestEquiDepthHistogram:
 class TestHistogramInCatalog:
     def test_catalog_builds_histograms(self):
         from adaptive_engine import Catalog
+
         catalog = Catalog()
         data = [{"x": i, "y": i * 2} for i in range(200)]
         ts = catalog.create_table("t", data)
@@ -122,6 +125,7 @@ class TestHistogramInCatalog:
 
     def test_catalog_no_histogram(self):
         from adaptive_engine import Catalog
+
         catalog = Catalog()
         data = [{"x": i} for i in range(100)]
         ts = catalog.create_table("t", data, build_histograms=False)
@@ -131,6 +135,7 @@ class TestHistogramInCatalog:
 
     def test_selectivity_for_op_uses_histogram(self):
         from adaptive_engine import Catalog
+
         catalog = Catalog()
         data = [{"x": i} for i in range(1000)]
         ts = catalog.create_table("t", data)
@@ -143,6 +148,7 @@ class TestHistogramInCatalog:
     def test_optimizer_uses_histogram_selectivity(self):
         from adaptive_engine import Catalog, FilterNode, ScanNode, gt
         from adaptive_engine.optimizer import Optimizer
+
         catalog = Catalog()
         # Uniform 0..999: P(x > 900) ≈ 10%
         data = [{"x": i} for i in range(1000)]

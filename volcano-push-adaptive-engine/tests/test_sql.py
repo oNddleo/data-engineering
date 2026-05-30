@@ -1,11 +1,14 @@
 """Tests for the SQL frontend (lexer, parser, planner)."""
+
 import pytest
 from adaptive_engine import Catalog, AdaptiveEngine
 from adaptive_engine.sql import Parser, Planner, LexError, ParseError
 from adaptive_engine.sql.lexer import tokenize, TT
 from adaptive_engine.plan import (
     LimitNode,
-    ProjectNode, ScanNode, SortNode,
+    ProjectNode,
+    ScanNode,
+    SortNode,
 )
 
 
@@ -13,12 +16,21 @@ from adaptive_engine.plan import (
 # Fixtures
 # ------------------------------------------------------------------
 
+
 def make_catalog() -> Catalog:
     catalog = Catalog()
     catalog.create_table(
         "employees",
-        [{"id": i, "name": f"Emp{i}", "dept_id": i % 5, "salary": 30_000 + i * 1_000, "active": i % 3 != 0}
-         for i in range(50)],
+        [
+            {
+                "id": i,
+                "name": f"Emp{i}",
+                "dept_id": i % 5,
+                "salary": 30_000 + i * 1_000,
+                "active": i % 3 != 0,
+            }
+            for i in range(50)
+        ],
     )
     catalog.create_table(
         "departments",
@@ -34,6 +46,7 @@ def make_catalog() -> Catalog:
 # ------------------------------------------------------------------
 # Lexer
 # ------------------------------------------------------------------
+
 
 class TestLexer:
     def test_keywords(self):
@@ -74,6 +87,7 @@ class TestLexer:
 # Parser
 # ------------------------------------------------------------------
 
+
 class TestParser:
     def test_simple_select(self):
         q = Parser.parse("SELECT id, name FROM employees")
@@ -89,8 +103,11 @@ class TestParser:
         assert q.where is not None
 
     def test_and_or_condition(self):
-        q = Parser.parse("SELECT id FROM employees WHERE salary > 40000 AND active = true")
+        q = Parser.parse(
+            "SELECT id FROM employees WHERE salary > 40000 AND active = true"
+        )
         from adaptive_engine.sql.parser import SqlBinOp
+
         assert isinstance(q.where, SqlBinOp) and q.where.op == "AND"
 
     def test_join(self):
@@ -115,23 +132,29 @@ class TestParser:
         assert q.offset == 5
 
     def test_between(self):
-        q = Parser.parse("SELECT id FROM employees WHERE salary BETWEEN 40000 AND 60000")
+        q = Parser.parse(
+            "SELECT id FROM employees WHERE salary BETWEEN 40000 AND 60000"
+        )
         from adaptive_engine.sql.parser import SqlBinOp
+
         assert isinstance(q.where, SqlBinOp) and q.where.op == "AND"
 
     def test_is_null(self):
         q = Parser.parse("SELECT id FROM employees WHERE name IS NULL")
         from adaptive_engine.sql.parser import SqlIsNull
+
         assert isinstance(q.where, SqlIsNull) and not q.where.negated
 
     def test_is_not_null(self):
         q = Parser.parse("SELECT id FROM employees WHERE name IS NOT NULL")
         from adaptive_engine.sql.parser import SqlIsNull
+
         assert isinstance(q.where, SqlIsNull) and q.where.negated
 
     def test_aggregate_functions(self):
         q = Parser.parse("SELECT COUNT(*), SUM(salary), AVG(salary) FROM employees")
         from adaptive_engine.sql.parser import SqlAgg
+
         aggs = [i.expr for i in q.select if isinstance(i.expr, SqlAgg)]
         funcs = {a.func for a in aggs}
         assert funcs == {"count", "sum", "avg"}
@@ -148,6 +171,7 @@ class TestParser:
 # ------------------------------------------------------------------
 # Planner → execution
 # ------------------------------------------------------------------
+
 
 class TestPlanner:
     def test_simple_scan(self):
@@ -169,6 +193,7 @@ class TestPlanner:
         plan = planner.plan_sql("SELECT * FROM employees WHERE salary > 40000")
         # Outermost is scan (no project for *), but filter should be in tree
         from adaptive_engine.plan import walk
+
         node_types = {type(n).__name__ for n in walk(plan)}
         assert "FilterNode" in node_types
 
@@ -180,6 +205,7 @@ class TestPlanner:
             "JOIN departments d ON e.dept_id = d.id"
         )
         from adaptive_engine.plan import walk
+
         node_types = {type(n).__name__ for n in walk(plan)}
         assert "HashJoinNode" in node_types
 
@@ -191,6 +217,7 @@ class TestPlanner:
             "FROM employees GROUP BY dept_id"
         )
         from adaptive_engine.plan import walk
+
         node_types = {type(n).__name__ for n in walk(plan)}
         assert "AggregateNode" in node_types
 
@@ -199,6 +226,7 @@ class TestPlanner:
         planner = Planner(catalog)
         plan = planner.plan_sql("SELECT id FROM employees ORDER BY salary DESC")
         from adaptive_engine.plan import walk
+
         assert any(isinstance(n, SortNode) for n in walk(plan))
 
     def test_limit_plan(self):
@@ -206,12 +234,14 @@ class TestPlanner:
         planner = Planner(catalog)
         plan = planner.plan_sql("SELECT id FROM employees LIMIT 5")
         from adaptive_engine.plan import walk
+
         assert any(isinstance(n, LimitNode) for n in walk(plan))
 
 
 # ------------------------------------------------------------------
 # End-to-end: SQL → execute → results
 # ------------------------------------------------------------------
+
 
 class TestSQLExecution:
     def _run(self, sql: str, catalog: Catalog | None = None) -> list[dict]:

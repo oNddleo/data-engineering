@@ -7,10 +7,11 @@ Times the same query plan under three execution strategies:
 
 Results are averaged over REPEATS runs to reduce timing noise.
 """
+
 from __future__ import annotations
 import copy
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable
 
 from adaptive_engine import AdaptiveEngine
@@ -76,7 +77,9 @@ class BenchmarkRunner:
         results = []
         for val in scenario.param_values:
             catalog, plan = scenario.factory(val)
-            result = self._measure(scenario.name, scenario.param_name, val, catalog, plan)
+            result = self._measure(
+                scenario.name, scenario.param_name, val, catalog, plan
+            )
             results.append(result)
         return results
 
@@ -106,7 +109,9 @@ class BenchmarkRunner:
 
         # Push
         push_ms, push_rows = _timed(
-            lambda: PushCompiler(catalog).compile(opt.optimize(copy.deepcopy(plan))).run()
+            lambda: PushCompiler(catalog)
+            .compile(opt.optimize(copy.deepcopy(plan)))
+            .run()
         )
 
         # Adaptive (well-estimated — no artificial undercount so we see true overhead)

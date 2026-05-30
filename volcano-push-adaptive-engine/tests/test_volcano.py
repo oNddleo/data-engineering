@@ -1,4 +1,5 @@
 """Tests for volcano (pull-based) executor."""
+
 from adaptive_engine import (
     Catalog,
     VolcanoExecutor,
@@ -20,13 +21,25 @@ def make_catalog() -> tuple[Catalog, VolcanoExecutor]:
     catalog.create_table(
         "orders",
         [
-            {"id": i, "customer_id": i % 5, "amount": i * 10, "status": "open" if i % 3 == 0 else "closed"}
+            {
+                "id": i,
+                "customer_id": i % 5,
+                "amount": i * 10,
+                "status": "open" if i % 3 == 0 else "closed",
+            }
             for i in range(1, 51)
         ],
     )
     catalog.create_table(
         "customers",
-        [{"id": i, "name": f"Customer-{i}", "tier": "gold" if i % 2 == 0 else "silver"} for i in range(5)],
+        [
+            {
+                "id": i,
+                "name": f"Customer-{i}",
+                "tier": "gold" if i % 2 == 0 else "silver",
+            }
+            for i in range(5)
+        ],
     )
     return catalog, VolcanoExecutor(catalog)
 
@@ -54,7 +67,11 @@ class TestFilter:
     def test_filter_reduces_rows(self):
         catalog, exec_ = make_catalog()
         plan = annotate(
-            FilterNode(child=ScanNode(table="orders"), predicate=eq("status", "open"), selectivity=0.3),
+            FilterNode(
+                child=ScanNode(table="orders"),
+                predicate=eq("status", "open"),
+                selectivity=0.3,
+            ),
             catalog,
         )
         rows = exec_.execute(plan)
@@ -64,7 +81,11 @@ class TestFilter:
     def test_filter_gt(self):
         catalog, exec_ = make_catalog()
         plan = annotate(
-            FilterNode(child=ScanNode(table="orders"), predicate=gt("amount", 200), selectivity=0.5),
+            FilterNode(
+                child=ScanNode(table="orders"),
+                predicate=gt("amount", 200),
+                selectivity=0.5,
+            ),
             catalog,
         )
         rows = exec_.execute(plan)
@@ -188,7 +209,9 @@ class TestLimit:
     def test_limit_with_offset(self):
         catalog, exec_ = make_catalog()
         plan_all = annotate(ScanNode(table="orders"), catalog)
-        plan_lim = annotate(LimitNode(child=ScanNode(table="orders"), limit=5, offset=10), catalog)
+        plan_lim = annotate(
+            LimitNode(child=ScanNode(table="orders"), limit=5, offset=10), catalog
+        )
         all_rows = exec_.execute(plan_all)
         lim_rows = exec_.execute(plan_lim)
         assert lim_rows == all_rows[10:15]
