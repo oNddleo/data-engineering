@@ -2,9 +2,11 @@
 Incident tracker — records what broke a table and when it was fixed.
 """
 
+from __future__ import annotations
+
 import sqlite3
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 
 def _now() -> str:
@@ -34,6 +36,8 @@ class IncidentTracker:
             (table_name, _now(), severity, description),
         )
         self.conn.commit()
+        if cur.lastrowid is None:
+            raise RuntimeError("INSERT did not produce a row ID")
         return cur.lastrowid
 
     def resolve(
@@ -52,7 +56,7 @@ class IncidentTracker:
         )
         self.conn.commit()
 
-    def open_incidents(self, table_name: Optional[str] = None) -> list[dict]:
+    def open_incidents(self, table_name: Optional[str] = None) -> list[dict[str, Any]]:
         if table_name:
             rows = self.conn.execute(
                 "SELECT * FROM meta_incidents WHERE table_name=? AND resolved_at IS NULL ORDER BY occurred_at DESC",
@@ -64,14 +68,14 @@ class IncidentTracker:
             ).fetchall()
         return [dict(r) for r in rows]
 
-    def history(self, table_name: str, limit: int = 10) -> list[dict]:
+    def history(self, table_name: str, limit: int = 10) -> list[dict[str, Any]]:
         rows = self.conn.execute(
             "SELECT * FROM meta_incidents WHERE table_name=? ORDER BY occurred_at DESC LIMIT ?",
             (table_name, limit),
         ).fetchall()
         return [dict(r) for r in rows]
 
-    def last_incident(self, table_name: str) -> Optional[dict]:
+    def last_incident(self, table_name: str) -> Optional[dict[str, Any]]:
         row = self.conn.execute(
             "SELECT * FROM meta_incidents WHERE table_name=? ORDER BY occurred_at DESC LIMIT 1",
             (table_name,),

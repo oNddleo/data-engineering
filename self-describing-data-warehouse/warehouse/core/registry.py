@@ -3,11 +3,13 @@ Metadata registry — register tables and columns with their descriptions,
 owners, domains, and tags.
 """
 
+from __future__ import annotations
+
 import json
 import sqlite3
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 
 def _now() -> str:
@@ -21,7 +23,7 @@ class ColumnMeta:
     description: str = ""
     is_pii: bool = False
     is_nullable: bool = True
-    sample_values: list = field(default_factory=list)
+    sample_values: list[Any] = field(default_factory=list)
 
 
 @dataclass
@@ -32,7 +34,7 @@ class TableMeta:
     domain: str
     source_system: str = ""
     update_frequency: str = "daily"
-    tags: list = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     columns: list[ColumnMeta] = field(default_factory=list)
 
 
@@ -102,7 +104,7 @@ class MetadataRegistry:
         )
         self.conn.commit()
 
-    def get_table(self, table_name: str) -> Optional[dict]:
+    def get_table(self, table_name: str) -> Optional[dict[str, Any]]:
         row = self.conn.execute(
             "SELECT * FROM meta_tables WHERE table_name=?", (table_name,)
         ).fetchone()
@@ -113,7 +115,7 @@ class MetadataRegistry:
         result["columns"] = self._get_columns(table_name)
         return result
 
-    def _get_columns(self, table_name: str) -> list[dict]:
+    def _get_columns(self, table_name: str) -> list[dict[str, Any]]:
         rows = self.conn.execute(
             "SELECT * FROM meta_columns WHERE table_name=? ORDER BY id",
             (table_name,),
@@ -125,9 +127,9 @@ class MetadataRegistry:
             cols.append(d)
         return cols
 
-    def list_tables(self, domain: Optional[str] = None, include_deprecated: bool = False) -> list[dict]:
+    def list_tables(self, domain: Optional[str] = None, include_deprecated: bool = False) -> list[dict[str, Any]]:
         query = "SELECT * FROM meta_tables WHERE 1=1"
-        params: list = []
+        params: list[Any] = []
         if domain:
             query += " AND domain=?"
             params.append(domain)
