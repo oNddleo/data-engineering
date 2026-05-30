@@ -43,7 +43,7 @@ class WorkerMetrics:
     distinct_values: HyperLogLogCRDT = field(init=False)
     value_histogram: Dict[str, GCounter] = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.null_count = GCounter(node_id=self.node_id)
         self.valid_count = GCounter(node_id=self.node_id)
         self.anomaly_count = PNCounter(node_id=self.node_id)
@@ -95,7 +95,7 @@ class WorkerMetrics:
         for b in HISTOGRAM_BUCKETS:
             self.value_histogram[b].merge_into(other.value_histogram[b])
 
-    def summary(self) -> dict:
+    def summary(self) -> dict[str, Any]:
         total = self.null_count.value() + self.valid_count.value()
         null_rate = self.null_count.value() / total if total else 0.0
         return {

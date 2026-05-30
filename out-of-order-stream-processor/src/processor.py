@@ -1,7 +1,7 @@
 from __future__ import annotations
 import time
 from collections import defaultdict
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from .event import Event, LateEvent, WindowResult
 from .watermarks.base import Watermark
@@ -106,9 +106,9 @@ class StreamProcessor:
         self._emitted_results.extend(results)
         self._late_events.extend(lates)
 
-        for r in results:
+        for result in results:
             if self.result_callback:
-                self.result_callback(r)
+                self.result_callback(result)
         for le in lates:
             if self.late_callback:
                 self.late_callback(le)
@@ -154,7 +154,7 @@ class StreamProcessor:
     def buffered_window_count(self) -> int:
         return sum(1 for events in self._buffer.values() if events)
 
-    def stats(self) -> dict:
+    def stats(self) -> dict[str, Any]:
         total_late = len(self._late_events)
         dropped = sum(
             1 for le in self._late_events if le.policy_applied == "drop"

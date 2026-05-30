@@ -8,6 +8,7 @@ Supports both increment and decrement while preserving all CRDT properties.
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
+from typing import Any
 from .g_counter import GCounter
 
 
@@ -17,7 +18,7 @@ class PNCounter:
     p: GCounter = field(init=False)
     n: GCounter = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.p = GCounter(node_id=self.node_id)
         self.n = GCounter(node_id=self.node_id)
 
@@ -50,7 +51,7 @@ class PNCounter:
         result.n = self.n.clone()
         return result
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "node_id": self.node_id,
             "p": self.p.to_dict(),
@@ -58,7 +59,7 @@ class PNCounter:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "PNCounter":
+    def from_dict(cls, data: dict[str, Any]) -> "PNCounter":
         obj = cls(node_id=data["node_id"])
         obj.p = GCounter.from_dict(data["p"])
         obj.n = GCounter.from_dict(data["n"])

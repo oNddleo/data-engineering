@@ -17,7 +17,7 @@ import hashlib
 import math
 import struct
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import Any, List, cast
 
 
 _ALPHA = {
@@ -36,7 +36,7 @@ def _alpha(m: int) -> float:
 def _hash64(value: Any) -> int:
     raw = str(value).encode()
     digest = hashlib.sha256(raw).digest()
-    return struct.unpack(">Q", digest[:8])[0]
+    return cast(int, struct.unpack(">Q", digest[:8])[0])
 
 
 def _rho(bits: int, max_bits: int) -> int:
@@ -53,7 +53,7 @@ class HyperLogLogCRDT:
     precision: int = 10  # b: number of index bits; m = 2^b registers
     registers: List[int] = field(default_factory=list)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.registers:
             self.registers = [0] * (2 ** self.precision)
 
@@ -116,7 +116,7 @@ class HyperLogLogCRDT:
     def error_rate(self) -> float:
         return 1.04 / math.sqrt(self.m)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "node_id": self.node_id,
             "precision": self.precision,
@@ -124,7 +124,7 @@ class HyperLogLogCRDT:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "HyperLogLogCRDT":
+    def from_dict(cls, data: dict[str, Any]) -> "HyperLogLogCRDT":
         return cls(
             node_id=data["node_id"],
             precision=data["precision"],

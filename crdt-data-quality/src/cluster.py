@@ -12,7 +12,7 @@ from __future__ import annotations
 import random
 import time
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from .worker import PipelineWorker
 
@@ -27,7 +27,7 @@ class Cluster:
     merge_rounds: int = field(init=False, default=0)
     total_merge_time_ms: float = field(init=False, default=0.0)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         rng = random.Random(self.seed)
         for i in range(self.n_workers):
             w = PipelineWorker(
@@ -141,7 +141,7 @@ class Cluster:
             "distinct_spread": max(distincts) - min(distincts),
         }
 
-    def global_summary(self) -> dict:
+    def global_summary(self) -> dict[str, Any]:
         """Merge all worker states and return the global aggregate."""
         if not self.workers:
             return {}

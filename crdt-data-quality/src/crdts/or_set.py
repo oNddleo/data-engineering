@@ -71,7 +71,7 @@ class ORSet:
     def __len__(self) -> int:
         return len(self.elements())
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "node_id": self.node_id,
             "entries": {str(k): list(v) for k, v in self.entries.items()},
@@ -79,7 +79,7 @@ class ORSet:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "ORSet":
+    def from_dict(cls, data: dict[str, Any]) -> "ORSet":
         obj = cls(node_id=data["node_id"])
         obj.entries = {k: set(v) for k, v in data["entries"].items()}
         obj.tombstones = set(data["tombstones"])

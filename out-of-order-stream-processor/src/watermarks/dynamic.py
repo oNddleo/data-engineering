@@ -105,7 +105,7 @@ class DynamicPerKeyWatermark(Watermark):
             return self.global_fallback_lag
         return min(max(stats.lag, self.min_lag), self.max_lag)
 
-    def stats_summary(self) -> dict[str, dict]:
+    def stats_summary(self) -> dict[str, dict[str, float]]:
         out = {}
         for key, stats in self._key_stats.items():
             out[key] = {
