@@ -142,14 +142,14 @@ def consumer_notification(
 # File output helpers
 # ------------------------------------------------------------------ #
 
-def write_report(report: dict, output_path: Path | str, *, indent: int = 2) -> None:
+def write_report(report: dict[str, Any], output_path: Path | str, *, indent: int = 2) -> None:
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w") as fh:
         json.dump(report, fh, indent=indent, default=str)
 
 
-def write_markdown_report(report: dict, output_path: Path | str) -> None:
+def write_markdown_report(report: dict[str, Any], output_path: Path | str) -> None:
     """Render a breaking-change report as Markdown."""
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)

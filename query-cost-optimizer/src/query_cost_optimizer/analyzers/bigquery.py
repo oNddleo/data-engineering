@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import Any
 
 from ..models import Platform, QueryRecord, TableStats
 
@@ -23,7 +24,7 @@ class BigQueryAnalyzer:
         history_days: int = 30,
     ) -> None:
         try:
-            from google.cloud import bigquery  # type: ignore
+            from google.cloud import bigquery
         except ImportError as e:
             raise ImportError(
                 "google-cloud-bigquery is required. "
@@ -88,9 +89,9 @@ class BigQueryAnalyzer:
         logger.info("Fetched %d query records from BigQuery.", len(records))
         return records
 
-    def fetch_table_metadata(self, dataset_ids: list[str] | None = None) -> dict[str, dict]:
+    def fetch_table_metadata(self, dataset_ids: list[str] | None = None) -> dict[str, dict[str, Any]]:
         """Return row count + size for tables in the project."""
-        meta: dict[str, dict] = {}
+        meta: dict[str, dict[str, Any]] = {}
         datasets = dataset_ids or self._list_datasets()
         for ds in datasets:
             sql = f"""

@@ -20,7 +20,7 @@ class SumOfMax:
     _max: PerKeyMax = field(default_factory=PerKeyMax)
     _outer_sum: float = 0.0
     _per_key_max_known: dict[Any, float] = field(default_factory=dict)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def insert(self, key: Any, value: float) -> float:
         with self._lock:

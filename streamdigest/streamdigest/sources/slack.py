@@ -20,7 +20,7 @@ def _ts_to_iso(ts: str | None) -> str | None:
         return ts
 
 
-def _classify_reason(msg: dict, bot_user_id: str | None) -> str:
+def _classify_reason(msg: dict[str, Any], bot_user_id: str | None) -> str:
     if msg.get("channel_type") == "im":
         return "dm"
     text = msg.get("text", "")
@@ -44,7 +44,7 @@ def slack_source(
     bot_token: str = dlt.secrets.value,
     channel_limit: int = 50,
     message_limit: int = 200,
-):
+) -> Any:
     """dlt source emitting a `messages` resource from all joined Slack channels."""
     _token = bot_token or settings.slack_bot_token
     if not _token:
@@ -66,7 +66,7 @@ def slack_source(
     ) -> Iterator[dict[str, Any]]:
         try:
             from slack_sdk import WebClient
-            from slack_sdk.errors import SlackApiError  # type: ignore[import-not-found]
+            from slack_sdk.errors import SlackApiError
         except ImportError as exc:
             raise ImportError(
                 "slack-sdk is required for the Slack source. "

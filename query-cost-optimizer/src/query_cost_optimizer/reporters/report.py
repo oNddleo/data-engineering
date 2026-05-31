@@ -147,7 +147,7 @@ class JsonReporter:
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        def _default(obj):
+        def _default(obj: object) -> object:
             if isinstance(obj, datetime):
                 return obj.isoformat()
             if hasattr(obj, "value"):

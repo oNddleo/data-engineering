@@ -29,7 +29,7 @@ class SnowflakeAnalyzer:
         credit_price_usd: float = _DEFAULT_CREDIT_PRICE_USD,
     ) -> None:
         try:
-            import snowflake.connector  # type: ignore
+            import snowflake.connector
         except ImportError as e:
             raise ImportError(
                 "snowflake-connector-python is required. "

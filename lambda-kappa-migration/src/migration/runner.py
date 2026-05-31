@@ -6,6 +6,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 from src.config import HISTORICAL_DIR, config
 from src.kappa_arch.stream_processor import KappaProcessor
@@ -38,7 +39,7 @@ class MigrationState:
 
     phase: MigrationPhase = MigrationPhase.INITIAL
     started_at: datetime = field(default_factory=datetime.utcnow)
-    phase_log: list[dict] = field(default_factory=list)
+    phase_log: list[dict[str, Any]] = field(default_factory=list)
     validation_passed: bool = False
     events_backfilled: int = 0
 

@@ -8,6 +8,7 @@ import threading
 import time
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from src.config import HISTORICAL_DIR, LOCAL_KAFKA_FILE, config
 from src.kappa_arch.replay_manager import ProcessorMode
@@ -102,7 +103,7 @@ class KappaProcessor:
             self._thread.join(timeout=5)
         logger.info("KappaProcessor stopped")
 
-    def get_results(self) -> dict:
+    def get_results(self) -> dict[str, Any]:
         """Return a snapshot of all current aggregation results."""
         return self.state.snapshot()
 
@@ -140,7 +141,7 @@ class KappaProcessor:
     def _consume_kafka(self, on_message: Callable[[Event], None] | None) -> None:
         """Consume live events from Kafka."""
         try:
-            from kafka import KafkaConsumer  # type: ignore[import]
+            from kafka import KafkaConsumer  # type: ignore[import-not-found]
         except ImportError:
             logger.error("kafka-python not installed; cannot start Kafka consumer")
             return

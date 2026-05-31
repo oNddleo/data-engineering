@@ -42,7 +42,7 @@ class GorillaFloatCodec(Codec):
                                  original_dtype=str(data.dtype), original_len=n)
 
         def f2i(f: float) -> int:
-            return struct.unpack("<Q", struct.pack("<d", f))[0]
+            return int(struct.unpack("<Q", struct.pack("<d", f))[0])
 
         prev = f2i(float(values[0]))
         bw.write_bits(prev, 64)
@@ -104,7 +104,7 @@ class GorillaFloatCodec(Codec):
             return np.array([], dtype=encoded.original_dtype)
 
         def i2f(b: int) -> float:
-            return struct.unpack("<d", struct.pack("<Q", b & 0xFFFF_FFFF_FFFF_FFFF))[0]
+            return float(struct.unpack("<d", struct.pack("<Q", b & 0xFFFF_FFFF_FFFF_FFFF))[0])
 
         result = np.empty(n, dtype=np.float64)
         prev = br.read_bits(64)

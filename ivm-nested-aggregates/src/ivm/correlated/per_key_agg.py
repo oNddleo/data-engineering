@@ -18,7 +18,7 @@ from sortedcontainers import SortedList
 @dataclass
 class PerKeySum:
     _sum: dict[Any, float] = field(default_factory=lambda: defaultdict(float))
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def insert(self, key: Any, value: float) -> float:
         with self._lock:
@@ -41,7 +41,7 @@ class PerKeySum:
 @dataclass
 class PerKeyCount:
     _cnt: dict[Any, int] = field(default_factory=lambda: defaultdict(int))
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def insert(self, key: Any) -> int:
         with self._lock:
@@ -86,7 +86,7 @@ class PerKeyAvg:
 @dataclass
 class PerKeyMax:
     _values: dict[Any, SortedList] = field(default_factory=dict)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def insert(self, key: Any, value: float) -> float:
         with self._lock:
@@ -116,7 +116,7 @@ class PerKeyMax:
 @dataclass
 class PerKeyMin:
     _values: dict[Any, SortedList] = field(default_factory=dict)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def insert(self, key: Any, value: float) -> float:
         with self._lock:

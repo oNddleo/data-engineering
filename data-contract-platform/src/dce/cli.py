@@ -7,7 +7,7 @@ import json
 import sys
 from pathlib import Path
 
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 
 from .contract import load_contract
 from .notifier import build_notifier

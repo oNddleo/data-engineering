@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import logging
 import sys
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import click
 from dotenv import load_dotenv
@@ -48,8 +50,8 @@ _output_options = [
 ]
 
 
-def add_options(options):
-    def _add_options(func):
+def add_options(options: list[Any]) -> Callable[[Any], Any]:
+    def _add_options(func: Any) -> Any:
         for option in reversed(options):
             func = option(func)
         return func
@@ -61,7 +63,7 @@ def add_options(options):
 @main.command()
 @click.option("--project", envvar="BQ_PROJECT_ID", required=True, help="GCP project ID (or set BQ_PROJECT_ID).")
 @add_options(_output_options)
-def bigquery(project, days, min_savings, min_queries, output, out_dir, verbose):
+def bigquery(project: str, days: int, min_savings: float, min_queries: int, output: str, out_dir: str, verbose: bool) -> None:
     """Analyse BigQuery query history and surface optimisation recommendations."""
     _setup_logging(verbose)
     console.print(f"[cyan]Connecting to BigQuery project:[/cyan] [bold]{project}[/bold]")
@@ -94,7 +96,7 @@ def bigquery(project, days, min_savings, min_queries, output, out_dir, verbose):
 @click.option("--password", envvar="SNOWFLAKE_PASSWORD", default=None, help="Snowflake password (or set SNOWFLAKE_PASSWORD).")
 @click.option("--warehouse", envvar="SNOWFLAKE_WAREHOUSE", default=None, help="Snowflake warehouse to use.")
 @add_options(_output_options)
-def snowflake(account, user, password, warehouse, days, min_savings, min_queries, output, out_dir, verbose):
+def snowflake(account: str, user: str, password: str | None, warehouse: str | None, days: int, min_savings: float, min_queries: int, output: str, out_dir: str, verbose: bool) -> None:
     """Analyse Snowflake query history and surface optimisation recommendations."""
     _setup_logging(verbose)
     console.print(f"[cyan]Connecting to Snowflake account:[/cyan] [bold]{account}[/bold]")
@@ -128,7 +130,7 @@ def snowflake(account, user, password, warehouse, days, min_savings, min_queries
 @click.option("--platform", type=click.Choice(["bigquery", "snowflake"]), default="bigquery", show_default=True)
 @click.option("--output", "-o", type=click.Choice(["console", "json", "html", "all"]), default="console", show_default=True)
 @click.option("--out-dir", default="./reports", show_default=True)
-def demo(platform, output, out_dir):
+def demo(platform: str, output: str, out_dir: str) -> None:
     """Run the optimizer against synthetic demo data (no credentials needed)."""
     from .demo import build_demo_report
     report = build_demo_report(platform)
@@ -137,7 +139,7 @@ def demo(platform, output, out_dir):
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
-def _emit(report, output: str, out_dir: str, prefix: str) -> None:
+def _emit(report: Any, output: str, out_dir: str, prefix: str) -> None:
     from .reporters.report import ConsoleReporter, JsonReporter, HtmlReporter
 
     ts = report.generated_at.strftime("%Y%m%d_%H%M%S")

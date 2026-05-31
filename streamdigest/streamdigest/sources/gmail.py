@@ -20,7 +20,7 @@ def gmail_source(
     app_password: str = dlt.secrets.value,
     folder: str = "INBOX",
     batch_size: int = 50,
-):
+) -> Any:
     """dlt source emitting a `messages` resource from a Gmail IMAP mailbox."""
     _host = host or settings.gmail_host or IMAP_HOST
     _email = email or settings.gmail_email
@@ -43,7 +43,7 @@ def gmail_source(
             "uid", initial_value=1
         )
         try:
-            from imap_tools import MailBox, AND  # type: ignore[import-not-found]
+            from imap_tools import MailBox, AND  # noqa: F401  # type: ignore[import-untyped, import-not-found]
         except ImportError as exc:
             raise ImportError(
                 "imap-tools is required for the Gmail source. "

@@ -23,6 +23,7 @@ import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 from .adapters.base import BaseAdapter
 from .cost_model import CalibrationStore, CostModel, PricingConfig
@@ -122,7 +123,7 @@ class ViewScheduler:
         log.info("=== Cycle complete ===")
         return result
 
-    def status(self) -> dict:
+    def status(self) -> dict[str, Any]:
         return {
             "live_views": len(self._live_views),
             "worklog": self.store.stats(),
@@ -237,7 +238,7 @@ class ViewScheduler:
             return {}
 
     def _save_state(self) -> None:
-        def _serialise(obj):
+        def _serialise(obj: object) -> str:
             if isinstance(obj, datetime):
                 return obj.isoformat()
             raise TypeError(f"Not serialisable: {type(obj)}")

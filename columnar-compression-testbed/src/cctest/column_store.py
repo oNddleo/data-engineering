@@ -58,12 +58,11 @@ class ColumnStore:
     def retrieve(self, columns: Optional[list[str]] = None) -> dict[str, np.ndarray[Any, np.dtype[Any]]]:
         """Decompress and concatenate all stored chunks for each column."""
         names = columns if columns is not None else list(self._store.keys())
-        result: dict[str, np.ndarray] = {}
+        result: dict[str, np.ndarray[Any, np.dtype[Any]]] = {}
         for name in names:
             chunks = self._store.get(name, [])
             if not chunks:
                 continue
-            _codec = self._selector.select.__self__  # noqa: F841
             decoded_chunks = []
             for chunk in chunks:
                 from .codecs import ALL_CODECS
@@ -94,7 +93,7 @@ class ColumnStore:
             result[name] = total
         return result
 
-    def compression_summary(self) -> dict[str, dict]:
+    def compression_summary(self) -> dict[str, dict[str, Any]]:
         sb = self.storage_bytes()
         ob = self.original_bytes()
         summary = {}

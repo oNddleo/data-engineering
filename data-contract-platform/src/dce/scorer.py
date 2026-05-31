@@ -7,7 +7,7 @@ import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
 from .validator import ValidationResult
 
@@ -140,7 +140,7 @@ class ReliabilityStore:
         contract_id: str,
         *,
         limit: int = 50,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         with self._conn() as conn:
             rows = conn.execute(
                 """

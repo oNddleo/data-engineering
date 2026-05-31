@@ -97,7 +97,7 @@ class CorrectnessValidator:
         self,
         lambda_results: dict[str, Any],
         kappa_results: dict[str, Any],
-    ) -> list:
+    ) -> list[Any]:
         from src.validator.tolerance import FieldComparison, MatchResult
 
         comparisons = []
@@ -162,7 +162,7 @@ class CorrectnessValidator:
         section: str,
         lambda_data: dict[str, dict[str, int]],
         kappa_data: dict[str, dict[str, int]],
-    ) -> list:
+    ) -> list[Any]:
         from src.validator.tolerance import FieldComparison, MatchResult
 
         comparisons = []

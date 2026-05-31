@@ -60,7 +60,7 @@ class OllamaClient:
             raise OllamaError(f"Ollama returned empty content: {body}")
 
         try:
-            return json.loads(content)
+            return json.loads(content)  # type: ignore[no-any-return]
         except json.JSONDecodeError as e:
             raise OllamaError(f"Ollama returned non-JSON: {content[:300]}") from e
 

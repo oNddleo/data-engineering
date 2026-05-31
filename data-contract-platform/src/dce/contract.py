@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 
 @dataclass
@@ -85,7 +85,7 @@ class DataContract:
 # Loading helpers
 # ------------------------------------------------------------------ #
 
-def _parse_field(raw: dict) -> FieldSchema:
+def _parse_field(raw: dict[str, Any]) -> FieldSchema:
     return FieldSchema(
         name=raw["name"],
         type=raw["type"],
@@ -95,7 +95,7 @@ def _parse_field(raw: dict) -> FieldSchema:
     )
 
 
-def _parse_sla(raw: dict) -> SLARule:
+def _parse_sla(raw: dict[str, Any]) -> SLARule:
     return SLARule(
         name=raw["name"],
         rule_type=raw["rule_type"],
@@ -105,7 +105,7 @@ def _parse_sla(raw: dict) -> SLARule:
     )
 
 
-def _parse_semantic(raw: dict) -> SemanticRule:
+def _parse_semantic(raw: dict[str, Any]) -> SemanticRule:
     return SemanticRule(
         name=raw["name"],
         expression=raw["expression"],

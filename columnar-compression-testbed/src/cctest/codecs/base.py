@@ -71,18 +71,20 @@ class Codec(ABC):
         original_bytes = data.nbytes
 
         encode_times = []
-        encoded = None
+        encoded: EncodedColumn | None = None
         for _ in range(rounds):
             t0 = time.perf_counter()
             encoded = self.encode(data)
             encode_times.append(time.perf_counter() - t0)
+        assert encoded is not None, "rounds must be > 0"
 
         decode_times = []
-        decoded = None
+        decoded: np.ndarray[Any, np.dtype[Any]] | None = None
         for _ in range(rounds):
             t0 = time.perf_counter()
             decoded = self.decode(encoded)
             decode_times.append(time.perf_counter() - t0)
+        assert decoded is not None, "rounds must be > 0"
 
         if data.dtype.kind == "U" or data.dtype.kind == "O":
             lossless = list(data) == list(decoded)

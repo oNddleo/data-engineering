@@ -79,10 +79,10 @@ class SnowflakeAdapter(BaseAdapter):
             self._conn = snowflake.connector.connect(**params)
         return self._conn
 
-    def _execute(self, sql: str, params: list | None = None) -> list[dict]:
+    def _execute(self, sql: str, params: list[Any] | None = None) -> list[dict[str, Any]]:
         cur = self.conn.cursor(snowflake.connector.DictCursor)
         cur.execute(sql, params or [])
-        return cur.fetchall()
+        return cur.fetchall()  # type: ignore[no-any-return]
 
     # ------------------------------------------------------------------
     # Worklog

@@ -51,7 +51,7 @@ def _fetch_subject_body(client: httpx.Client, subject_url: str | None) -> str:
 def github_source(
     token: str = dlt.secrets.value,
     include_bodies: bool = True,
-):
+) -> Any:
     """dlt source emitting a `notifications` resource."""
     if not token:
         token = settings.github_token

@@ -8,6 +8,7 @@ optimizer always works with aggregate statistics rather than raw rows.
 from __future__ import annotations
 
 import sqlite3
+from typing import Any
 from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime
@@ -111,7 +112,7 @@ class WorklogStore:
         limit: int = 50_000,
     ) -> list[QueryRecord]:
         where = ""
-        params: list = []
+        params: list[Any] = []
         if warehouse:
             where = "WHERE warehouse = ?"
             params.append(warehouse.value)
@@ -133,7 +134,7 @@ class WorklogStore:
                 (warehouse.value, datetime.utcnow().isoformat(), row_count),
             )
 
-    def stats(self) -> dict:
+    def stats(self) -> dict[str, Any]:
         with self._db() as con:
             total = con.execute(
                 "SELECT COUNT(*), SUM(frequency), SUM(cost_usd) FROM query_records"

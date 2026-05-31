@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 
 from .contract import DataContract, FieldSchema
 
@@ -39,7 +39,7 @@ class ValidationResult:
     def warnings(self) -> list[ValidationIssue]:
         return [i for i in self.issues if i.severity == "warning"]
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "contract_id": self.contract_id,
             "contract_version": self.contract_version,
@@ -68,7 +68,7 @@ class ValidationResult:
 # Type mapping
 # ------------------------------------------------------------------ #
 
-_TYPE_MAP: dict[str, type | tuple] = {
+_TYPE_MAP: dict[str, type | tuple[type, ...]] = {
     "string": str,
     "integer": (int,),
     "number": (int, float),

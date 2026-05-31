@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
+from typing import Any
 
 from ..models import ExpensivePattern, Platform, QueryRecord, Severity
 from ..sql_parser import detect_expensive_patterns
@@ -11,7 +12,7 @@ from ..sql_parser import detect_expensive_patterns
 logger = logging.getLogger(__name__)
 
 # Pattern metadata: (display name, description, fix, savings_pct, severity)
-_PATTERN_META: dict[str, dict] = {
+_PATTERN_META: dict[str, dict[str, Any]] = {
     "select_star": {
         "name": "SELECT * (full column scan)",
         "description": (
@@ -104,7 +105,7 @@ class PatternDetector:
 
     def detect(self, records: list[QueryRecord]) -> list[ExpensivePattern]:
         # Accumulate cost + examples per (platform, pattern)
-        buckets: dict[tuple[Platform, str], dict] = defaultdict(
+        buckets: dict[tuple[Platform, str], dict[str, Any]] = defaultdict(
             lambda: {"cost": 0.0, "count": 0, "examples": []}
         )
 

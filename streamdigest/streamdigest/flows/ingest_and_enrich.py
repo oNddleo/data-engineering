@@ -23,7 +23,7 @@ from streamdigest.sources.github import github_source
 from streamdigest.storage import get_store
 
 
-@task(name="ingest-github", retries=2, retry_delay_seconds=exponential_backoff(backoff_factor=5))
+@task(name="ingest-github", retries=2, retry_delay_seconds=exponential_backoff(backoff_factor=5))  # type: ignore[misc]
 def ingest_github() -> dict[str, Any]:
     logger = get_run_logger()
     pipeline = dlt.pipeline(
@@ -36,14 +36,14 @@ def ingest_github() -> dict[str, Any]:
     return {"pipeline": pipeline.pipeline_name, "dataset": "github"}
 
 
-@task(name="prepare-storage")
+@task(name="prepare-storage")  # type: ignore[misc]
 def prepare_storage() -> None:
     store = get_store()
     store.init_schema()
     store.ensure_digest_view()
 
 
-@task(
+@task(  # type: ignore[misc]
     name="enrich-batch",
     retries=1,
     retry_delay_seconds=10,
@@ -88,7 +88,7 @@ def enrich_batch(batch_size: int = 50) -> dict[str, int]:
         return {"enriched": ok, "skipped": 0, "failed": failed}
 
 
-@flow(name="streamdigest", log_prints=True)
+@flow(name="streamdigest", log_prints=True)  # type: ignore[misc]
 def ingest_and_enrich(batch_size: int = 50) -> dict[str, Any]:
     """Top-level flow: ingest → prepare → enrich."""
     ingest_info = ingest_github()

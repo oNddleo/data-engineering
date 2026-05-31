@@ -26,7 +26,7 @@ class MonotonicityChecker:
     advancer: WatermarkAdvancer
     _last_w: float = -float("inf")
     _last_safe_delay: dict[object, float] = field(default_factory=dict)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
     violations: list[str] = field(default_factory=list)
     strict: bool = True              # if True, raise on violation
 

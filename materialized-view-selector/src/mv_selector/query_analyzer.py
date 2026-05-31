@@ -193,7 +193,7 @@ class QueryAnalyzer:
         if _SQLGLOT:
             try:
                 tree = sqlglot.parse_one(sql, read=self.dialect)
-                return _extract_tables_sqlglot(tree)
+                return _extract_tables_sqlglot(tree)  # type: ignore[arg-type]
             except Exception:
                 pass
         return _extract_tables_simple(sql)

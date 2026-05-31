@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import threading
 from dataclasses import dataclass
+from typing import cast
 
 from disagg.core.page import Page, PageId, blank_page
 from disagg.server.coherence import CoherenceDirectory
@@ -41,15 +42,21 @@ class PageServer:
 
     def dispatch(self, op: str, **kwargs: object) -> object:
         if op == "read":
-            return self.read(int(kwargs["client_id"]), kwargs["page_id"])  # type: ignore[call-overload]
+            return self.read(
+                int(cast(str, kwargs["client_id"])),
+                cast(PageId, kwargs["page_id"]),
+            )
         if op == "write":
             return self.write(
-                int(kwargs["client_id"]),
-                kwargs["page_id"],  # type: ignore[call-overload]
-                kwargs["data"],     # type: ignore[call-overload]
+                int(cast(str, kwargs["client_id"])),
+                cast(PageId, kwargs["page_id"]),
+                cast(bytes, kwargs["data"]),
             )
         if op == "release":
-            self.release(int(kwargs["client_id"]), kwargs["page_id"])  # type: ignore[call-overload]
+            self.release(
+                int(cast(str, kwargs["client_id"])),
+                cast(PageId, kwargs["page_id"]),
+            )
             return None
         raise ValueError(f"unknown op: {op}")
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 from src.config import HISTORICAL_DIR, config
 from src.kappa_arch.replay_manager import ReplayManager
@@ -28,7 +29,7 @@ class BackfillJob:
         self.local_mode = config.local_mode if local_mode is None else local_mode
         self.rate = rate if rate is not None else config.backfill_rate
 
-    def run(self) -> dict[str, int]:
+    def run(self) -> dict[str, Any]:
         """Execute the backfill; returns stats dict with event count."""
         logger.info(
             "BackfillJob starting: source=%s, local_mode=%s, rate=%d/s",
@@ -43,7 +44,7 @@ class BackfillJob:
         )
         topic = config.kafka.topic_replay
         published = manager.replay(topic=topic)
-        stats = {"events_published": published, "topic": topic}  # type: ignore[assignment]
+        stats: dict[str, Any] = {"events_published": published, "topic": topic}
         logger.info("BackfillJob complete: %s", stats)
         return stats
 

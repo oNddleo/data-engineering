@@ -60,11 +60,11 @@ def _graphql(api_key: str, query: str, variables: dict[str, Any]) -> dict[str, A
     payload = resp.json()
     if "errors" in payload:
         raise RuntimeError(f"Linear GraphQL error: {payload['errors']}")
-    return payload["data"]
+    return payload["data"]  # type: ignore[no-any-return]
 
 
 @dlt.source(name="linear")  # type: ignore[misc]
-def linear_source(api_key: str = dlt.secrets.value):
+def linear_source(api_key: str = dlt.secrets.value) -> Any:
     """dlt source emitting a `notifications` resource from Linear."""
     _key = api_key or settings.linear_api_key
     if not _key:

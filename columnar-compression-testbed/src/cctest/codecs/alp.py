@@ -167,4 +167,4 @@ class ALPCodec(Codec):
             for pos, val in zip(exc_pos, exc_vals):
                 result[pos] = val
 
-        return result.astype(encoded.original_dtype)
+        return result.astype(encoded.original_dtype)  # type: ignore[no-any-return]
