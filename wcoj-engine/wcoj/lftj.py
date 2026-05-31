@@ -120,7 +120,7 @@ def lftj(
         for d in global_depths:
             depth_iters[d].append(it)
 
-    results: List[Tuple] = []
+    results: List[Tuple[Any, ...]] = []
     current: List[int] = [0] * k
 
     def recurse(depth: int) -> None:

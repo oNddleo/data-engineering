@@ -14,14 +14,14 @@ hash_join(query) → np.ndarray
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 
 from .query import JoinQuery, Relation
 
 
-def hash_join(query: JoinQuery) -> np.ndarray:
+def hash_join(query: JoinQuery) -> np.ndarray[Any, np.dtype[Any]]:
     """Run a left-deep multi-way hash join.
 
     Returns a 2-D int64 array whose columns correspond to the query's
@@ -58,11 +58,11 @@ def hash_join(query: JoinQuery) -> np.ndarray:
 # ------------------------------------------------------------------ #
 
 def _two_way_hash_join(
-    left: np.ndarray,
+    left: np.ndarray[Any, np.dtype[Any]],
     left_vars: List[str],
-    right: np.ndarray,
+    right: np.ndarray[Any, np.dtype[Any]],
     right_vars: List[str],
-) -> Tuple[np.ndarray, List[str]]:
+) -> Tuple[np.ndarray[Any, np.dtype[Any]], List[str]]:
     """Hash join between left and right on their shared variables."""
     join_vars = [v for v in left_vars if v in right_vars]
 
@@ -76,7 +76,7 @@ def _two_way_hash_join(
     right_extra_vars = [right_vars[i] for i in right_extra_cols]
 
     # Build hash table on the smaller side (right here).
-    ht: Dict[Tuple, List[np.ndarray]] = defaultdict(list)
+    ht: Dict[Tuple[Any, ...], List[np.ndarray[Any, np.dtype[Any]]]] = defaultdict(list)
     for row in right:
         key = tuple(int(row[c]) for c in right_key_cols)
         ht[key].append(row[right_extra_cols])
@@ -95,11 +95,11 @@ def _two_way_hash_join(
 
 
 def _cartesian(
-    left: np.ndarray,
+    left: np.ndarray[Any, np.dtype[Any]],
     left_vars: List[str],
-    right: np.ndarray,
+    right: np.ndarray[Any, np.dtype[Any]],
     right_vars: List[str],
-) -> Tuple[np.ndarray, List[str]]:
+) -> Tuple[np.ndarray[Any, np.dtype[Any]], List[str]]:
     n_l, n_r = len(left), len(right)
     out_vars = left_vars + right_vars
     if n_l == 0 or n_r == 0:

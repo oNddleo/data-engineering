@@ -6,14 +6,14 @@ All public methods return (fig, axes) so callers can save or show them.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 
 from .models import BatchResult, DQDimension, PosteriorState
 
 # Lazy import matplotlib so the module is importable without a display.
-def _mpl():
+def _mpl() -> Any:
     import matplotlib.pyplot as plt
     return plt
 
@@ -44,7 +44,7 @@ class DQVisualizer:
         Base (width, height) per subplot.
     """
 
-    def __init__(self, scorers: dict, figsize_base: tuple[float, float] = (5.5, 4.0)):
+    def __init__(self, scorers: dict[DQDimension, Any], figsize_base: tuple[float, float] = (5.5, 4.0)):
         self.scorers = scorers
         self.figsize_base = figsize_base
 
@@ -56,7 +56,7 @@ class DQVisualizer:
         self,
         dimensions: Optional[list[DQDimension]] = None,
         title: str = "Posterior Distributions — Data Quality",
-    ):
+    ) -> tuple[Any, Any]:
         """
         Side-by-side Beta posterior PDFs for each dimension.
         Shaded region = P(healthy); vertical dashed = health threshold.
@@ -113,7 +113,7 @@ class DQVisualizer:
         dimensions: Optional[list[DQDimension]] = None,
         alert_threshold: float = 0.20,
         title: str = "P(healthy) Over Time",
-    ):
+    ) -> tuple[Any, Any]:
         """
         Line chart of P(healthy) per batch, with alert band shaded.
         """
@@ -157,7 +157,7 @@ class DQVisualizer:
         results: list[BatchResult],
         dimensions: Optional[list[DQDimension]] = None,
         title: str = "Posterior Mean ± Uncertainty Over Batches",
-    ):
+    ) -> tuple[Any, Any]:
         """
         Rolling posterior mean with ±1σ and 95% CI bands.
         """
@@ -178,12 +178,12 @@ class DQVisualizer:
 
         for ax, dim in zip(axes, dims):
             color = _DIM_COLORS[dim]
-            means = [r.posteriors[dim].mean for r in results if dim in r.posteriors]
-            stds  = [r.posteriors[dim].std  for r in results if dim in r.posteriors]
-            xi    = x[:len(means)]
+            means_list = [r.posteriors[dim].mean for r in results if dim in r.posteriors]
+            stds_list  = [r.posteriors[dim].std  for r in results if dim in r.posteriors]
+            xi    = x[:len(means_list)]
 
-            means = np.array(means)
-            stds  = np.array(stds)
+            means: np.ndarray[Any, np.dtype[Any]] = np.array(means_list)
+            stds: np.ndarray[Any, np.dtype[Any]]  = np.array(stds_list)
 
             ax.plot(xi, means, color=color, lw=2, marker="o", ms=4, label="Posterior mean")
             ax.fill_between(xi, means - stds, means + stds,
@@ -214,7 +214,7 @@ class DQVisualizer:
         results: list[BatchResult],
         alert_threshold: float = 0.20,
         output_path: Optional[str] = None,
-    ):
+    ) -> Any:
         """
         Three-panel dashboard: posteriors | P(healthy) series | mean+CI series.
         Saves to output_path if provided, otherwise shows interactively.

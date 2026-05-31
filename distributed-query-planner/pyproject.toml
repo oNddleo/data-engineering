@@ -21,6 +21,14 @@ dev = ["pytest>=7.4", "pytest-cov", "black", "ruff", "mypy"]
 testpaths = ["tests"]
 pythonpath = ["src"]
 
+[tool.mypy]
+python_version = "3.11"
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["pyarrow.*", "pymongo.*", "psycopg2.*"]
+ignore_missing_imports = true
+
 [tool.ruff]
 line-length = 100
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 
 class DQDimension(str, Enum):
@@ -32,14 +32,14 @@ class PosteriorState:
 
     @property
     def std(self) -> float:
-        return self.variance ** 0.5
+        return float(self.variance ** 0.5)
 
     @property
     def concentration(self) -> float:
         """alpha + beta — higher means sharper / more certain posterior."""
         return self.alpha + self.beta
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "dimension": self.dimension.value,
             "alpha": self.alpha,
@@ -59,7 +59,7 @@ class BatchObservation:
     total: int          # total rows in batch
     batch_id: str
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @property
     def rate(self) -> float:
@@ -76,7 +76,7 @@ class BatchResult:
     p_healthy: dict[DQDimension, float]
     alerts_fired: list["AlertEvent"] = field(default_factory=list)
 
-    def summary(self) -> dict:
+    def summary(self) -> dict[str, Any]:
         return {
             "batch_id": self.batch_id,
             "timestamp": self.timestamp.isoformat(),
@@ -103,7 +103,7 @@ class AlertEvent:
     posterior_std: float
     message: str
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "dimension": self.dimension.value,
             "batch_id": self.batch_id,

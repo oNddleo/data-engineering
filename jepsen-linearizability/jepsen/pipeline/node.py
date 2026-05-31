@@ -23,10 +23,10 @@ from typing import Any, Dict, Optional
 
 def node_worker(
     node_id: int,
-    inbox: mp.Queue,
-    router_queue: mp.Queue,
-    clock_offsets: mp.Array,  # shared float array indexed by node_id
-    ready_event: mp.Event,
+    inbox: "mp.Queue[Any]",
+    router_queue: "mp.Queue[Any]",
+    clock_offsets: Any,  # shared float array indexed by node_id
+    ready_event: Any,
 ) -> None:
     """Main loop for a pipeline node process."""
     store: Dict[str, Any] = {}

@@ -36,3 +36,11 @@ include = ["bayesian_dq*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --tb=short"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["scipy.*", "pandas.*", "matplotlib.*"]
+ignore_missing_imports = true

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
 from .compaction import CompactionController
 from .memtable import Memtable
@@ -206,8 +206,8 @@ class LSMEngine:
     # Housekeeping
     # ------------------------------------------------------------------
 
-    def stats(self) -> dict:
-        s = {
+    def stats(self) -> dict[str, Any]:
+        s: dict[str, Any] = {
             "memtable_entries": len(self._memtable),
             "memtable_bytes": self._memtable.size_bytes,
             "immutable_count": len(self._immutable),
@@ -225,5 +225,5 @@ class LSMEngine:
     def __enter__(self) -> LSMEngine:
         return self
 
-    def __exit__(self, *_) -> None:
+    def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
         self.close()

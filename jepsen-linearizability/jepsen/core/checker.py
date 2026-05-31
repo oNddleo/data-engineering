@@ -32,7 +32,7 @@ class CheckResult:
     model: Any
 
 
-def check(entries: List[Entry], model=None) -> CheckResult:
+def check(entries: List[Entry], model: Any = None) -> CheckResult:
     """Check linearizability of a list of history entries against model."""
     if model is None:
         model = RegisterModel()
@@ -52,10 +52,10 @@ def check(entries: List[Entry], model=None) -> CheckResult:
     # Only check completed or explicitly-failed operations.
     # Pending (crashed) ops are already handled in History.entries().
     op_map: Dict[int, Entry] = {e.index: e for e in entries}
-    memo: Dict[Tuple[FrozenSet, Any], bool] = {}
+    memo: Dict[Tuple[FrozenSet[int], Any], bool] = {}
     counter = [0]
 
-    def candidates(remaining: FrozenSet) -> List[Entry]:
+    def candidates(remaining: FrozenSet[int]) -> List[Entry]:
         """
         An entry can be linearized next if no other remaining entry
         has a response_time strictly before this entry's invoke_time.
@@ -73,7 +73,7 @@ def check(entries: List[Entry], model=None) -> CheckResult:
                 result.append(e)
         return result
 
-    def dfs(remaining: FrozenSet, state: Any) -> Tuple[bool, List[Entry]]:
+    def dfs(remaining: FrozenSet[int], state: Any) -> Tuple[bool, List[Entry]]:
         counter[0] += 1
         key = (remaining, state)
         if key in memo:

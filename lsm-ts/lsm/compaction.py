@@ -15,7 +15,7 @@ from __future__ import annotations
 import heapq
 import itertools
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
 from .sstable import SSTableReader, SSTableWriter
 
@@ -24,17 +24,17 @@ LEVEL_SIZE_MULTIPLIER = 10
 L1_MAX_BYTES = 10 * 1024 * 1024   # 10 MB
 
 
-def _level_max_bytes(level: int) -> int:
+def _level_max_bytes(level: int) -> float:
     if level == 0:
         return float("inf")
-    return L1_MAX_BYTES * (LEVEL_SIZE_MULTIPLIER ** (level - 1))
+    return float(L1_MAX_BYTES * (LEVEL_SIZE_MULTIPLIER ** (level - 1)))
 
 
 def _overlaps(a: SSTableReader, b: SSTableReader) -> bool:
     """True if two SSTables have overlapping key ranges."""
     a_min, a_max = a.min_key, a.max_key
     b_min, b_max = b.min_key, b.max_key
-    if a_min is None or b_min is None:
+    if a_min is None or a_max is None or b_min is None or b_max is None:
         return False
     return not (a_max < b_min or b_max < a_min)
 
@@ -48,7 +48,7 @@ def merge_sorted_iterators(
     newest-first.
     """
     # Heap entries: (key, seq_no, value, iterator)
-    heap: list[tuple[bytes, int, bytes | None, Iterator]] = []
+    heap: list[tuple[bytes, int, bytes | None, Iterator[tuple[bytes, bytes | None]]]] = []
     for seq, it in enumerate(iterators):
         try:
             k, v = next(it)
@@ -167,8 +167,8 @@ class CompactionController:
                 iters.append(sst.scan(start, end))
         return merge_sorted_iterators(iters)
 
-    def stats(self) -> dict:
-        stats = {}
+    def stats(self) -> dict[str, Any]:
+        stats: dict[str, Any] = {}
         for i, level in enumerate(self.levels):
             if level:
                 total = sum(r.path.stat().st_size for r in level)

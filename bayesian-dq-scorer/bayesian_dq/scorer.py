@@ -18,7 +18,7 @@ Usage::
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 from .alerts import AlertManager
 from .dimensions import CompletenessScorer, FreshnessScorer, UniquenessScorer
@@ -53,7 +53,7 @@ class BayesianDQScorer:
         health_thresholds: Optional[dict[DQDimension, float]] = None,
         alert_thresholds: Optional[dict[DQDimension, float]] = None,
         alert_cooldown: int = 3,
-        alert_handlers=None,
+        alert_handlers: Any = None,
     ):
         _ht = health_thresholds or {}
 

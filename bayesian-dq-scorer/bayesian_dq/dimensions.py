@@ -14,7 +14,7 @@ P(healthy | data) = P(rate > health_threshold) = 1 - Beta_CDF(threshold; alpha, 
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 from scipy.stats import beta as beta_dist
@@ -86,7 +86,7 @@ class _BaseDimensionScorer:
         self,
         n_points: int = 300,
         state: Optional[PosteriorState] = None,
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray[Any, np.dtype[Any]], np.ndarray[Any, np.dtype[Any]]]:
         """Return (x, pdf) arrays for plotting the posterior density."""
         s = state or self._state
         x = np.linspace(0, 1, n_points)
@@ -112,7 +112,7 @@ class CompletenessScorer(_BaseDimensionScorer):
     dimension = DQDimension.COMPLETENESS
 
     @staticmethod
-    def from_dataframe(df) -> BatchObservation:
+    def from_dataframe(df: Any) -> BatchObservation:
         """Convenience: create BatchObservation from a pandas DataFrame."""
         import pandas as pd
         total = len(df)
@@ -145,7 +145,7 @@ class FreshnessScorer(_BaseDimensionScorer):
         super().__init__(prior_alpha, prior_beta, health_threshold)
         self.max_age = max_age
 
-    def from_dataframe(self, df, timestamp_col: str) -> BatchObservation:
+    def from_dataframe(self, df: Any, timestamp_col: str) -> BatchObservation:
         """Convenience: count rows fresher than max_age."""
         import pandas as pd
 
@@ -173,7 +173,7 @@ class UniquenessScorer(_BaseDimensionScorer):
     dimension = DQDimension.UNIQUENESS
 
     @staticmethod
-    def from_dataframe(df, subset=None) -> BatchObservation:
+    def from_dataframe(df: Any, subset: Any = None) -> BatchObservation:
         """Convenience: count unique rows over `subset` columns."""
         total = len(df)
         successes = int(df.drop_duplicates(subset=subset).shape[0])

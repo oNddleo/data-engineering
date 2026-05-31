@@ -19,7 +19,7 @@ generic_join(query, var_order) → np.ndarray
 """
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -29,7 +29,7 @@ from .query import JoinQuery, Relation
 def generic_join(
     query: JoinQuery,
     var_order: Optional[List[str]] = None,
-) -> np.ndarray:
+) -> np.ndarray[Any, np.dtype[Any]]:
     """Run Generic Join on *query* and return result tuples.
 
     Args:
@@ -42,7 +42,7 @@ def generic_join(
     if var_order is None:
         var_order = query.variable_order()
 
-    results: List[Tuple] = []
+    results: List[Tuple[Any, ...]] = []
     _gj(query.relations, var_order, {}, results)
 
     k = len(var_order)
@@ -60,7 +60,7 @@ def _gj(
     relations: List[Relation],
     remaining_vars: List[str],
     binding: Dict[str, int],
-    output: List[Tuple],
+    output: List[Tuple[Any, ...]],
 ) -> None:
     if not remaining_vars:
         # Emit one result tuple in the original var_order (binding is complete).
@@ -112,12 +112,12 @@ def _gj(
 #  Helpers                                                            #
 # ------------------------------------------------------------------ #
 
-def _sorted_column(data: np.ndarray, col: int) -> np.ndarray:
+def _sorted_column(data: np.ndarray[Any, np.dtype[Any]], col: int) -> np.ndarray[Any, np.dtype[Any]]:
     """Return sorted unique values from column *col*."""
-    return np.unique(data[:, col])
+    return np.unique(data[:, col])  # type: ignore[no-any-return]
 
 
-def _intersect_sorted(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+def _intersect_sorted(a: np.ndarray[Any, np.dtype[Any]], b: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
     """Intersection of two sorted unique int64 arrays (merge-based O(n+m))."""
     result = []
     i = j = 0

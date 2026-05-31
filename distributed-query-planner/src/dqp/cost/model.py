@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 from dqp.predicate import (
     AndPredicate,
@@ -17,7 +17,7 @@ from dqp.predicate import (
     OrPredicate,
     Predicate,
 )
-from dqp.cost.statistics import StatsRegistry, TableStats
+from dqp.cost.statistics import ColumnStats, StatsRegistry, TableStats
 
 
 # ---------------------------------------------------------------------------
@@ -64,7 +64,7 @@ def estimate_selectivity(pred: Predicate, table_stats: TableStats) -> float:
     return 0.1
 
 
-def _col_stats(col: ColumnRef, table_stats: TableStats):
+def _col_stats(col: ColumnRef, table_stats: TableStats) -> Optional[ColumnStats]:
     return table_stats.get_column(col.column)
 
 
@@ -256,8 +256,8 @@ class CostModel:
         self,
         table_name: str,
         engine_name: str,
-        pushed_preds: list,
-        residual_preds: list,
+        pushed_preds: list[Any],
+        residual_preds: list[Any],
         table_stats: TableStats,
     ) -> PlanCost:
         """Cost when some predicates are pushed into the engine.
