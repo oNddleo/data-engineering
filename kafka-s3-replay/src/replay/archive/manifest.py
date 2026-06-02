@@ -6,9 +6,10 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
-from replay.models import S3ArchiveConfig, TimeWindow
 from replay.archive.s3 import S3ArchiveReader
+from replay.models import S3ArchiveConfig, TimeWindow
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ class ManifestEntry:
         self.key = key
         self.estimated_events = estimated_events
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {"topic": self.topic, "key": self.key, "estimated_events": self.estimated_events}
 
 

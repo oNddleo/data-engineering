@@ -3,15 +3,21 @@ Deployment orchestrator — the single entry-point for running a zero-downtime
 pipeline version upgrade end-to-end.
 """
 
+from __future__ import annotations
+
 import logging
 import time
-from typing import Any, Dict, Iterable, Optional
+from typing import TYPE_CHECKING, Any
 
 from .comparator import DivergenceTracker
 from .config import DeploymentConfig
-from .pipeline import BasePipeline
 from .shadow_runner import ShadowRunner
-from .traffic_shifter import ShiftState, TrafficShifter
+from .traffic_shifter import TrafficShifter
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from .pipeline import BasePipeline
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +57,7 @@ class DeploymentOrchestrator:
         self,
         v1: BasePipeline,
         v2: BasePipeline,
-        config: Optional[DeploymentConfig] = None,
+        config: DeploymentConfig | None = None,
     ) -> None:
         self.v1 = v1
         self.v2 = v2
@@ -81,13 +87,13 @@ class DeploymentOrchestrator:
         self._completed = False
         self._promoted = False
         self._rolled_back = False
-        self._start_time: Optional[float] = None
+        self._start_time: float | None = None
 
     # ------------------------------------------------------------------
     # Lifecycle
     # ------------------------------------------------------------------
 
-    def start(self) -> "DeploymentOrchestrator":
+    def start(self) -> DeploymentOrchestrator:
         """Set up pipelines and start the traffic-shifting background thread."""
         if self._started:
             raise RuntimeError("Orchestrator already started")
@@ -107,7 +113,7 @@ class DeploymentOrchestrator:
         self._start_time = time.time()
         return self
 
-    def process(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def process(self, record: dict[str, Any]) -> dict[str, Any]:
         """
         Process a single record through the active routing policy.
 
@@ -123,10 +129,10 @@ class DeploymentOrchestrator:
 
     def process_stream(
         self,
-        stream: Iterable[Dict[str, Any]],
+        stream: Iterable[dict[str, Any]],
         *,
         progress_every: int = 500,
-    ) -> Iterable[Dict[str, Any]]:
+    ) -> Iterable[dict[str, Any]]:
         """
         Convenience generator: process an iterable of records, yielding each
         output and logging periodic progress.
@@ -140,7 +146,7 @@ class DeploymentOrchestrator:
             if i % progress_every == 0:
                 self._log_progress(i)
 
-    def complete(self) -> Dict[str, Any]:
+    def complete(self) -> dict[str, Any]:
         """
         Cleanly shut down both pipelines and stop the shifter.
 
@@ -185,7 +191,7 @@ class DeploymentOrchestrator:
     # Observability
     # ------------------------------------------------------------------
 
-    def status(self) -> Dict[str, Any]:
+    def status(self) -> dict[str, Any]:
         """Return a point-in-time snapshot of the deployment status."""
         return {
             "v1_version": self.v1.version,

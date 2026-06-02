@@ -14,7 +14,7 @@ lftj(query, var_order)     – run LFTJ on a JoinQuery, return result array
 """
 from __future__ import annotations
 
-from typing import Dict, Generator, List, Optional, Tuple
+from typing import Any, Dict, Generator, List, Optional, Tuple
 
 import numpy as np
 
@@ -86,7 +86,7 @@ def leapfrog_join(iterators: List[TrieIterator]) -> Generator[int, None, None]:
 def lftj(
     query: JoinQuery,
     var_order: Optional[List[str]] = None,
-) -> np.ndarray:
+) -> np.ndarray[Any, np.dtype[Any]]:
     """Run Leapfrog Triejoin on *query* and return result tuples.
 
     Args:
@@ -120,7 +120,7 @@ def lftj(
         for d in global_depths:
             depth_iters[d].append(it)
 
-    results: List[Tuple] = []
+    results: List[Tuple[Any, ...]] = []
     current: List[int] = [0] * k
 
     def recurse(depth: int) -> None:

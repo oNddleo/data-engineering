@@ -8,10 +8,12 @@ Endpoints:
   GET  /metrics                               — Prometheus exposition
   GET  /registry                              — feature schema catalog
 """
+
 from __future__ import annotations
 
 import os
 import time
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -78,14 +80,10 @@ offline_store: OfflineStore
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     global online_store, registry, offline_store
-    online_store = AsyncOnlineStore(
-        redis_url=os.getenv("REDIS_URL", "redis://localhost:6379")
-    )
-    offline_store = OfflineStore(
-        base_path=os.getenv("OFFLINE_STORE_PATH", "./data/offline")
-    )
+    online_store = AsyncOnlineStore(redis_url=os.getenv("REDIS_URL", "redis://localhost:6379"))
+    offline_store = OfflineStore(base_path=os.getenv("OFFLINE_STORE_PATH", "./data/offline"))
     registry = FeatureRegistry()
     config_path = os.getenv("CONFIG_PATH", "configs/feature_store.yaml")
     if os.path.exists(config_path):
@@ -109,7 +107,7 @@ app.add_middleware(GZipMiddleware, minimum_size=500)
 
 
 class BatchRequest(BaseModel):
-    requests: list[dict]  # [{group, entity_id}, ...]
+    requests: list[dict[str, Any]]  # [{group, entity_id}, ...]
 
 
 class FeatureWriteRequest(BaseModel):
@@ -124,7 +122,7 @@ class FeatureWriteRequest(BaseModel):
 
 
 @app.get("/features/{group}/{entity_id}")
-async def get_features(group: str, entity_id: str) -> dict:
+async def get_features(group: str, entity_id: str) -> dict[str, Any]:
     t0 = time.monotonic()
     cache_key = f"{group}:{entity_id}"
 
@@ -155,7 +153,7 @@ async def get_features(group: str, entity_id: str) -> dict:
 
 
 @app.post("/features/batch")
-async def get_features_batch(req: BatchRequest) -> dict:
+async def get_features_batch(req: BatchRequest) -> dict[str, Any]:
     """
     Fetch features for multiple (group, entity_id) pairs in one request.
     Uses a single Redis pipeline — stays well under 10ms for typical payloads.
@@ -164,7 +162,7 @@ async def get_features_batch(req: BatchRequest) -> dict:
     requests = [(r["group"], r["entity_id"]) for r in req.requests]
 
     # Check L1 cache
-    hits: dict = {}
+    hits: dict[tuple[str, str], Any] = {}
     misses: list[tuple[str, str]] = []
     for g, e in requests:
         v = _l1_get(f"{g}:{e}")
@@ -177,7 +175,7 @@ async def get_features_batch(req: BatchRequest) -> dict:
     if misses:
         try:
             fetched = await online_store.get_multi_group(misses)
-        except Exception as exc:
+        except Exception:
             STORE_ERRORS.labels("redis").inc()
             raise HTTPException(status_code=503, detail="Store unavailable")
         for (g, e), features in fetched.items():
@@ -201,9 +199,10 @@ async def get_features_batch(req: BatchRequest) -> dict:
 
 
 @app.post("/features/{group}/{entity_id}")
-async def write_feature(group: str, entity_id: str, req: FeatureWriteRequest) -> dict:
+async def write_feature(group: str, entity_id: str, req: FeatureWriteRequest) -> dict[str, Any]:
     """Direct write endpoint — useful for testing and backfills."""
     from feature_store.online.redis_store import OnlineStore
+
     sync_store = OnlineStore(redis_url=os.getenv("REDIS_URL", "redis://localhost:6379"))
     sync_store.put(group, entity_id, req.features, req.ttl_seconds)
     offline_store.write(group, entity_id, req.features)
@@ -211,7 +210,7 @@ async def write_feature(group: str, entity_id: str, req: FeatureWriteRequest) ->
 
 
 @app.get("/health")
-async def health() -> dict:
+async def health() -> dict[str, Any]:
     redis_ok = await online_store.healthcheck()
     return {
         "status": "ok" if redis_ok else "degraded",
@@ -226,13 +225,15 @@ async def metrics() -> Response:
 
 
 @app.get("/registry")
-async def get_registry() -> dict:
+async def get_registry() -> dict[str, Any]:
     import json
-    return json.loads(registry.to_json())
+
+    result: dict[str, Any] = json.loads(registry.to_json())
+    return result
 
 
 @app.get("/offline/stats/{group}")
-async def offline_stats(group: str) -> dict:
+async def offline_stats(group: str) -> dict[str, Any]:
     return offline_store.get_stats(group)
 
 
@@ -249,7 +250,7 @@ def main() -> None:
         workers=int(os.getenv("WORKERS", "4")),
         log_level=os.getenv("LOG_LEVEL", "info").lower(),
         loop="uvloop",
-        access_log=False,           # avoid per-request log overhead
+        access_log=False,  # avoid per-request log overhead
     )
 
 

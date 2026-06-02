@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ class CheckpointStore:
     def __init__(self, checkpoint_dir: str, job_id: str) -> None:
         self.path = Path(checkpoint_dir) / f"{job_id}.json"
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._state: dict = self._load()
+        self._state: dict[str, Any] = self._load()
 
     # ------------------------------------------------------------------
     # Public API
@@ -35,20 +36,20 @@ class CheckpointStore:
         self._state.setdefault("completed_keys", [])
         if key not in self._state["completed_keys"]:
             self._state["completed_keys"].append(key)
-        self._state["last_updated"] = datetime.now(tz=timezone.utc).isoformat()
+        self._state["last_updated"] = datetime.now(tz=UTC).isoformat()
         self._save()
 
     def record_progress(self, replayed: int, failed: int) -> None:
         self._state["replayed_events"] = replayed
         self._state["failed_events"] = failed
-        self._state["last_updated"] = datetime.now(tz=timezone.utc).isoformat()
+        self._state["last_updated"] = datetime.now(tz=UTC).isoformat()
         self._save()
 
     def get_replayed_count(self) -> int:
-        return self._state.get("replayed_events", 0)
+        return int(self._state.get("replayed_events", 0))
 
     def get_failed_count(self) -> int:
-        return self._state.get("failed_events", 0)
+        return int(self._state.get("failed_events", 0))
 
     def reset(self) -> None:
         self._state = {}
@@ -62,12 +63,15 @@ class CheckpointStore:
     # Internal
     # ------------------------------------------------------------------
 
-    def _load(self) -> dict:
+    def _load(self) -> dict[str, Any]:
         if self.path.exists():
             try:
-                data = json.loads(self.path.read_text())
-                logger.info("Resuming from checkpoint %s (%d keys done)",
-                            self.path, len(data.get("completed_keys", [])))
+                data: dict[str, Any] = json.loads(self.path.read_text())
+                logger.info(
+                    "Resuming from checkpoint %s (%d keys done)",
+                    self.path,
+                    len(data.get("completed_keys", [])),
+                )
                 return data
             except Exception:
                 logger.warning("Corrupt checkpoint at %s — starting fresh", self.path)

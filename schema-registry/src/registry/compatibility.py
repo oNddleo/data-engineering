@@ -26,12 +26,12 @@ def _normalize_type(t: Any) -> set[str]:
     return {"any"}
 
 
-def _get_required(schema: dict) -> set[str]:
+def _get_required(schema: dict[str, Any]) -> set[str]:
     return set(schema.get("required", []))
 
 
-def _get_properties(schema: dict) -> dict[str, Any]:
-    return schema.get("properties", {})
+def _get_properties(schema: dict[str, Any]) -> dict[str, Any]:
+    return schema.get("properties", {})  # type: ignore[no-any-return]
 
 
 def _is_type_compatible(old_type: Any, new_type: Any) -> bool:
@@ -55,8 +55,8 @@ class CompatibilityChecker:
 
     def check(
         self,
-        new_schema: dict,
-        old_schema: dict,
+        new_schema: dict[str, Any],
+        old_schema: dict[str, Any],
         mode: CompatibilityMode,
     ) -> CompatibilityResult:
         errors: list[CompatibilityError] = []
@@ -84,7 +84,7 @@ class CompatibilityChecker:
 
     # ── Backward: new reads old data ──────────────────────────────────────
 
-    def _check_backward(self, new: dict, old: dict) -> list[CompatibilityError]:
+    def _check_backward(self, new: dict[str, Any], old: dict[str, Any]) -> list[CompatibilityError]:
         """
         Rules for BACKWARD compatibility:
         - May add new OPTIONAL fields (with default)
@@ -116,14 +116,16 @@ class CompatibilityChecker:
         for field, new_field_schema in new_props.items():
             if field in old_props:
                 old_field_schema = old_props[field]
-                errs = self._check_type_compatible(field, old_field_schema, new_field_schema, direction="backward")
+                errs = self._check_type_compatible(
+                    field, old_field_schema, new_field_schema, direction="backward"
+                )
                 errors.extend(errs)
 
         return errors
 
     # ── Forward: old reads new data ───────────────────────────────────────
 
-    def _check_forward(self, new: dict, old: dict) -> list[CompatibilityError]:
+    def _check_forward(self, new: dict[str, Any], old: dict[str, Any]) -> list[CompatibilityError]:
         """
         Rules for FORWARD compatibility:
         - May remove optional fields (old consumers just won't see them in new data)
@@ -135,7 +137,7 @@ class CompatibilityChecker:
         old_props = _get_properties(old)
         new_props = _get_properties(new)
         old_req = _get_required(old)
-        new_req = _get_required(new)
+        _new_req = _get_required(new)  # noqa: F841
 
         # Fields removed from new schema that were required in old
         for field in old_req - set(new_props.keys()):
@@ -151,7 +153,9 @@ class CompatibilityChecker:
         for field, old_field_schema in old_props.items():
             if field in new_props:
                 new_field_schema = new_props[field]
-                errs = self._check_type_compatible(field, old_field_schema, new_field_schema, direction="forward")
+                errs = self._check_type_compatible(
+                    field, old_field_schema, new_field_schema, direction="forward"
+                )
                 errors.extend(errs)
 
         return errors
@@ -161,8 +165,8 @@ class CompatibilityChecker:
     def _check_type_compatible(
         self,
         field: str,
-        old_schema: dict,
-        new_schema: dict,
+        old_schema: dict[str, Any],
+        new_schema: dict[str, Any],
         direction: str,
     ) -> list[CompatibilityError]:
         errors: list[CompatibilityError] = []
@@ -236,7 +240,7 @@ class CompatibilityChecker:
 
 
 def check_compatibility(
-    new_schema: dict,
+    new_schema: dict[str, Any],
     existing_versions: list[SchemaVersion],
     mode: CompatibilityMode,
 ) -> CompatibilityResult:

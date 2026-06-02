@@ -1,9 +1,7 @@
 """Tests for the storage repository layer."""
-import pytest
 from datetime import datetime, timedelta
 
 from savings_engine.models.schemas import NormalizedRate
-from savings_engine.storage.repository import RateRepository
 
 
 def _rate(bank_code: str, term_days: int, rate_pa: float, rate_type: str = "standard") -> NormalizedRate:

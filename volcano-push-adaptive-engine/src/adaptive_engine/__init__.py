@@ -1,4 +1,5 @@
 """Volcano-to-Push Adaptive Query Engine."""
+
 from .statistics import EquiDepthHistogram
 from .sql import Planner as SQLPlanner, Parser as SQLParser
 from .catalog import Catalog, ColumnStats, TableStats
@@ -35,6 +36,11 @@ from .push import Pipeline, PushCompiler
 from .volcano import VolcanoExecutor
 
 __all__ = [
+    # SQL
+    "Parser",
+    "Planner",
+    "SQLParser",
+    "SQLPlanner",
     # Catalog
     "Catalog",
     "ColumnStats",

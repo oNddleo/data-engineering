@@ -4,7 +4,7 @@ import json
 import sqlite3
 import time
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any, Generator
@@ -25,13 +25,13 @@ class SagaRecord:
     saga_type: str
     status: SagaStatus = SagaStatus.PENDING
     context: dict[str, Any] = field(default_factory=dict)
-    step_records: list[dict] = field(default_factory=list)
+    step_records: list[dict[str, Any]] = field(default_factory=list)
     created_at: float = field(default_factory=time.time)
     updated_at: float = field(default_factory=time.time)
     completed_at: float | None = None
     failure_step: str | None = None
     failure_reason: str | None = None
-    compensation_errors: list[dict] = field(default_factory=list)
+    compensation_errors: list[dict[str, Any]] = field(default_factory=list)
 
 
 _SCHEMA = """

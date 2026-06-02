@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 
 @dataclass
@@ -22,6 +22,7 @@ class FieldSchema:
 @dataclass
 class SLARule:
     """Service-level agreement rule attached to a contract."""
+
     name: str
     rule_type: str  # freshness | completeness | row_count | latency
     threshold: float
@@ -32,16 +33,17 @@ class SLARule:
 @dataclass
 class SemanticRule:
     """Custom predicate evaluated against the dataset."""
+
     name: str
-    expression: str         # Python expression; 'df' is the DataFrame
-    severity: str = "error" # error | warning
+    expression: str  # Python expression; 'df' is the DataFrame
+    severity: str = "error"  # error | warning
     description: str = ""
 
 
 @dataclass
 class DataContract:
     id: str
-    version: str            # semver
+    version: str  # semver
     producer: str
     consumers: list[str]
     description: str
@@ -72,9 +74,7 @@ class DataContract:
                 continue
             new_f = new_fields[name]
             if old_f.type != new_f.type:
-                changes.append(
-                    f"TYPE CHANGE on '{name}': {old_f.type} → {new_f.type}"
-                )
+                changes.append(f"TYPE CHANGE on '{name}': {old_f.type} → {new_f.type}")
             if old_f.nullable and not new_f.nullable:
                 changes.append(f"NULLABILITY TIGHTENED on '{name}'")
 
@@ -85,7 +85,8 @@ class DataContract:
 # Loading helpers
 # ------------------------------------------------------------------ #
 
-def _parse_field(raw: dict) -> FieldSchema:
+
+def _parse_field(raw: dict[str, Any]) -> FieldSchema:
     return FieldSchema(
         name=raw["name"],
         type=raw["type"],
@@ -95,7 +96,7 @@ def _parse_field(raw: dict) -> FieldSchema:
     )
 
 
-def _parse_sla(raw: dict) -> SLARule:
+def _parse_sla(raw: dict[str, Any]) -> SLARule:
     return SLARule(
         name=raw["name"],
         rule_type=raw["rule_type"],
@@ -105,7 +106,7 @@ def _parse_sla(raw: dict) -> SLARule:
     )
 
 
-def _parse_semantic(raw: dict) -> SemanticRule:
+def _parse_semantic(raw: dict[str, Any]) -> SemanticRule:
     return SemanticRule(
         name=raw["name"],
         expression=raw["expression"],

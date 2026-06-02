@@ -1,0 +1,5 @@
+services:
+  reservoir:
+    build: .
+    image: reservoir-sampling:latest
+    command: ["info"]

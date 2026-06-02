@@ -1,7 +1,8 @@
 """Thin wrapper around pyiceberg + DuckDB for the Dagster assets."""
+
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 import duckdb
 import pyarrow as pa
@@ -40,7 +41,7 @@ def get_catalog() -> Catalog:
     return cat
 
 
-def upsert_table(name: str, table: pa.Table, partition_by: list[str] | None = None):
+def upsert_table(name: str, table: pa.Table, partition_by: list[str] | None = None) -> str:
     """Create-or-append an Iceberg table from a PyArrow Table."""
     cat = get_catalog()
     full = f"{NAMESPACE}.{name}"
@@ -53,7 +54,7 @@ def upsert_table(name: str, table: pa.Table, partition_by: list[str] | None = No
     return full
 
 
-def overwrite_table(name: str, table: pa.Table):
+def overwrite_table(name: str, table: pa.Table) -> str:
     cat = get_catalog()
     full = f"{NAMESPACE}.{name}"
     try:
@@ -91,7 +92,7 @@ def duckdb_connect() -> duckdb.DuckDBPyConnection:
     return con
 
 
-def register_iceberg_views(con: duckdb.DuckDBPyConnection, tables: Iterable[str]):
+def register_iceberg_views(con: duckdb.DuckDBPyConnection, tables: Iterable[str]) -> None:
     """Materialize Iceberg tables as DuckDB views by scanning via pyiceberg."""
     cat = get_catalog()
     for t in tables:

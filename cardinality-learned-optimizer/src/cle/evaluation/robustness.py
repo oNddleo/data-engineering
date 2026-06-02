@@ -11,14 +11,15 @@ We reproduce Figure 9 / Table 2 from the paper:
   - Fraction of queries where Bao's chosen plan is within 2× of optimal
   - "Regret" = chosen_latency / optimal_latency (1.0 = optimal)
 """
+
 from __future__ import annotations
+
 import json
 import logging
-import math
 import statistics
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from ..db.connector import ConnectionPool
 from ..db.hint_injector import BAO_HINT_SETS, hint_set_to_pg_hints
@@ -31,16 +32,17 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PlanProfile:
     """All 15 plans profiled for a single query."""
+
     query_name: str
     sql: str
-    latencies: dict[int, float]   # arm → latency_ms (None if timed out)
+    latencies: dict[int, float | None]  # arm → latency_ms (None if timed out)
     optimal_arm: Optional[int] = None
     optimal_latency: Optional[float] = None
 
     def __post_init__(self) -> None:
         valid = {arm: ms for arm, ms in self.latencies.items() if ms is not None}
         if valid:
-            self.optimal_arm = min(valid, key=valid.get)
+            self.optimal_arm = min(valid, key=valid.get)  # type: ignore[arg-type]
             self.optimal_latency = valid[self.optimal_arm]
 
     def regret(self, chosen_arm: int) -> Optional[float]:
@@ -61,7 +63,7 @@ class PlanProfiler:
         self.timeout_ms = timeout_ms
 
     def profile_query(self, name: str, sql: str) -> PlanProfile:
-        latencies: dict[int, float] = {}
+        latencies: dict[int, float | None] = {}
         for arm, hint_set in enumerate(BAO_HINT_SETS):
             hints = hint_set_to_pg_hints(hint_set)
             full_sql = f"/*+ {hints} */\n{sql}" if hints else sql
@@ -98,9 +100,9 @@ class PlanProfiler:
 
 def robustness_report(
     profiles: list[PlanProfile],
-    chosen_arms: dict[str, int],    # query_name → chosen arm
+    chosen_arms: dict[str, int],  # query_name → chosen arm
     baseline_arm: int = 0,
-) -> dict:
+) -> dict[str, Any]:
     """Compute robustness statistics comparing Bao choices vs baseline.
 
     chosen_arms: map from query name to the arm Bao selected.
@@ -127,7 +129,7 @@ def robustness_report(
             baseline_regrets.append(base_lat / p.optimal_latency)
             baseline_latencies.append(base_lat)
 
-    def summary(regrets: list[float], label: str) -> dict:
+    def summary(regrets: list[float], label: str) -> dict[str, Any]:
         if not regrets:
             return {}
         regrets = sorted(regrets)
@@ -149,8 +151,8 @@ def robustness_report(
         report["total_bao_s"] = sum(bao_latencies) / 1000
         report["total_baseline_s"] = sum(baseline_latencies) / 1000
         report["total_optimal_s"] = sum(opt_latencies) / 1000
-        report["overall_speedup_vs_baseline"] = (
-            sum(baseline_latencies) / max(sum(bao_latencies), 0.001)
+        report["overall_speedup_vs_baseline"] = sum(baseline_latencies) / max(
+            sum(bao_latencies), 0.001
         )
 
     print_metric_table(report, "Plan Robustness: Bao vs. PostgreSQL Default")
@@ -158,6 +160,7 @@ def robustness_report(
 
 
 # ── serialization helpers ─────────────────────────────────────────────────────
+
 
 def _save_profiles(profiles: list[PlanProfile], path: Path) -> None:
     data = [

@@ -1,7 +1,8 @@
 """SQL → LogicalPlan via sqlglot AST walking."""
+
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 import pyarrow as pa
 import sqlglot
@@ -18,8 +19,6 @@ from .expressions import (
     IsNullExpr,
     Literal,
     UnaryExpr,
-    conjuncts_to_expr,
-    split_conjuncts,
 )
 from .logical_plan import (
     Aggregate,
@@ -36,6 +35,7 @@ from .logical_plan import (
 # ---------------------------------------------------------------------------
 # Expression conversion
 # ---------------------------------------------------------------------------
+
 
 def _conv_expr(node: sge.Expression) -> Expr:
     if isinstance(node, sge.Star):
@@ -71,17 +71,17 @@ def _conv_expr(node: sge.Expression) -> Expr:
 
     # Boolean binary
     if isinstance(node, sge.And):
-        return BinaryExpr("AND", _conv_expr(node.left), _conv_expr(node.right))
+        return BinaryExpr("AND", _conv_expr(node.left), _conv_expr(node.right))  # type: ignore[arg-type]
     if isinstance(node, sge.Or):
-        return BinaryExpr("OR", _conv_expr(node.left), _conv_expr(node.right))
+        return BinaryExpr("OR", _conv_expr(node.left), _conv_expr(node.right))  # type: ignore[arg-type]
 
     # Comparison
-    _cmp_map: dict = {
-        sge.EQ:  "=",
+    _cmp_map: dict[Any, str] = {
+        sge.EQ: "=",
         sge.NEQ: "!=",
-        sge.LT:  "<",
+        sge.LT: "<",
         sge.LTE: "<=",
-        sge.GT:  ">",
+        sge.GT: ">",
         sge.GTE: ">=",
     }
     for cls, op in _cmp_map.items():
@@ -89,7 +89,7 @@ def _conv_expr(node: sge.Expression) -> Expr:
             return BinaryExpr(op, _conv_expr(node.left), _conv_expr(node.right))
 
     # Arithmetic
-    _arith_map: dict = {
+    _arith_map: dict[Any, str] = {
         sge.Add: "+",
         sge.Sub: "-",
         sge.Mul: "*",
@@ -119,7 +119,9 @@ def _conv_expr(node: sge.Expression) -> Expr:
 
     if isinstance(node, sge.Is):
         inner = _conv_expr(node.this)
-        negated = isinstance(node.expression, sge.Not) or isinstance(node.expression, sge.Not)
+        negated = isinstance(node.expression, sge.Not) or isinstance(
+            node.expression, sge.Not
+        )
         return IsNullExpr(inner, negated=negated)
 
     if isinstance(node, sge.Cast):
@@ -128,7 +130,7 @@ def _conv_expr(node: sge.Expression) -> Expr:
         return CastExpr(inner, to_type)
 
     # Aggregates
-    _agg_map: dict = {
+    _agg_map: dict[Any, str] = {
         sge.Sum: "sum",
         sge.Avg: "avg",
         sge.Min: "min",
@@ -157,13 +159,17 @@ def _conv_expr(node: sge.Expression) -> Expr:
 
 def _conv_pa_type(node: sge.DataType) -> pa.DataType:
     t = node.this
-    if t in (sge.DataType.Type.INT, sge.DataType.Type.INT4):
+    int4 = getattr(sge.DataType.Type, "INT4", None)
+    int8 = getattr(sge.DataType.Type, "INT8", None)
+    real = getattr(sge.DataType.Type, "REAL", None)
+    float8 = getattr(sge.DataType.Type, "FLOAT8", None)
+    if t == sge.DataType.Type.INT or t == int4:
         return pa.int32()
-    if t in (sge.DataType.Type.BIGINT, sge.DataType.Type.INT8):
+    if t == sge.DataType.Type.BIGINT or t == int8:
         return pa.int64()
-    if t in (sge.DataType.Type.FLOAT, sge.DataType.Type.REAL):
+    if t == sge.DataType.Type.FLOAT or t == real:
         return pa.float32()
-    if t in (sge.DataType.Type.DOUBLE, sge.DataType.Type.FLOAT8):
+    if t == sge.DataType.Type.DOUBLE or t == float8:
         return pa.float64()
     if t == sge.DataType.Type.TEXT:
         return pa.string()
@@ -176,8 +182,10 @@ def _conv_pa_type(node: sge.DataType) -> pa.DataType:
 # SELECT item helpers
 # ---------------------------------------------------------------------------
 
+
 class _SelectItem:
     """Parsed output of a single SELECT item."""
+
     def __init__(self, expr: Expr, alias: Optional[str]):
         self.expr = expr
         self.alias = alias
@@ -185,7 +193,7 @@ class _SelectItem:
         self.is_agg = isinstance(expr, AggExpr)
 
 
-def _parse_select_items(items) -> list[_SelectItem]:
+def _parse_select_items(items: Any) -> list[_SelectItem]:
     result = []
     for item in items:
         if isinstance(item, sge.Star):
@@ -204,13 +212,16 @@ def _parse_select_items(items) -> list[_SelectItem]:
 # Statement → LogicalPlan
 # ---------------------------------------------------------------------------
 
+
 def parse(sql: str) -> LogicalPlan:
     statements = sqlglot.parse(sql, read="duckdb")
     if not statements:
         raise ValueError("No statements found")
     stmt = statements[0]
     if not isinstance(stmt, sge.Select):
-        raise NotImplementedError(f"Only SELECT is supported, got {type(stmt).__name__}")
+        raise NotImplementedError(
+            f"Only SELECT is supported, got {type(stmt).__name__}"
+        )
     return _build_select(stmt)
 
 
@@ -248,7 +259,7 @@ def _build_select(stmt: sge.Select) -> LogicalPlan:
     has_agg = bool(aggs)
 
     if has_agg or group_by:
-        agg_exprs: list[AggExpr] = [si.expr for si in aggs]  # type: ignore[assignment]
+        agg_exprs: list[AggExpr] = [si.expr for si in aggs]  # type: ignore[misc]
 
         # Assign names to aggregates
         for i, agg in enumerate(agg_exprs):
@@ -263,10 +274,12 @@ def _build_select(stmt: sge.Select) -> LogicalPlan:
             plan = Filter(plan, _conv_expr(having.this))
 
         # Final projection: group keys + aggregate outputs
-        proj_exprs: list[Expr] = list(group_by) + [ColumnRef(a.output_name) for a in agg_exprs]
-        proj_aliases: list[Optional[str]] = (
-            [None] * len(group_by) + [a.alias for a in agg_exprs]
-        )
+        proj_exprs: list[Expr] = list(group_by) + [
+            ColumnRef(a.output_name) for a in agg_exprs
+        ]
+        _none_aliases: list[Optional[str]] = [None] * len(group_by)
+        _agg_aliases: list[Optional[str]] = [a.alias for a in agg_exprs]
+        proj_aliases: list[Optional[str]] = _none_aliases + _agg_aliases
         plan = Project(plan, proj_exprs, proj_aliases)
 
     elif not is_star_only:

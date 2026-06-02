@@ -1,0 +1,5 @@
+services:
+  cdrpipe:
+    build: .
+    image: telecom-cdr-pipeline:latest
+    command: ["info"]

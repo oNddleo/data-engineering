@@ -5,9 +5,10 @@ actual rows and time.  After a configurable check interval the profiler
 compares actual vs. estimated cardinality and raises a HotPathSignal
 if the ratio exceeds a threshold.
 """
+
 from __future__ import annotations
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Iterator
 
 from .expressions import Row
@@ -17,6 +18,7 @@ from .plan import PlanNode
 # ------------------------------------------------------------------
 # Data structures
 # ------------------------------------------------------------------
+
 
 @dataclass
 class OperatorStats:
@@ -59,6 +61,7 @@ class HotPathSignal(Exception):
 # Profiling iterator wrapper
 # ------------------------------------------------------------------
 
+
 class ProfilingIterator:
     """Wraps a volcano iterator, counts rows, signals hot paths.
 
@@ -93,10 +96,7 @@ class ProfilingIterator:
         self._stats.actual_rows += 1
         self._stats.elapsed_ns = time.perf_counter_ns() - self._start_ns
 
-        if (
-            self._stats.actual_rows % self._interval == 0
-            and not self._stats.hot
-        ):
+        if self._stats.actual_rows % self._interval == 0 and not self._stats.hot:
             self._check()
 
         return row
@@ -111,6 +111,7 @@ class ProfilingIterator:
 # ------------------------------------------------------------------
 # Session-level profiler
 # ------------------------------------------------------------------
+
 
 class QueryProfiler:
     """Maintains stats for every operator in a query execution."""
@@ -151,7 +152,8 @@ class QueryProfiler:
         """Drain iterator, updating stats, without raising HotPathSignal."""
         stats = self.register(node)
         pi = ProfilingIterator(
-            iterator, stats,
+            iterator,
+            stats,
             check_interval=self.check_interval,
             hot_threshold=self.hot_threshold,
             raise_on_hot=False,

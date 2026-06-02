@@ -22,13 +22,20 @@ from saga import SagaOrchestrator, SagaStatus, SagaStep, SagaStore, StepStatus
 # Instrumented step — records call order globally
 # ---------------------------------------------------------------------------
 
+
 class OrderedStep(SagaStep):
     """
     Records execution and compensation events into a shared list so tests can
     assert exact ordering.
     """
-    def __init__(self, label: str, events: list[str], fail_execute: bool = False,
-                 fail_compensate: bool = False) -> None:
+
+    def __init__(
+        self,
+        label: str,
+        events: list[str],
+        fail_execute: bool = False,
+        fail_compensate: bool = False,
+    ) -> None:
         self._label = label
         self._events = events
         self._fail_execute = fail_execute
@@ -54,6 +61,7 @@ class OrderedStep(SagaStep):
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def make_orchestrator() -> SagaOrchestrator:
     return SagaOrchestrator(SagaStore())
 
@@ -61,6 +69,7 @@ def make_orchestrator() -> SagaOrchestrator:
 # ---------------------------------------------------------------------------
 # Core rollback ordering tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_compensation_runs_in_reverse_order() -> None:
@@ -128,6 +137,7 @@ async def test_last_step_failure_compensates_all_prior_steps() -> None:
 # Context availability during compensation
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_compensation_receives_accumulated_context() -> None:
     captured: dict = {}
@@ -141,6 +151,7 @@ async def test_compensation_receives_accumulated_context() -> None:
 
     class ReaderCompStep(SagaStep):
         """Captures context during its compensate() call."""
+
         async def execute(self, ctx: dict[str, Any]) -> dict[str, Any]:
             return {}
 
@@ -170,13 +181,14 @@ async def test_compensation_receives_accumulated_context() -> None:
 # Compensation failure handling
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_compensation_failure_does_not_stop_other_compensations() -> None:
     events: list[str] = []
     steps = [
         OrderedStep("1", events),
         OrderedStep("2", events, fail_compensate=True),  # comp for "2" will fail
-        OrderedStep("3", events, fail_execute=True),      # triggers rollback
+        OrderedStep("3", events, fail_execute=True),  # triggers rollback
     ]
     result = await make_orchestrator().run(steps)
 
@@ -234,6 +246,7 @@ async def test_partial_compensation_failure_sets_failed_status() -> None:
 # Step status assertions after rollback
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_step_statuses_after_rollback() -> None:
     events: list[str] = []
@@ -246,10 +259,10 @@ async def test_step_statuses_after_rollback() -> None:
     result = await make_orchestrator().run(steps)
     recs = result.step_records
 
-    assert recs[0].status == StepStatus.COMPENSATED   # executed then rolled back
-    assert recs[1].status == StepStatus.COMPENSATED   # executed then rolled back
-    assert recs[2].status == StepStatus.FAILED         # the trigger
-    assert recs[3].status == StepStatus.PENDING        # never ran
+    assert recs[0].status == StepStatus.COMPENSATED  # executed then rolled back
+    assert recs[1].status == StepStatus.COMPENSATED  # executed then rolled back
+    assert recs[2].status == StepStatus.FAILED  # the trigger
+    assert recs[3].status == StepStatus.PENDING  # never ran
 
 
 @pytest.mark.asyncio

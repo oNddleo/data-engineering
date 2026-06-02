@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import datetime, timezone
 
 from ..models import Platform, QueryRecord, TableStats
 
@@ -30,7 +29,7 @@ class SnowflakeAnalyzer:
         credit_price_usd: float = _DEFAULT_CREDIT_PRICE_USD,
     ) -> None:
         try:
-            import snowflake.connector  # type: ignore
+            import snowflake.connector
         except ImportError as e:
             raise ImportError(
                 "snowflake-connector-python is required. "
@@ -106,7 +105,11 @@ class SnowflakeAnalyzer:
 
     def build_table_stats(self, records: list[QueryRecord]) -> list[TableStats]:
         """Aggregate per-table usage from query records."""
-        from ..sql_parser import extract_filter_columns, extract_join_columns, extract_group_by_columns
+        from ..sql_parser import (
+            extract_filter_columns,
+            extract_join_columns,
+            extract_group_by_columns,
+        )
 
         stats_map: dict[str, TableStats] = {}
         for rec in records:

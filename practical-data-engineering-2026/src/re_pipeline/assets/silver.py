@@ -1,5 +1,8 @@
 """Silver: cleaned current-state + price history."""
+
 from __future__ import annotations
+
+from typing import Any
 
 import duckdb
 from dagster import MaterializeResult, asset
@@ -7,13 +10,13 @@ from dagster import MaterializeResult, asset
 from ..iceberg_utils import overwrite_table, scan, upsert_table
 
 
-@asset(
+@asset(  # type: ignore[misc]
     group_name="silver",
     compute_kind="duckdb",
     deps=["bronze_listings"],
     description="Deduped current snapshot of each listing (latest scrape per id).",
 )
-def silver_listings(context) -> MaterializeResult:
+def silver_listings(context: Any) -> MaterializeResult:
     raw = scan("bronze_listings")
     con = duckdb.connect()
     con.register("raw", raw)
@@ -37,14 +40,14 @@ def silver_listings(context) -> MaterializeResult:
     return MaterializeResult(metadata={"rows": cleaned.num_rows, "iceberg_table": full})
 
 
-@asset(
+@asset(  # type: ignore[misc]
     group_name="silver",
     compute_kind="duckdb",
     deps=["bronze_listings"],
     description="Append-only price history: every observed (id, fingerprint) "
-                "becomes a row. Enables time-travel analytics without Delta/SCD2.",
+    "becomes a row. Enables time-travel analytics without Delta/SCD2.",
 )
-def silver_price_history(context) -> MaterializeResult:
+def silver_price_history(context: Any) -> MaterializeResult:
     raw = scan("bronze_listings")
     con = duckdb.connect()
     con.register("raw", raw)

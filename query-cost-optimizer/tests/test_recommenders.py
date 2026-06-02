@@ -1,6 +1,5 @@
 """Unit tests for recommenders."""
 
-import pytest
 from query_cost_optimizer.models import Platform, TableStats, QueryRecord
 from query_cost_optimizer.recommenders.clustering import ClusteringRecommender
 from query_cost_optimizer.recommenders.partitioning import PartitioningRecommender

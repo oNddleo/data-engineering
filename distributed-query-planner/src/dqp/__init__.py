@@ -1,4 +1,5 @@
 """Distributed Query Planner — federated predicate pushdown across MongoDB, Parquet, PostgreSQL."""
+
 from __future__ import annotations
 
 from dqp.catalog import Catalog, ColumnSchema, TableSchema

@@ -4,7 +4,6 @@ import uuid
 from datetime import datetime, timedelta
 
 import numpy as np
-import pytest
 
 from autoscaler.config import PredictorConfig
 from autoscaler.models import JobRun, JobStatus

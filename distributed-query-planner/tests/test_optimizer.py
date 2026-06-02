@@ -4,15 +4,14 @@ from __future__ import annotations
 import pytest
 
 from dqp.catalog import Catalog, ColumnSchema, TableSchema
-from dqp.cost.model import CostModel, PlanCost
+from dqp.cost.model import CostModel
 from dqp.cost.statistics import ColumnStats, Histogram, StatsRegistry, TableStats
 from dqp.engines.mongodb_engine import MongoDBEngine
 from dqp.engines.parquet_engine import ParquetEngine
 from dqp.engines.postgres_engine import PostgresEngine
-from dqp.logical_plan import FilterNode, JoinNode, PushedScanNode
+from dqp.logical_plan import JoinNode, PushedScanNode
 from dqp.optimizer import FederatedOptimizer
 from dqp.predicate import (
-    AndPredicate,
     BetweenPredicate,
     ColumnRef,
     ComparisonOp,

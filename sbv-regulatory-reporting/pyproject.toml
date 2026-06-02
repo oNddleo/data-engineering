@@ -34,3 +34,10 @@ addopts = "-v --tb=short"
 [tool.coverage.run]
 source = ["src/sbv_reporting"]
 omit = ["*/tests/*"]
+
+[tool.mypy]
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["yaml", "pandas", "pandas.*", "openpyxl", "openpyxl.*", "numpy", "numpy.*"]
+ignore_missing_imports = true

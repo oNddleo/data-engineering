@@ -15,10 +15,10 @@ State = Any  # hashable
 class RegisterModel:
     """Multi-key compare-free register: write(k,v) -> ok, read(k) -> v|None."""
 
-    def initial_state(self) -> FrozenSet:
+    def initial_state(self) -> FrozenSet[Any]:
         return frozenset()  # empty dict encoded as frozenset of (k,v) pairs
 
-    def step(self, state: FrozenSet, entry) -> Tuple[FrozenSet, bool]:
+    def step(self, state: FrozenSet[Any], entry: Any) -> Tuple[FrozenSet[Any], bool]:
         kv = dict(state)
 
         if entry.f == "write":
@@ -48,10 +48,10 @@ class RegisterModel:
 class QueueModel:
     """FIFO queue: enqueue(v) -> ok, dequeue() -> v|'empty'."""
 
-    def initial_state(self) -> tuple:
+    def initial_state(self) -> tuple[Any, ...]:
         return ()  # empty tuple = empty queue (hashable)
 
-    def step(self, state: tuple, entry) -> Tuple[tuple, bool]:
+    def step(self, state: tuple[Any, ...], entry: Any) -> Tuple[tuple[Any, ...], bool]:
         queue = list(state)
 
         if entry.f == "enqueue":
@@ -81,10 +81,10 @@ class QueueModel:
 class CASRegisterModel:
     """Compare-and-swap register: write(v)->ok, read()->v, cas(old,new)->ok|fail."""
 
-    def initial_state(self) -> tuple:
+    def initial_state(self) -> tuple[Any, ...]:
         return (None,)  # (current_value,)
 
-    def step(self, state: tuple, entry) -> Tuple[tuple, bool]:
+    def step(self, state: tuple[Any, ...], entry: Any) -> Tuple[tuple[Any, ...], bool]:
         (current,) = state
 
         if entry.f == "write":

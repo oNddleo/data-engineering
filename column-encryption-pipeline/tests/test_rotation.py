@@ -38,7 +38,6 @@ def test_records_readable_after_rotation(pipeline, rotation_pipeline):
 
 def test_dual_read_during_rotation(pipeline, kms_client, registry, store, engine, cfg):
     """Simulate mid-rotation state where some records use old key, some use new key."""
-    from src.pipeline.rotation import RotationPipeline
 
     pipeline.register_customer("cust_dual")
     row = {"ssn": "111-22-3333", "email": "x@x.com", "product_id": "p0"}
@@ -77,6 +76,7 @@ def test_rotation_raises_if_already_in_progress(pipeline, registry, kms_client):
     registry.begin_rotation("cust_dup_rot", resp["KeyMetadata"]["KeyId"])
 
     from src.pipeline.rotation import RotationPipeline
+
     rp = RotationPipeline(kms_client, progress=False)
     with pytest.raises(ValueError, match="already in progress"):
         rp.rotate_customer_key("cust_dup_rot")

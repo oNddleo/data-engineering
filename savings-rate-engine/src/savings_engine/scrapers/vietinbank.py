@@ -3,12 +3,15 @@ VietinBank (CTG) scraper.
 
 Rate page: https://www.vietinbank.vn/web/home/vn/products/saving-deposit
 """
+
 import logging
 from datetime import datetime
+
 from bs4 import BeautifulSoup
 
-from .base import BaseScraper, ScraperError
 from savings_engine.models.schemas import RateEntry
+
+from .base import BaseScraper, ScraperError
 
 logger = logging.getLogger(__name__)
 
@@ -44,13 +47,15 @@ class VietinBankScraper(BaseScraper):
                     rate = float(rate_str)
                 except ValueError:
                     continue
-                entries.append(RateEntry(
-                    bank_code=self.bank_code,
-                    term_label=term_label,
-                    rate_pa=rate,
-                    rate_type=rate_type,
-                    scraped_at=datetime.utcnow(),
-                ))
+                entries.append(
+                    RateEntry(
+                        bank_code=self.bank_code,
+                        term_label=term_label,
+                        rate_pa=rate,
+                        rate_type=rate_type,
+                        scraped_at=datetime.utcnow(),
+                    )
+                )
 
         if not entries:
             raise ScraperError("VietinBank: no entries parsed")
@@ -60,15 +65,17 @@ class VietinBankScraper(BaseScraper):
         now = datetime.utcnow()
         data = [
             ("Không kỳ hạn", 0.10, "standard"),
-            ("1 tháng",      4.70, "standard"),
-            ("3 tháng",      4.80, "standard"),
-            ("6 tháng",      5.10, "standard"),
-            ("9 tháng",      5.10, "standard"),
-            ("12 tháng",     5.60, "standard"),
-            ("24 tháng",     5.60, "standard"),
-            ("36 tháng",     5.60, "standard"),
+            ("1 tháng", 4.70, "standard"),
+            ("3 tháng", 4.80, "standard"),
+            ("6 tháng", 5.10, "standard"),
+            ("9 tháng", 5.10, "standard"),
+            ("12 tháng", 5.60, "standard"),
+            ("24 tháng", 5.60, "standard"),
+            ("36 tháng", 5.60, "standard"),
         ]
         return [
-            RateEntry(bank_code=self.bank_code, term_label=t, rate_pa=r, rate_type=rt, scraped_at=now)
+            RateEntry(
+                bank_code=self.bank_code, term_label=t, rate_pa=r, rate_type=rt, scraped_at=now
+            )
             for t, r, rt in data
         ]

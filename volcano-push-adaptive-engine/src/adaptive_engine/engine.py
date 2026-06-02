@@ -19,6 +19,7 @@ Public API
 The returned `report` is an ExecutionReport with timing, mode switches,
 and re-optimizations applied.
 """
+
 from __future__ import annotations
 import time
 from dataclasses import dataclass, field
@@ -37,14 +38,15 @@ from .volcano import VolcanoExecutor
 # Configuration
 # ------------------------------------------------------------------
 
-HOT_THRESHOLD: float = 10.0      # ratio actual/estimated that triggers a mode switch
-CHECK_INTERVAL: int = 100         # rows between ratio checks
-MAX_REOPT_ROUNDS: int = 3         # max plan rewrites per query
+HOT_THRESHOLD: float = 10.0  # ratio actual/estimated that triggers a mode switch
+CHECK_INTERVAL: int = 100  # rows between ratio checks
+MAX_REOPT_ROUNDS: int = 3  # max plan rewrites per query
 
 
 # ------------------------------------------------------------------
 # Report
 # ------------------------------------------------------------------
+
 
 @dataclass
 class ModeSwitch:
@@ -95,6 +97,7 @@ class ExecutionReport:
 # Adaptive engine
 # ------------------------------------------------------------------
 
+
 class AdaptiveEngine:
     """Executes a query plan, adaptively switching between Volcano and Push."""
 
@@ -132,9 +135,7 @@ class AdaptiveEngine:
     # Adaptive execution loop
     # ------------------------------------------------------------------
 
-    def _execute_adaptive(
-        self, plan: PlanNode, report: ExecutionReport
-    ) -> list[Row]:
+    def _execute_adaptive(self, plan: PlanNode, report: ExecutionReport) -> list[Row]:
         profiler = QueryProfiler(
             hot_threshold=self.hot_threshold,
             check_interval=self.check_interval,
@@ -238,6 +239,7 @@ class AdaptiveEngine:
 # ------------------------------------------------------------------
 # Plan-tree surgery utilities
 # ------------------------------------------------------------------
+
 
 def _find_node(root: PlanNode, node_id: str) -> PlanNode | None:
     for n in walk(root):

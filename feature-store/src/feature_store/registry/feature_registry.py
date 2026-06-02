@@ -2,6 +2,7 @@
 Feature registry — single source of truth for feature schemas, TTLs, and lineage.
 All writes to online/offline stores are validated against registered definitions.
 """
+
 from __future__ import annotations
 
 import json
@@ -33,7 +34,7 @@ class FeatureDef:
     tags: dict[str, str] = field(default_factory=dict)
 
     @classmethod
-    def from_dict(cls, d: dict) -> FeatureDef:
+    def from_dict(cls, d: dict[str, Any]) -> FeatureDef:
         return cls(
             name=d["name"],
             dtype=DType(d["dtype"]),
@@ -59,7 +60,7 @@ class FeatureGroup:
         return next((f for f in self.features if f.name == name), None)
 
     @classmethod
-    def from_dict(cls, name: str, d: dict) -> FeatureGroup:
+    def from_dict(cls, name: str, d: dict[str, Any]) -> FeatureGroup:
         return cls(
             name=name,
             features=[FeatureDef.from_dict(f) for f in d.get("features", [])],

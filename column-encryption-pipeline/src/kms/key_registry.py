@@ -7,16 +7,15 @@ import json
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 
 class KeyVersion:
-    def __init__(self, data: dict):
+    def __init__(self, data: dict) -> None:
         self.version: int = data["version"]
         self.cmk_id: str = data["cmk_id"]
         self.created_at: str = data["created_at"]
         self.status: str = data["status"]  # active | rotating_out | retired | deleted
-        self.retired_at: Optional[str] = data.get("retired_at")
+        self.retired_at: str | None = data.get("retired_at")
 
     def to_dict(self) -> dict:
         return {
@@ -29,28 +28,28 @@ class KeyVersion:
 
 
 class CustomerKeyRecord:
-    def __init__(self, data: dict):
+    def __init__(self, data: dict) -> None:
         self.customer_id: str = data["customer_id"]
         self.current_version: int = data["current_version"]
         self.rotation_in_progress: bool = data.get("rotation_in_progress", False)
         self.forgotten: bool = data.get("forgotten", False)
-        self.forgotten_at: Optional[str] = data.get("forgotten_at")
+        self.forgotten_at: str | None = data.get("forgotten_at")
         self.versions: list[KeyVersion] = [KeyVersion(v) for v in data.get("versions", [])]
 
-    def active_version(self) -> Optional[KeyVersion]:
+    def active_version(self) -> KeyVersion | None:
         for v in self.versions:
             if v.version == self.current_version:
                 return v
         return None
 
-    def previous_version(self) -> Optional[KeyVersion]:
+    def previous_version(self) -> KeyVersion | None:
         """Returns the version being rotated out (if rotation is in progress)."""
         for v in self.versions:
             if v.status == "rotating_out":
                 return v
         return None
 
-    def get_version(self, version: int) -> Optional[KeyVersion]:
+    def get_version(self, version: int) -> KeyVersion | None:
         for v in self.versions:
             if v.version == version:
                 return v
@@ -70,7 +69,7 @@ class CustomerKeyRecord:
 class KeyRegistry:
     """Thread-safe JSON-backed registry of customer CMK versions."""
 
-    def __init__(self, registry_path: str):
+    def __init__(self, registry_path: str) -> None:
         self._path = Path(registry_path)
         self._lock = threading.Lock()
         self._data: dict[str, dict] = self._load()
@@ -131,13 +130,15 @@ class KeyRegistry:
                 if v["version"] == old_version_num:
                     v["status"] = "rotating_out"
 
-            record["versions"].append({
-                "version": new_version_num,
-                "cmk_id": new_cmk_id,
-                "created_at": _now_iso(),
-                "status": "active",
-                "retired_at": None,
-            })
+            record["versions"].append(
+                {
+                    "version": new_version_num,
+                    "cmk_id": new_cmk_id,
+                    "created_at": _now_iso(),
+                    "status": "active",
+                    "retired_at": None,
+                }
+            )
             record["current_version"] = new_version_num
             record["rotation_in_progress"] = True
             self._save()

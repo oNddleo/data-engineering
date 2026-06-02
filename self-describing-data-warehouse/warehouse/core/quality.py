@@ -4,9 +4,11 @@ in the metadata layer.  Score 0-100 based on completeness, uniqueness,
 constraint validity, and trend stability.
 """
 
+from __future__ import annotations
+
 import sqlite3
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 
 def _now() -> str:
@@ -17,7 +19,7 @@ class QualityScorer:
     def __init__(self, conn: sqlite3.Connection):
         self.conn = conn
 
-    def run(self, table_name: str, notes: str = "") -> dict:
+    def run(self, table_name: str, notes: str = "") -> dict[str, Any]:
         """
         Inspect the actual table and compute a quality score.
         Returns the full quality run result dict.
@@ -53,7 +55,7 @@ class QualityScorer:
             "quality_score": round(score, 2),
         }
 
-    def latest(self, table_name: str) -> Optional[dict]:
+    def latest(self, table_name: str) -> Optional[dict[str, Any]]:
         row = self.conn.execute(
             """
             SELECT * FROM meta_quality_runs
@@ -64,7 +66,7 @@ class QualityScorer:
         ).fetchone()
         return dict(row) if row else None
 
-    def history(self, table_name: str, limit: int = 10) -> list[dict]:
+    def history(self, table_name: str, limit: int = 10) -> list[dict[str, Any]]:
         rows = self.conn.execute(
             """
             SELECT * FROM meta_quality_runs
@@ -98,7 +100,7 @@ class QualityScorer:
 
     def _row_count(self, table_name: str) -> int:
         row = self.conn.execute(f"SELECT COUNT(*) as n FROM [{table_name}]").fetchone()
-        return row["n"]
+        return int(row["n"])
 
     def _null_rate(self, table_name: str) -> float:
         """Average null rate across all columns."""
@@ -113,9 +115,9 @@ class QualityScorer:
             return 0.0
         for col in cols:
             col_name = col["name"]
-            null_count = self.conn.execute(
+            null_count = int(self.conn.execute(
                 f"SELECT COUNT(*) as n FROM [{table_name}] WHERE [{col_name}] IS NULL"
-            ).fetchone()["n"]
+            ).fetchone()["n"])
             total_rate += null_count / total_count
         return total_rate / len(cols)
 
@@ -125,9 +127,9 @@ class QualityScorer:
             return 0.0
         cols = self.conn.execute(f"PRAGMA table_info([{table_name}])").fetchall()
         col_names = ", ".join(f"[{c['name']}]" for c in cols)
-        distinct = self.conn.execute(
+        distinct = int(self.conn.execute(
             f"SELECT COUNT(*) as n FROM (SELECT DISTINCT {col_names} FROM [{table_name}])"
-        ).fetchone()["n"]
+        ).fetchone()["n"])
         return (total - distinct) / total
 
     def _constraint_violations(self, table_name: str) -> int:
@@ -136,9 +138,9 @@ class QualityScorer:
         violations = 0
         for col in cols:
             if col["notnull"] == 1:
-                n = self.conn.execute(
+                n = int(self.conn.execute(
                     f"SELECT COUNT(*) as n FROM [{table_name}] WHERE [{col['name']}] IS NULL"
-                ).fetchone()["n"]
+                ).fetchone()["n"])
                 violations += n
         return violations
 

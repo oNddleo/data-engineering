@@ -1,0 +1,5 @@
+services:
+  flashpipe:
+    build: .
+    image: flash-sale-event-pipeline:latest
+    command: ["info"]

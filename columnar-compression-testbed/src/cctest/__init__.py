@@ -1,4 +1,5 @@
 """cctest – Columnar Compression Research Testbed."""
+
 from .benchmark import print_benchmark, run_column_benchmark, run_table_benchmark
 from .codecs import ALPCodec, FSSTCodec, GorillaDeltaCodec, GorillaFloatCodec
 from .column_store import ColumnStore

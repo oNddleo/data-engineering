@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -10,12 +11,11 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    select,
     func,
-    text,
+    select,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
 from ..config import settings
@@ -27,6 +27,7 @@ log = structlog.get_logger(__name__)
 # ---------------------------------------------------------------------------
 # ORM models
 # ---------------------------------------------------------------------------
+
 
 class Base(DeclarativeBase):
     pass
@@ -57,6 +58,7 @@ class ValidationResultORM(Base):
 # Repository
 # ---------------------------------------------------------------------------
 
+
 class ValidationRepository:
     def __init__(self) -> None:
         self._engine = create_async_engine(
@@ -65,9 +67,7 @@ class ValidationRepository:
             max_overflow=settings.database_max_overflow,
             echo=False,
         )
-        self._session_factory = async_sessionmaker(
-            self._engine, expire_on_commit=False
-        )
+        self._session_factory = async_sessionmaker(self._engine, expire_on_commit=False)
 
     async def init_db(self) -> None:
         async with self._engine.begin() as conn:
@@ -109,9 +109,7 @@ class ValidationRepository:
         self, limit: int = 100, table_name: str | None = None
     ) -> list[dict[str, Any]]:
         async with self._session_factory() as session:
-            q = select(ValidationResultORM).order_by(
-                ValidationResultORM.validated_at.desc()
-            )
+            q = select(ValidationResultORM).order_by(ValidationResultORM.validated_at.desc())
             if table_name:
                 q = q.where(ValidationResultORM.table_name == table_name)
             q = q.limit(limit)

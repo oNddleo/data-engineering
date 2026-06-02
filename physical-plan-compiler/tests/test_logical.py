@@ -98,9 +98,11 @@ def test_join_returns_union_columns(orders_schema):
         rows=100_000,
     )
     on = column("o_custkey", INT64).eq(column("c_custkey", INT64))
-    j = LogicalJoin(left=LogicalScan(table="orders", table_schema=orders_schema),
-                    right=LogicalScan(table="customer", table_schema=cust),
-                    on=on)
+    j = LogicalJoin(
+        left=LogicalScan(table="orders", table_schema=orders_schema),
+        right=LogicalScan(table="customer", table_schema=cust),
+        on=on,
+    )
     # All orders cols + all customer cols (dedup by name)
     assert "o_orderkey" in j.schema.names
     assert "c_name" in j.schema.names

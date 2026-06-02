@@ -15,13 +15,23 @@ import sqlglot.expressions as exp
 
 from .catalog import SchemaCatalog, SourceType
 from .connectors import (
-    BaseConnector, ConnectorResult,
-    MongoDBConnector, PostgresConnector,
-    RestApiConnector, S3ParquetConnector,
+    BaseConnector,
+    ConnectorResult,
+    MongoDBConnector,
+    PostgresConnector,
+    RestApiConnector,
+    S3ParquetConnector,
 )
 from .planner.nodes import (
-    Aggregate, Filter, Join, JoinType, Limit,
-    PlanNode, Project, Sort, TableScan,
+    Aggregate,
+    Filter,
+    Join,
+    JoinType,
+    Limit,
+    PlanNode,
+    Project,
+    Sort,
+    TableScan,
 )
 
 
@@ -73,16 +83,14 @@ class Executor:
         if source_name in self._connectors:
             return self._connectors[source_name]
         # Auto-instantiate a default connector based on catalog source type
-        schema = next(
-            (s for s in self.catalog._tables.values() if s.source == source_name), None
-        )
+        schema = next((s for s in self.catalog._tables.values() if s.source == source_name), None)
         if schema is None:
             raise KeyError(f"No connector and no catalog entry for source: {source_name!r}")
-        mapping = {
-            SourceType.POSTGRES:   PostgresConnector,
-            SourceType.MONGODB:    MongoDBConnector,
+        mapping: dict[SourceType, type[BaseConnector]] = {
+            SourceType.POSTGRES: PostgresConnector,
+            SourceType.MONGODB: MongoDBConnector,
             SourceType.S3_PARQUET: S3ParquetConnector,
-            SourceType.REST_API:   RestApiConnector,
+            SourceType.REST_API: RestApiConnector,
         }
         cls = mapping.get(schema.source_type)
         if cls is None:
@@ -176,14 +184,18 @@ class Executor:
                     result_cols[col] = df[col]
             elif isinstance(expr, exp.Alias):
                 series = _eval_expr_on_df(df, expr.this)
-                result_cols[out_name] = series if series is not None else pd.Series([None] * len(df))
+                result_cols[out_name] = (
+                    series if series is not None else pd.Series([None] * len(df))
+                )
             elif isinstance(expr, exp.Column):
                 col = _resolve_column(df, expr)
                 if col is not None:
                     result_cols[out_name] = df[col]
             else:
                 series = _eval_expr_on_df(df, expr)
-                result_cols[out_name] = series if series is not None else pd.Series([None] * len(df))
+                result_cols[out_name] = (
+                    series if series is not None else pd.Series([None] * len(df))
+                )
 
         return pd.DataFrame(result_cols) if result_cols else df
 
@@ -214,7 +226,7 @@ class Executor:
 
             if None in left_on or None in right_on:
                 # Try swapped: keys built for original sides may now be reversed
-                left_on_swap  = [_find_col(left_df,  k) for k in node.right_keys]
+                left_on_swap = [_find_col(left_df, k) for k in node.right_keys]
                 right_on_swap = [_find_col(right_df, k) for k in node.left_keys]
                 if None not in left_on_swap and None not in right_on_swap:
                     left_on, right_on = left_on_swap, right_on_swap
@@ -222,13 +234,14 @@ class Executor:
             if None not in left_on and None not in right_on:
                 how = {
                     JoinType.INNER: "inner",
-                    JoinType.LEFT:  "left",
+                    JoinType.LEFT: "left",
                     JoinType.RIGHT: "right",
-                    JoinType.FULL:  "outer",
+                    JoinType.FULL: "outer",
                 }.get(node.join_type, "inner")
 
                 merged = pd.merge(
-                    left_df, right_df,
+                    left_df,
+                    right_df,
                     left_on=left_on,
                     right_on=right_on,
                     how=how,
@@ -266,7 +279,7 @@ class Executor:
 
         agg_spec: dict[str, Any] = {}
         for agg_expr in node.aggregates:
-            out_col = str(agg_expr)
+            _out_col = str(agg_expr)
             inner = next(iter(agg_expr.find_all(exp.Column)), None)
             if inner is None:
                 continue
@@ -275,8 +288,11 @@ class Executor:
                 continue
             fn = type(agg_expr).__name__.lower()
             pandas_fn = {
-                "sum": "sum", "avg": "mean", "count": "count",
-                "max": "max", "min": "min",
+                "sum": "sum",
+                "avg": "mean",
+                "count": "count",
+                "max": "max",
+                "min": "min",
             }.get(fn, "sum")
             agg_spec[src_col] = pandas_fn
 
@@ -327,6 +343,7 @@ class Executor:
 # Column resolution helpers                                                    #
 # --------------------------------------------------------------------------- #
 
+
 def _find_col(df: pd.DataFrame, key: str) -> str | None:
     """Resolve 'alias.col' or 'col' to an actual DataFrame column name."""
     if key in df.columns:
@@ -335,7 +352,7 @@ def _find_col(df: pd.DataFrame, key: str) -> str | None:
     suffix = key.split(".")[-1]
     for col in df.columns:
         if col == suffix or col.endswith(f".{suffix}"):
-            return col
+            return str(col)
     return None
 
 
@@ -349,6 +366,7 @@ def _resolve_column(df: pd.DataFrame, expr: exp.Expression) -> str | None:
 # --------------------------------------------------------------------------- #
 # In-memory expression evaluation                                              #
 # --------------------------------------------------------------------------- #
+
 
 def _eval_on_df(df: pd.DataFrame, expr: exp.Expression) -> pd.Series | None:
     """Evaluate a predicate expression against the DataFrame; return bool Series."""
@@ -379,6 +397,7 @@ def _eval_condition_on_row(row: pd.Series, expr: exp.Expression) -> bool:
         flat = {rename.get(k, k): v for k, v in row.items()}
         df_single = pd.DataFrame([flat])
         from .connectors.postgres import _eval_predicate as _pg_eval
+
         mask = _pg_eval(df_single, expr)
         return bool(mask.iloc[0]) if mask is not None else True
     except Exception:

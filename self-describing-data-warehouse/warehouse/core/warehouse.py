@@ -4,19 +4,20 @@ Combines the metadata registry, quality, freshness, usage, lineage,
 incidents, and recommender into one coherent API.
 """
 
+from __future__ import annotations
+
 import sqlite3
 import time
-from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from warehouse.schema.metadata_schema import METADATA_SCHEMA
-from warehouse.core.registry import MetadataRegistry, TableMeta
+from warehouse.core.registry import MetadataRegistry
 from warehouse.core.lineage import LineageTracker
 from warehouse.core.quality import QualityScorer
 from warehouse.core.freshness import FreshnessMonitor
 from warehouse.core.usage import UsageTracker
 from warehouse.core.incidents import IncidentTracker
-from warehouse.core.recommender import TableRecommender
+from warehouse.core.recommender import Recommendation, TableRecommender
 
 
 class SelfDescribingWarehouse:
@@ -59,9 +60,9 @@ class SelfDescribingWarehouse:
     def execute(
         self,
         sql: str,
-        params: tuple = (),
+        params: tuple[Any, ...] = (),
         user: str = "anonymous",
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """Run any SQL and automatically record usage for every table touched."""
         tables = self._extract_tables(sql)
         start = time.monotonic()
@@ -77,7 +78,7 @@ class SelfDescribingWarehouse:
         self.conn.execute(ddl)
         self.conn.commit()
 
-    def insert_many(self, table_name: str, rows: list[dict]) -> None:
+    def insert_many(self, table_name: str, rows: list[dict[str, Any]]) -> None:
         if not rows:
             return
         cols = list(rows[0].keys())
@@ -93,7 +94,7 @@ class SelfDescribingWarehouse:
     #  Self-describing queries                                             #
     # ------------------------------------------------------------------ #
 
-    def describe(self, table_name: str) -> dict:
+    def describe(self, table_name: str) -> dict[str, Any]:
         """Everything known about a table — metadata + latest quality/freshness/usage."""
         meta = self.registry.get_table(table_name)
         if not meta:
@@ -115,15 +116,15 @@ class SelfDescribingWarehouse:
         query: str,
         domain: Optional[str] = None,
         top_k: int = 5,
-    ):
+    ) -> list[Recommendation]:
         """Answer: 'which table should I use for X?'"""
         return self.recommender.recommend(query, domain=domain, top_k=top_k)
 
-    def catalog(self, domain: Optional[str] = None) -> list[dict]:
+    def catalog(self, domain: Optional[str] = None) -> list[dict[str, Any]]:
         """List all registered (non-deprecated) tables."""
         return self.registry.list_tables(domain=domain)
 
-    def health_dashboard(self) -> list[dict]:
+    def health_dashboard(self) -> list[dict[str, Any]]:
         """Return a per-table health summary across all registered tables."""
         tables = self.registry.list_tables(include_deprecated=False)
         rows = []
@@ -143,7 +144,7 @@ class SelfDescribingWarehouse:
                 "open_incidents": open_inc,
                 "trend":         self.quality.trend(name),
             })
-        rows.sort(key=lambda r: (r["quality_score"] or 0), reverse=True)
+        rows.sort(key=lambda r: float(r["quality_score"] or 0), reverse=True)
         return rows
 
     # ------------------------------------------------------------------ #

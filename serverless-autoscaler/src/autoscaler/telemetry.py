@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import logging
-import threading
-from typing import Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +11,13 @@ class Telemetry:
     Prometheus metrics for the autoscaler control plane.
     All counters/gauges/histograms are exposed on /metrics.
     """
+
+    prewarm_total: Any
+    scaling_actions: Any
+    active_jobs: Any
+    predicted_workers: Any
+    job_duration: Any
+    net_savings_usd: Any
 
     def __init__(self, port: int = 9090) -> None:
         try:
@@ -62,12 +68,19 @@ class Telemetry:
 
     def _install_stubs(self) -> None:
         """Replace all metrics with no-op stubs when prometheus_client is absent."""
+
         class _Stub:
-            def labels(self, **_):
+            def labels(self, **_: Any) -> _Stub:
                 return self
-            def inc(self, *_, **__): pass
-            def set(self, *_, **__): pass
-            def observe(self, *_, **__): pass
+
+            def inc(self, *_: Any, **__: Any) -> None:
+                pass
+
+            def set(self, *_: Any, **__: Any) -> None:
+                pass
+
+            def observe(self, *_: Any, **__: Any) -> None:
+                pass
 
         self.prewarm_total = _Stub()
         self.scaling_actions = _Stub()

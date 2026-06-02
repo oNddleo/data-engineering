@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 import pandas as pd
-import sqlglot
 import sqlglot.expressions as exp
 
 from .base import BaseConnector, ConnectorResult
@@ -113,9 +112,7 @@ class PostgresConnector(BaseConnector):
             table=table,
         )
 
-    def _predicates_to_sql(
-        self, predicates: list[exp.Expression]
-    ) -> tuple[str, list[Any]]:
+    def _predicates_to_sql(self, predicates: list[exp.Expression]) -> tuple[str, list[Any]]:
         """Translate sqlglot expressions to a parameterised SQL fragment."""
         if not predicates:
             return "", []
@@ -130,6 +127,7 @@ class PostgresConnector(BaseConnector):
 # --------------------------------------------------------------------------- #
 # Helpers shared by mock + real path                                           #
 # --------------------------------------------------------------------------- #
+
 
 def _expr_to_sql(expr: exp.Expression) -> tuple[str, list[Any]]:
     """Return (sql_fragment, [bind_values]) for a single predicate."""
@@ -173,15 +171,14 @@ def _apply_predicates(df: pd.DataFrame, predicates: list[exp.Expression]) -> pd.
     return df
 
 
-def _eval_predicate(df: pd.DataFrame, expr: exp.Expression):
+def _eval_predicate(df: pd.DataFrame, expr: exp.Expression) -> Any:
     """Return a boolean Series or None."""
-    import pandas as pd
 
-    def col(e: exp.Expression):
+    def col(e: exp.Expression) -> Any:
         name = e.name if isinstance(e, exp.Column) else str(e)
         return df[name] if name in df.columns else None
 
-    def lit(e: exp.Expression):
+    def lit(e: exp.Expression) -> Any:
         return _lit(e)
 
     match expr:

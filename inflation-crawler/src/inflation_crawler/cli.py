@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 from pathlib import Path
+from typing import Any
 
 import click
 import duckdb
@@ -34,12 +35,12 @@ def main(log_level: str) -> None:
 @click.option("--url-pattern", default=None, help="Optional SQL LIKE pattern for url")
 @click.option("--limit", default=5000, show_default=True)
 @click.option("--out", type=click.Path(path_type=Path), default=None)
-def cli_ingest(crawl: str, host: str, url_pattern: str | None, limit: int, out: Path | None) -> None:
+def cli_ingest(
+    crawl: str, host: str, url_pattern: str | None, limit: int, out: Path | None
+) -> None:
     """Query the Common Crawl columnar index and save matching WARC offsets."""
     out = out or (settings.extracted_dir / f"index_{crawl}.parquet")
-    rows = ingest.query_index(
-        crawl=crawl, host_pattern=host, url_pattern=url_pattern, limit=limit
-    )
+    rows = ingest.query_index(crawl=crawl, host_pattern=host, url_pattern=url_pattern, limit=limit)
     ingest.save_index_rows(rows, out)
     console.print(f"[green]✓[/] {len(rows)} rows -> {out}")
 
@@ -54,7 +55,7 @@ def cli_fetch(index: Path) -> None:
 
     async def _run() -> int:
         extracted = 0
-        batch: list = []
+        batch: list[Any] = []
         async for rec in fetch.fetch_records(index_rows):
             product = extract_product(rec.html, rec.url, rec.fetch_time)
             if product:
@@ -83,10 +84,13 @@ def cli_extract_file(html_path: Path, url: str, fetch_time: str) -> None:
         console.print("[red]no product extracted[/]")
         raise SystemExit(1)
     store.upsert_products([product])
-    console.print(json.dumps(
-        {**product.__dict__, "fetch_time": product.fetch_time.isoformat()},
-        indent=2, default=str,
-    ))
+    console.print(
+        json.dumps(
+            {**product.__dict__, "fetch_time": product.fetch_time.isoformat()},
+            indent=2,
+            default=str,
+        )
+    )
 
 
 @main.command("cpi")
@@ -115,8 +119,7 @@ def cli_analyze(category: str | None, year: int | None) -> None:
     table.add_column("N products", justify="right")
     table.add_column("Monthly %", justify="right")
     for row in ts.iter_rows(named=True):
-        table.add_row(row["period"], str(row["n_products"]),
-                      f"{row['monthly_inflation_pct']:+.2f}")
+        table.add_row(row["period"], str(row["n_products"]), f"{row['monthly_inflation_pct']:+.2f}")
     console.print(table)
 
     rate = analyze.annualized_inflation(category, year)

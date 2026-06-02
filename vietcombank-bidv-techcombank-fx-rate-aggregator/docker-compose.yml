@@ -1,0 +1,5 @@
+services:
+  fxagg:
+    build: .
+    image: vietcombank-bidv-techcombank-fx-rate-aggregator:latest
+    command: ["info"]

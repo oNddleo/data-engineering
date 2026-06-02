@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 # Record type used throughout
-Record = tuple[Any, Any, Any]    # (id, group, value)
+Record = tuple[Any, Any, Any]  # (id, group, value)
 
 
 @dataclass
@@ -33,7 +33,7 @@ class State:
     rev_etl: set[Record] = field(default_factory=set)
     # Bookkeeping (not part of TLA+ spec but useful for testing)
     kafka_consumed: list[Record] = field(default_factory=list)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
@@ -53,7 +53,7 @@ class StateMachine:
 
     state: State = field(default_factory=State)
     step_count: int = 0
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def step(self) -> int:
         with self._lock:

@@ -12,9 +12,9 @@ Architecture:
 All stages are registered on a Pipeline object; calling pipeline.run()
 drives the source to completion.
 """
+
 from __future__ import annotations
 from collections import defaultdict
-from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from .catalog import Catalog
@@ -37,6 +37,7 @@ Consumer = Callable[[Row], None]
 # ------------------------------------------------------------------
 # Pipeline
 # ------------------------------------------------------------------
+
 
 class Pipeline:
     """A linear chain of push operators ending in a collecting sink."""
@@ -83,6 +84,7 @@ class Pipeline:
 # Base push operator
 # ------------------------------------------------------------------
 
+
 class PushOperator:
     def __init__(self) -> None:
         self._consumer: Consumer | None = None
@@ -108,6 +110,7 @@ class PushOperator:
 # ------------------------------------------------------------------
 # Source operators
 # ------------------------------------------------------------------
+
 
 class ScanPush(PushOperator):
     def __init__(self, catalog: Catalog, table: str) -> None:
@@ -137,6 +140,7 @@ class RowBufferPush(PushOperator):
 # ------------------------------------------------------------------
 # Transform operators
 # ------------------------------------------------------------------
+
 
 class FilterPush(PushOperator):
     def __init__(self, predicate: Expr) -> None:
@@ -181,6 +185,7 @@ class HashJoinPush(PushOperator):
     def open(self) -> None:
         # Materialise build side using volcano (it may itself be a push pipeline)
         from .volcano import VolcanoExecutor
+
         exec_ = VolcanoExecutor(self._catalog)
         for row in exec_.iter(self._build_plan):
             self._ht[row.get(self._build_key)].append(row)
@@ -207,7 +212,7 @@ class AggregatePush(PushOperator):
         super().__init__()
         self._group_by = group_by
         self._aggregates = aggregates
-        self._groups: dict[tuple, dict] = {}
+        self._groups: dict[tuple[Any, ...], dict[str, Any]] = {}
 
     def push(self, row: Row) -> None:
         key = tuple(row.get(c) for c in self._group_by)
@@ -217,7 +222,9 @@ class AggregatePush(PushOperator):
                 self._groups[key][out_col] = _agg_init(func)
         for out_col, func, in_col in self._aggregates:
             val = 1 if in_col == "*" else row.get(in_col)
-            self._groups[key][out_col] = _agg_step(func, self._groups[key][out_col], val)
+            self._groups[key][out_col] = _agg_step(
+                func, self._groups[key][out_col], val
+            )
 
     def close(self) -> None:
         assert self._consumer
@@ -247,7 +254,9 @@ class SortPush(PushOperator):
         assert self._consumer
         rows = self._buf
         for col, ascending in reversed(self._order_by):
-            rows.sort(key=lambda r: (r.get(col) is None, r.get(col)), reverse=not ascending)
+            rows.sort(
+                key=lambda r: (r.get(col) is None, r.get(col)), reverse=not ascending
+            )
         for row in rows:
             self._consumer(row)
         self._buf = []
@@ -283,6 +292,7 @@ class LimitPush(PushOperator):
 # ------------------------------------------------------------------
 # Compiler: PlanNode -> Pipeline
 # ------------------------------------------------------------------
+
 
 class PushCompiler:
     """Compiles a plan subtree into a push Pipeline.
@@ -358,8 +368,6 @@ class PushCompiler:
 # ------------------------------------------------------------------
 # Aggregate helpers (shared with volcano.py to avoid circular import)
 # ------------------------------------------------------------------
-
-from typing import Any
 
 
 def _agg_init(func: str) -> Any:

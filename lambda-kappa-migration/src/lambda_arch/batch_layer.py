@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 
-from src.config import HISTORICAL_DIR, config
+from src.config import HISTORICAL_DIR
 from src.lambda_arch.models import (
     BatchView,
     Event,
@@ -86,9 +86,7 @@ class BatchProcessor:
         view = BatchView()
 
         # --- hourly_event_counts ---
-        hourly_counts = (
-            df.groupby(["hour_bucket", "event_type"]).size().reset_index(name="count")
-        )
+        hourly_counts = df.groupby(["hour_bucket", "event_type"]).size().reset_index(name="count")
         hourly_ec = HourlyEventCounts()
         for _, row in hourly_counts.iterrows():
             hourly_ec.increment(str(row["hour_bucket"]), str(row["event_type"]), int(row["count"]))
@@ -102,7 +100,9 @@ class BatchProcessor:
         )
         user_totals = UserTotals()
         for _, row in user_agg.iterrows():
-            user_totals.update(str(row["user_id"]), float(row["total_amount"]), int(row["event_count"]))
+            user_totals.update(
+                str(row["user_id"]), float(row["total_amount"]), int(row["event_count"])
+            )
         view.user_totals = user_totals
 
         # --- event_type_summary ---

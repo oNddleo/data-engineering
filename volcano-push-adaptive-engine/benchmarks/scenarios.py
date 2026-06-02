@@ -3,6 +3,7 @@
 Each scenario returns a list of (catalog, plan) pairs parameterised by
 a sweep variable (table size, selectivity, join fanout, group count).
 """
+
 from __future__ import annotations
 import random
 
@@ -11,13 +12,11 @@ from adaptive_engine import (
     Catalog,
     FilterNode,
     HashJoinNode,
-    ProjectNode,
     ScanNode,
     SortNode,
     gt,
     eq,
 )
-from adaptive_engine.expressions import BinOp, ColRef, Literal
 
 from .runner import Scenario
 
@@ -27,6 +26,7 @@ _rng = random.Random(42)
 # ------------------------------------------------------------------
 # 1. Filter selectivity sweep
 # ------------------------------------------------------------------
+
 
 def _filter_selectivity_factory(selectivity: float) -> tuple[Catalog, object]:
     n = 100_000
@@ -55,6 +55,7 @@ FILTER_SELECTIVITY = Scenario(
 # 2. Table size sweep
 # ------------------------------------------------------------------
 
+
 def _table_size_factory(n: int) -> tuple[Catalog, object]:
     data = [{"id": i, "value": _rng.randint(0, n)} for i in range(n)]
     catalog = Catalog()
@@ -81,9 +82,12 @@ TABLE_SIZE = Scenario(
 # 3. Hash join — probe-side size sweep
 # ------------------------------------------------------------------
 
+
 def _join_size_factory(probe_n: int) -> tuple[Catalog, object]:
     build_n = 1_000
-    probe = [{"id": i, "key": _rng.randint(0, build_n - 1), "val": i} for i in range(probe_n)]
+    probe = [
+        {"id": i, "key": _rng.randint(0, build_n - 1), "val": i} for i in range(probe_n)
+    ]
     build = [{"key": i, "label": f"L{i}"} for i in range(build_n)]
 
     catalog = Catalog()
@@ -112,9 +116,13 @@ JOIN_PROBE_SIZE = Scenario(
 # 4. Aggregate group count sweep
 # ------------------------------------------------------------------
 
+
 def _agg_groups_factory(n_groups: int) -> tuple[Catalog, object]:
     n = 200_000
-    data = [{"id": i, "group": _rng.randint(0, n_groups - 1), "value": _rng.random()} for i in range(n)]
+    data = [
+        {"id": i, "group": _rng.randint(0, n_groups - 1), "value": _rng.random()}
+        for i in range(n)
+    ]
     catalog = Catalog()
     catalog.create_table("t", data)
 
@@ -142,6 +150,7 @@ AGGREGATE_GROUPS = Scenario(
 # ------------------------------------------------------------------
 # 5. End-to-end pipeline (filter + join + agg + sort)
 # ------------------------------------------------------------------
+
 
 def _pipeline_factory(n: int) -> tuple[Catalog, object]:
     orders = [

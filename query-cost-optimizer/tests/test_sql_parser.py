@@ -1,6 +1,5 @@
 """Unit tests for sql_parser helpers."""
 
-import pytest
 from query_cost_optimizer.sql_parser import (
     extract_filter_columns,
     extract_join_columns,

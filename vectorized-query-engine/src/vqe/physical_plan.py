@@ -10,26 +10,27 @@ Late materialization is implemented in SequentialScan:
   - then fetch the remaining output columns and apply the mask
   This avoids reading wide columns for rows that will be filtered out.
 """
+
 from __future__ import annotations
 
 import collections
 from abc import ABC, abstractmethod
-from typing import Dict, Generator, Iterable, Iterator, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
-import numpy as np
 import pyarrow as pa
 import pyarrow.compute as pc
 
-from .catalog import Catalog, Table
-from .expressions import AggExpr, BinaryExpr, ColumnRef, Expr, conjuncts_to_expr
+from .catalog import Catalog
+from .expressions import AggExpr, ColumnRef, Expr
 
 
-BATCH_SIZE = 8192   # Tuned for L1/L2 cache; SIMD-friendly power of two
+BATCH_SIZE = 8192  # Tuned for L1/L2 cache; SIMD-friendly power of two
 
 
 # ---------------------------------------------------------------------------
 # Base class
 # ---------------------------------------------------------------------------
+
 
 class PhysicalOp(ABC):
     """Iterator / volcano-model interface."""
@@ -62,6 +63,7 @@ class PhysicalOp(ABC):
 # SequentialScan  (with late materialization + predicate pushdown)
 # ---------------------------------------------------------------------------
 
+
 class SequentialScan(PhysicalOp):
     """
     Reads a table in BATCH_SIZE chunks.
@@ -82,7 +84,7 @@ class SequentialScan(PhysicalOp):
         predicates: List[Expr],
     ) -> None:
         self.table_name = table_name
-        self.output_cols = output_cols    # None = all columns
+        self.output_cols = output_cols  # None = all columns
         self.predicates = predicates
         self._table: Optional[pa.Table] = None
         self._offset = 0
@@ -184,6 +186,7 @@ class SequentialScan(PhysicalOp):
 # Filter
 # ---------------------------------------------------------------------------
 
+
 class FilterOp(PhysicalOp):
     def __init__(self, child: PhysicalOp, predicate: Expr) -> None:
         self.child = child
@@ -209,6 +212,7 @@ class FilterOp(PhysicalOp):
 # ---------------------------------------------------------------------------
 # Project
 # ---------------------------------------------------------------------------
+
 
 class ProjectOp(PhysicalOp):
     def __init__(
@@ -249,6 +253,7 @@ class ProjectOp(PhysicalOp):
 # Hash Aggregate  (pipeline breaker — accumulates all input)
 # ---------------------------------------------------------------------------
 
+
 class HashAggOp(PhysicalOp):
     """
     Two-phase hash aggregation:
@@ -270,14 +275,9 @@ class HashAggOp(PhysicalOp):
         self._result: Optional[pa.RecordBatch] = None
         self._done = False
 
-    def open(self, catalog: Catalog) -> None:
-        self.child.open(catalog)
-        self._result = None
-        self._done = False
-
-    def _build(self, catalog: Catalog) -> None:
+    def _build(self, catalog: Optional[Catalog]) -> None:
         # state: group_key_tuple → [partial_state_per_agg]
-        states: Dict[Tuple, List] = collections.defaultdict(
+        states: Dict[Tuple[Any, ...], List[Any]] = collections.defaultdict(
             lambda: [None] * len(self.aggregates)
         )
 
@@ -296,14 +296,16 @@ class HashAggOp(PhysicalOp):
                 # Per-row aggregation
                 # For efficiency: group rows into buckets in Python
                 # (a production engine would use a vectorized hash table)
-                row_keys: List[Tuple] = list(zip(*key_np)) if key_np else [() for _ in range(n)]
+                row_keys: List[Tuple[Any, ...]] = (
+                    list(zip(*key_np)) if key_np else [() for _ in range(n)]
+                )
 
                 # Build partial per-batch aggregates per unique group
-                from itertools import groupby as _groupby
-                import numpy as _np
 
                 # Build group → row indices mapping
-                group_indices: Dict[Tuple, List[int]] = collections.defaultdict(list)
+                group_indices: Dict[Tuple[Any, ...], List[int]] = (
+                    collections.defaultdict(list)
+                )
                 for i, k in enumerate(row_keys):
                     group_indices[k].append(i)
 
@@ -323,8 +325,8 @@ class HashAggOp(PhysicalOp):
             batch = self.child.next()
 
         # Materialize result
-        key_arrays: List[pa.Array] = [[] for _ in self.group_by]
-        agg_arrays: List[List] = [[] for _ in self.aggregates]
+        key_arrays: List[List[Any]] = [[] for _ in self.group_by]
+        agg_arrays: List[List[Any]] = [[] for _ in self.aggregates]
 
         for key, agg_states in states.items():
             for i, v in enumerate(key):
@@ -351,7 +353,7 @@ class HashAggOp(PhysicalOp):
 
     def next(self) -> Optional[pa.RecordBatch]:
         if not self._done:
-            self._build(None)   # catalog not needed here
+            self._build(None)  # catalog not needed here
             self._done = True
         if self._result is not None:
             r = self._result
@@ -371,6 +373,7 @@ class HashAggOp(PhysicalOp):
 # ---------------------------------------------------------------------------
 # Sort  (pipeline breaker)
 # ---------------------------------------------------------------------------
+
 
 class SortOp(PhysicalOp):
     def __init__(
@@ -434,6 +437,7 @@ class SortOp(PhysicalOp):
 # Limit
 # ---------------------------------------------------------------------------
 
+
 class LimitOp(PhysicalOp):
     def __init__(self, child: PhysicalOp, n: int, offset: int = 0) -> None:
         self.child = child
@@ -478,6 +482,7 @@ class LimitOp(PhysicalOp):
 # Hash Join  (build smaller right side, probe with left batches)
 # ---------------------------------------------------------------------------
 
+
 class HashJoinOp(PhysicalOp):
     """
     Classic hash join:
@@ -498,7 +503,7 @@ class HashJoinOp(PhysicalOp):
         self.left_keys = left_keys
         self.right_keys = right_keys
         self.join_type = join_type
-        self._hash_table: Dict[Tuple, List[Dict]] = {}
+        self._hash_table: Dict[Tuple[Any, ...], List[Dict[str, Any]]] = {}
         self._built = False
 
     def open(self, catalog: Catalog) -> None:
@@ -509,14 +514,17 @@ class HashJoinOp(PhysicalOp):
 
     def _build(self) -> None:
         """Build hash table from entire right side."""
-        ht: Dict[Tuple, List[Dict]] = collections.defaultdict(list)
+        ht: Dict[Tuple[Any, ...], List[Dict[str, Any]]] = collections.defaultdict(list)
         batch = self.right.next()
         while batch is not None:
             if batch.num_rows > 0:
                 keys = [batch.column(k).to_pylist() for k in self.right_keys]
                 for i in range(batch.num_rows):
                     key = tuple(keys[j][i] for j in range(len(self.right_keys)))
-                    row = {name: batch.column(name)[i].as_py() for name in batch.schema.names}
+                    row = {
+                        name: batch.column(name)[i].as_py()
+                        for name in batch.schema.names
+                    }
                     ht[key].append(row)
             batch = self.right.next()
         self._hash_table = ht
@@ -534,8 +542,8 @@ class HashJoinOp(PhysicalOp):
                 continue
 
             left_keys = [batch.column(k).to_pylist() for k in self.left_keys]
-            out_left: Dict[str, List] = {n: [] for n in batch.schema.names}
-            out_right: Dict[str, List] = {}
+            out_left: Dict[str, List[Any]] = {n: [] for n in batch.schema.names}
+            out_right: Dict[str, List[Any]] = {}
 
             # Collect right column names
             if self._hash_table:

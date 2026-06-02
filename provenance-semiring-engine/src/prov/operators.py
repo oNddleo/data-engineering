@@ -14,19 +14,21 @@ Operations:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
     from prov.semiring.base import Semiring
 
-Tuple = tuple
-Relation = dict   # dict[tuple, K]
+Tuple = tuple[Any, ...]
+Relation = dict[tuple[Any, ...], Any]
 
 
 def annotate(
-    rows: Iterable[Tuple], token_fn: Callable, K: Semiring,
+    rows: Iterable[Tuple],
+    token_fn: Callable[..., Any],
+    K: Semiring[Any],
 ) -> Relation:
     """Build `Relation` from raw rows.
 
@@ -40,12 +42,12 @@ def annotate(
     return out
 
 
-def select(rel: Relation, predicate: Callable, K: Semiring) -> Relation:
+def select(rel: Relation, predicate: Callable[..., Any], K: Semiring[Any]) -> Relation:
     """σ_p : keep tuples where predicate(tup) is True; annotations unchanged."""
     return {tup: ann for tup, ann in rel.items() if predicate(tup)}
 
 
-def project(rel: Relation, indices: tuple, K: Semiring) -> Relation:
+def project(rel: Relation, indices: tuple[int, ...], K: Semiring[Any]) -> Relation:
     """π_indices : project sub-tuple; collapse equal-projection annotations via ⊕."""
     out: Relation = {}
     for tup, ann in rel.items():
@@ -54,7 +56,7 @@ def project(rel: Relation, indices: tuple, K: Semiring) -> Relation:
     return out
 
 
-def union(a: Relation, b: Relation, K: Semiring) -> Relation:
+def union(a: Relation, b: Relation, K: Semiring[Any]) -> Relation:
     """R ∪ S : combine matching tuples' annotations via ⊕."""
     out = dict(a)
     for tup, ann in b.items():
@@ -63,7 +65,11 @@ def union(a: Relation, b: Relation, K: Semiring) -> Relation:
 
 
 def join(
-    a: Relation, b: Relation, key_a: tuple, key_b: tuple, K: Semiring,
+    a: Relation,
+    b: Relation,
+    key_a: tuple[int, ...],
+    key_b: tuple[int, ...],
+    K: Semiring[Any],
 ) -> Relation:
     """R ⋈ S : equality join on the given key columns.
 
@@ -71,7 +77,7 @@ def join(
     Duplicate output tuples (multiple match pairs) sum via ⊕.
     """
     # Hash-build on b
-    index: dict = {}
+    index: dict[tuple[Any, ...], list[Any]] = {}
     for tup_b, ann_b in b.items():
         k = tuple(tup_b[i] for i in key_b)
         index.setdefault(k, []).append((tup_b, ann_b))
@@ -86,7 +92,7 @@ def join(
     return out
 
 
-def aggregate(rel: Relation, group_indices: tuple, K: Semiring) -> Relation:
+def aggregate(rel: Relation, group_indices: tuple[int, ...], K: Semiring[Any]) -> Relation:
     """γ_group : group by indices; annotations sum via ⊕."""
     return project(rel, group_indices, K)
 

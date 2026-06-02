@@ -1,6 +1,5 @@
 """Tests for late-arrival detection and correction emission."""
-import pytest
-from temporal_join import AsOfJoinEngine, Event, JoinResult, STREAM_LEFT, STREAM_RIGHT
+from temporal_join import AsOfJoinEngine, Event, STREAM_LEFT, STREAM_RIGHT
 
 
 def left(key: str, t: int, **payload) -> Event:

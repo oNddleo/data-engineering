@@ -44,12 +44,12 @@ class Cluster:
         # Shared float array for clock offsets (readable from node subprocesses)
         self._clock_offsets = mp.Array(ctypes.c_double, node_count)
 
-        self._router_queue: mp.Queue = mp.Queue()
-        self._inboxes: Dict[int, mp.Queue] = {}
+        self._router_queue: mp.Queue[Any] = mp.Queue()
+        self._inboxes: Dict[int, mp.Queue[Any]] = {}
         self._processes: Dict[int, mp.Process] = {}
 
         # Pending client responses: req_id -> threading.Event + result holder
-        self._pending: Dict[str, dict] = {}
+        self._pending: Dict[str, Dict[str, Any]] = {}
         self._pending_lock = threading.Lock()
 
         self._router_thread: Optional[threading.Thread] = None
@@ -68,7 +68,7 @@ class Cluster:
         self._router_thread.start()
 
     def _start_node(self, node_id: int) -> None:
-        inbox: mp.Queue = mp.Queue()
+        inbox: mp.Queue[Any] = mp.Queue()
         ready = mp.Event()
         p = mp.Process(
             target=node_worker,
@@ -79,7 +79,8 @@ class Cluster:
         ready.wait(timeout=5)
         self._inboxes[node_id] = inbox
         self._processes[node_id] = p
-        self.process_registry.register(node_id, p.pid)
+        if p.pid is not None:
+            self.process_registry.register(node_id, p.pid)
 
     def stop(self) -> None:
         self._running = False
@@ -100,16 +101,16 @@ class Cluster:
     def read(self, node_id: int, key: str) -> Any:
         return self._request(node_id, {"op": "read", "key": key})
 
-    def write(self, node_id: int, key: str, value: Any) -> str:
+    def write(self, node_id: int, key: str, value: Any) -> Any:
         return self._request(node_id, {"op": "write", "key": key, "value": value})
 
-    def _request(self, node_id: int, payload: dict) -> Any:
+    def _request(self, node_id: int, payload: Dict[str, Any]) -> Any:
         if not self.process_registry.is_alive(node_id):
             raise NodeDeadError(node_id)
 
         req_id = str(uuid.uuid4())
         event = threading.Event()
-        holder: dict = {}
+        holder: Dict[str, Any] = {}
 
         with self._pending_lock:
             self._pending[req_id] = {"event": event, "result": holder}
@@ -150,7 +151,7 @@ class Cluster:
             elif mtype == "broadcast":
                 self._broadcast_replication(msg)
 
-    def _deliver_response(self, msg: dict) -> None:
+    def _deliver_response(self, msg: Dict[str, Any]) -> None:
         req_id = msg["req_id"]
         with self._pending_lock:
             entry = self._pending.get(req_id)
@@ -160,7 +161,7 @@ class Cluster:
         entry["result"]["value"] = msg["value"]
         entry["event"].set()
 
-    def _broadcast_replication(self, msg: dict) -> None:
+    def _broadcast_replication(self, msg: Dict[str, Any]) -> None:
         from_node = msg["from"]
         repl_msg = {
             "type": "replicate",
@@ -186,7 +187,7 @@ class Cluster:
             else:
                 self._inboxes[node_id].put(repl_msg)
 
-    def _delayed_deliver(self, node_id: int, msg: dict, delay: float) -> None:
+    def _delayed_deliver(self, node_id: int, msg: Dict[str, Any], delay: float) -> None:
         time.sleep(delay)
         if self.process_registry.is_alive(node_id):
             self._inboxes[node_id].put(msg)

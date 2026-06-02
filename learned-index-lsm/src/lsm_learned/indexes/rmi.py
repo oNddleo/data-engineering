@@ -10,8 +10,8 @@ binary search rather than a full O(log n) traversal.
 from __future__ import annotations
 
 import bisect
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
+from typing import Any, Optional
 
 import numpy as np
 
@@ -23,7 +23,11 @@ class _LinearModel:
     slope: float = 0.0
     intercept: float = 0.0
 
-    def fit(self, keys: np.ndarray, targets: np.ndarray) -> None:
+    def fit(
+        self,
+        keys: np.ndarray[Any, np.dtype[Any]],
+        targets: np.ndarray[Any, np.dtype[Any]],
+    ) -> None:
         n = len(keys)
         if n == 0:
             return
@@ -73,9 +77,9 @@ class RMI:
         self.M = num_stage2
         self._stage1: _LinearModel = _LinearModel()
         self._stage2: list[_LinearModel] = []
-        self._min_err: np.ndarray = np.array([], dtype=np.int64)
-        self._max_err: np.ndarray = np.array([], dtype=np.int64)
-        self._keys: np.ndarray = np.array([], dtype=np.float64)
+        self._min_err: np.ndarray[Any, np.dtype[Any]] = np.array([], dtype=np.int64)
+        self._max_err: np.ndarray[Any, np.dtype[Any]] = np.array([], dtype=np.int64)
+        self._keys: np.ndarray[Any, np.dtype[Any]] = np.array([], dtype=np.float64)
         self._n: int = 0
         self._trained: bool = False
 
@@ -83,7 +87,7 @@ class RMI:
     # Training
     # ------------------------------------------------------------------
 
-    def train(self, sorted_keys: np.ndarray) -> None:
+    def train(self, sorted_keys: np.ndarray[Any, np.dtype[Any]]) -> None:
         """Train both RMI stages on a sorted key array."""
         keys = np.asarray(sorted_keys, dtype=np.float64)
         n = len(keys)

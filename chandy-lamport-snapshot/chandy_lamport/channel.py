@@ -1,11 +1,12 @@
 """Thread-safe FIFO channel with Chandy-Lamport recording support."""
+
 from __future__ import annotations
 
 import threading
 from queue import Empty, Queue
 from typing import List, Optional
 
-from .message import DataMessage, Marker
+from .message import DataMessage
 
 
 class Channel:
@@ -23,7 +24,7 @@ class Channel:
         self.dst = dst
         self.name = f"{src}->{dst}"
 
-        self._q: Queue = Queue()
+        self._q: Queue[object] = Queue()
         self._lock = threading.Lock()
         self._recording = False
         self._recorded: List[DataMessage] = []

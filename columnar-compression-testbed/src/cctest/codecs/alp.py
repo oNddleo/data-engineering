@@ -8,9 +8,12 @@ Algorithm overview (based on the SIGMOD 2023 paper)
 4. Non-round-tripping values are stored as exceptions (position + raw float64).
 5. The int64 array is then frame-of-reference + bit-packed.
 """
+
 from __future__ import annotations
 
 import struct
+
+from typing import Any
 
 import numpy as np
 
@@ -20,7 +23,7 @@ _MAX_EXPONENT = 18
 _POWERS = np.array([10**e for e in range(_MAX_EXPONENT + 1)], dtype=np.float64)
 
 
-def _count_exceptions(values: np.ndarray, e: int) -> int:
+def _count_exceptions(values: np.ndarray[Any, np.dtype[Any]], e: int) -> int:
     factor = _POWERS[e]
     finite_mask = np.isfinite(values)
     if not finite_mask.any():
@@ -33,7 +36,7 @@ def _count_exceptions(values: np.ndarray, e: int) -> int:
     return n_exc + int((~finite_mask).sum())
 
 
-def _find_best_exponent(sample: np.ndarray) -> int:
+def _find_best_exponent(sample: np.ndarray[Any, np.dtype[Any]]) -> int:
     best_e = 0
     best_exc = len(sample) + 1
     for e in range(_MAX_EXPONENT + 1):
@@ -46,7 +49,7 @@ def _find_best_exponent(sample: np.ndarray) -> int:
     return best_e
 
 
-def _bitpack_width(values: np.ndarray) -> int:
+def _bitpack_width(values: np.ndarray[Any, np.dtype[Any]]) -> int:
     if len(values) == 0:
         return 0
     mn, mx = int(values.min()), int(values.max())
@@ -56,7 +59,7 @@ def _bitpack_width(values: np.ndarray) -> int:
     return int(span).bit_length()
 
 
-def _bitpack(values: np.ndarray, width: int, ref: int) -> bytes:
+def _bitpack(values: np.ndarray[Any, np.dtype[Any]], width: int, ref: int) -> bytes:
     if width == 0:
         return b""
     shifted = (values.astype(np.int64) - ref).astype(np.uint64)
@@ -74,7 +77,9 @@ def _bitpack(values: np.ndarray, width: int, ref: int) -> bytes:
     return bytes(out)
 
 
-def _bitunpack(data: bytes, n: int, width: int, ref: int) -> np.ndarray:
+def _bitunpack(
+    data: bytes, n: int, width: int, ref: int
+) -> np.ndarray[Any, np.dtype[Any]]:
     if width == 0:
         return np.full(n, ref, dtype=np.int64)
     out = np.empty(n, dtype=np.int64)
@@ -98,10 +103,10 @@ class ALPCodec(Codec):
     def __init__(self, sample_fraction: float = 0.1) -> None:
         self.sample_fraction = sample_fraction
 
-    def supports_dtype(self, dtype: np.dtype) -> bool:
+    def supports_dtype(self, dtype: np.dtype[Any]) -> bool:
         return dtype.kind == "f"
 
-    def encode(self, data: np.ndarray) -> EncodedColumn:
+    def encode(self, data: np.ndarray[Any, np.dtype[Any]]) -> EncodedColumn:
         values = data.astype(np.float64)
 
         # Find best exponent on sample
@@ -133,7 +138,9 @@ class ALPCodec(Codec):
         exc_bytes = struct.pack(f"<{len(exc_positions)}i", *exc_positions)
         exc_bytes += struct.pack(f"<{len(exc_values)}d", *exc_values)
 
-        header = struct.pack("<HiiBBI", e, ref, len(data), width, len(exc_positions), len(exc_bytes))
+        header = struct.pack(
+            "<HiiBBI", e, ref, len(data), width, len(exc_positions), len(exc_bytes)
+        )
         payload = header + packed + exc_bytes
 
         return EncodedColumn(
@@ -144,7 +151,7 @@ class ALPCodec(Codec):
             original_len=len(data),
         )
 
-    def decode(self, encoded: EncodedColumn) -> np.ndarray:
+    def decode(self, encoded: EncodedColumn) -> np.ndarray[Any, np.dtype[Any]]:
         data = encoded.data
         header_size = struct.calcsize("<HiiBBI")
         e, ref, n, width, n_exc, exc_bytes_len = struct.unpack_from("<HiiBBI", data)
@@ -165,4 +172,4 @@ class ALPCodec(Codec):
             for pos, val in zip(exc_pos, exc_vals):
                 result[pos] = val
 
-        return result.astype(encoded.original_dtype)
+        return result.astype(encoded.original_dtype)  # type: ignore[no-any-return]

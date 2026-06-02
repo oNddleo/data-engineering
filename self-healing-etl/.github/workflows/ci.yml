@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    paths:
+      - "self-healing-etl/src/**"
+      - "self-healing-etl/tests/**"
+      - "self-healing-etl/pyproject.toml"
+  pull_request:
+    paths:
+      - "self-healing-etl/**"
+
+defaults:
+  run:
+    working-directory: self-healing-etl
+
+jobs:
+  quality:
+    name: "Lint & type-check (Python ${{ matrix.python-version }})"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install package + dev tools
+        run: pip install -e . ruff mypy hypothesis pytest
+      - name: ruff check
+        run: python -m ruff check src/selfheal/
+      - name: ruff format check
+        run: python -m ruff format --check src/selfheal/ tests/
+      - name: mypy
+        run: python -m mypy --strict --package selfheal
+      - name: pytest
+        run: python -m pytest tests/ -q

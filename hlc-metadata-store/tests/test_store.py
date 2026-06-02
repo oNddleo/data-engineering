@@ -4,7 +4,6 @@ from __future__ import annotations
 import threading
 import time
 
-import pytest
 
 from hlc_store.clock import HybridLogicalClock
 from hlc_store.store import MetadataStore

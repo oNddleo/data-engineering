@@ -1,8 +1,9 @@
 """Abstract engine base class and shared engine types."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any, List, Set
 

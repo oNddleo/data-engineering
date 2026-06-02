@@ -1,4 +1,5 @@
 """Bit-level I/O used by Gorilla encoding."""
+
 from __future__ import annotations
 
 

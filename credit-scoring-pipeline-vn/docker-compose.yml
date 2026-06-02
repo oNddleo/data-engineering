@@ -1,0 +1,5 @@
+services:
+  cicscore:
+    build: .
+    image: credit-scoring-pipeline-vn:latest
+    command: ["info"]

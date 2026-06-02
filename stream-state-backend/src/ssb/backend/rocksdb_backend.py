@@ -8,7 +8,7 @@ from typing import Iterator
 from .base import StorageBackend
 
 try:
-    import rocksdb  # type: ignore[import]
+    import rocksdb
 
     _ROCKSDB_AVAILABLE = True
 except ImportError:  # pragma: no cover
@@ -90,6 +90,7 @@ class RocksDBBackend(StorageBackend):
         with self._lock:
             if cf_name in self._cf_handles:
                 return
+            assert self._db is not None
             cf_opts = rocksdb.ColumnFamilyOptions()
             handle = self._db.create_column_family(cf_name, cf_opts)
             self._cf_handles[cf_name] = handle
@@ -98,6 +99,7 @@ class RocksDBBackend(StorageBackend):
         with self._lock:
             if cf_name not in self._cf_handles:
                 return
+            assert self._db is not None
             self._db.drop_column_family(self._cf_handles[cf_name])
             del self._cf_handles[cf_name]
 
@@ -111,16 +113,19 @@ class RocksDBBackend(StorageBackend):
 
     def put(self, cf: str, key: bytes, value: bytes) -> None:
         with self._lock:
+            assert self._db is not None
             handle = self._get_cf_handle(cf)
             self._db.put((handle, key), value)
 
     def get(self, cf: str, key: bytes) -> bytes | None:
         with self._lock:
+            assert self._db is not None
             handle = self._get_cf_handle(cf)
-            return self._db.get((handle, key))
+            return self._db.get((handle, key))  # type: ignore[no-any-return]
 
     def delete(self, cf: str, key: bytes) -> None:
         with self._lock:
+            assert self._db is not None
             handle = self._get_cf_handle(cf)
             self._db.delete((handle, key))
 
@@ -136,6 +141,7 @@ class RocksDBBackend(StorageBackend):
         limit: int | None = None,
     ) -> Iterator[tuple[bytes, bytes]]:
         with self._lock:
+            assert self._db is not None
             handle = self._get_cf_handle(cf)
             it = self._db.iteritems(handle)
 
@@ -160,6 +166,7 @@ class RocksDBBackend(StorageBackend):
 
     def write_batch(self, operations: list[tuple[str, bytes, bytes | None]]) -> None:
         with self._lock:
+            assert self._db is not None
             batch = rocksdb.WriteBatch()
             for cf, key, value in operations:
                 handle = self._get_cf_handle(cf)

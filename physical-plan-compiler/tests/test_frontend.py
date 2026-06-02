@@ -95,8 +95,7 @@ def test_only_select_supported(small_catalog):
 def test_outer_join_not_supported(small_catalog):
     with pytest.raises(SqlParseError, match="only INNER"):
         sql_to_logical(
-            "SELECT * FROM orders LEFT JOIN customer "
-            "ON orders.o_custkey = customer.c_custkey",
+            "SELECT * FROM orders LEFT JOIN customer " "ON orders.o_custkey = customer.c_custkey",
             small_catalog,
         )
 

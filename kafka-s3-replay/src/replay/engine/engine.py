@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-import anyio
 import structlog
 
 from replay.archive.s3 import S3ArchiveReader
@@ -47,7 +45,7 @@ class ReplayEngine:
     async def run(self) -> ReplayProgress:
         """Execute the replay job end-to-end. Returns final progress."""
         self._progress.status = ReplayStatus.RUNNING
-        self._progress.started_at = datetime.now(tz=timezone.utc)
+        self._progress.started_at = datetime.now(tz=UTC)
         await self._emit_progress()
 
         try:
@@ -64,7 +62,7 @@ class ReplayEngine:
             logger.exception("replay_failed", job_id=self.config.job_id, error=str(exc))
             raise
         finally:
-            self._progress.completed_at = datetime.now(tz=timezone.utc)
+            self._progress.completed_at = datetime.now(tz=UTC)
             self._checkpoint.record_progress(
                 self._progress.replayed_events,
                 self._progress.failed_events,
@@ -104,7 +102,9 @@ class ReplayEngine:
         await self._emit_progress()
 
         # Build rate limiter token bucket
-        rate_limiter = _TokenBucket(cfg.rate_limit_per_second) if cfg.rate_limit_per_second else None
+        rate_limiter = (
+            _TokenBucket(cfg.rate_limit_per_second) if cfg.rate_limit_per_second else None
+        )
 
         async def process_key(topic: str, key: str) -> None:
             async with sem:
@@ -139,7 +139,7 @@ class ReplayEngine:
 
                 if events_in_file > 0:
                     self._checkpoint.mark_key_done(key)
-                    self._progress.last_checkpoint = datetime.now(tz=timezone.utc)
+                    self._progress.last_checkpoint = datetime.now(tz=UTC)
 
                 self._checkpoint.record_progress(
                     self._progress.replayed_events,
@@ -161,7 +161,7 @@ class _TokenBucket:
     """Simple token-bucket rate limiter."""
 
     def __init__(self, rate: float) -> None:
-        self._rate = rate          # tokens per second
+        self._rate = rate  # tokens per second
         self._tokens = rate
         self._last = time.monotonic()
 

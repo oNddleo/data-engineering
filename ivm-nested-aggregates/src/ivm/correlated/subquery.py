@@ -46,7 +46,7 @@ class CorrelatedSubqueryIVM:
         self._row_slots: dict[int, _Row] = {}
         self._lock = threading.RLock()
 
-    def insert(self, customer: Any, amount: float) -> dict:
+    def insert(self, customer: Any, amount: float) -> dict[str, Any]:
         with self._lock:
             old_avg = self.avgs.get(customer)
             self.avgs.insert(customer, amount)
@@ -78,7 +78,7 @@ class CorrelatedSubqueryIVM:
                     removed.append(r)
             return {"added": added, "removed": removed}
 
-    def delete(self, customer: Any, amount: float) -> dict:
+    def delete(self, customer: Any, amount: float) -> dict[str, Any]:
         with self._lock:
             old_avg = self.avgs.get(customer)
             # Find a slot matching this row

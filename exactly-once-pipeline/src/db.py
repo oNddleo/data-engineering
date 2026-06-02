@@ -1,15 +1,18 @@
 """Postgres connection pool and typed query helpers."""
+
 from __future__ import annotations
 
 import json
 from contextlib import contextmanager
-from typing import Any, Generator
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 import psycopg2
 import psycopg2.extras
 import psycopg2.pool
 import structlog
-
 from src.config import settings
 
 log = structlog.get_logger(__name__)
@@ -54,11 +57,11 @@ def transaction() -> Generator[psycopg2.extensions.cursor, None, None]:
             cur.close()
 
 
-def execute(sql: str, params: tuple[Any, ...] | None = None) -> list[dict]:
+def execute(sql: str, params: tuple[Any, ...] | None = None) -> list[dict[str, Any]]:
     with transaction() as cur:
         cur.execute(sql, params)
         try:
-            return cur.fetchall()  # type: ignore[return-value]
+            return cur.fetchall()  # type: ignore[no-any-return]
         except psycopg2.ProgrammingError:
             return []
 

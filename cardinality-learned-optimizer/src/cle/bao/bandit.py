@@ -9,11 +9,14 @@ uses a neural network ensemble for uncertainty estimation.  We support both:
   - BayesianBandit: analytic conjugate update (fast, no GPU)
   - NeuralBandit:   uses the QueryOptimizer cost head (accurate, needs data)
 """
+
 from __future__ import annotations
+
 import logging
 import math
 import random
-from typing import Optional
+from typing import Any, Optional
+
 import torch
 
 logger = logging.getLogger(__name__)
@@ -23,10 +26,10 @@ class BayesianArm:
     """Gaussian-Gaussian conjugate model for a single arm (hint set)."""
 
     def __init__(self, prior_mean: float = 5.0, prior_var: float = 4.0) -> None:
-        self.mu = prior_mean       # posterior mean (log-ms)
-        self.var = prior_var       # posterior variance
-        self.n = 0                 # number of observations
-        self.obs_var = 1.0         # assumed observation noise variance
+        self.mu = prior_mean  # posterior mean (log-ms)
+        self.var = prior_var  # posterior variance
+        self.n = 0  # number of observations
+        self.obs_var = 1.0  # assumed observation noise variance
 
     def sample(self) -> float:
         return random.gauss(self.mu, math.sqrt(self.var))
@@ -44,7 +47,7 @@ class ThompsonSamplingBandit:
 
     def __init__(self, num_arms: int = 15) -> None:
         self.arms = [BayesianArm() for _ in range(num_arms)]
-        self.history: list[tuple[int, float]] = []   # (arm, log_latency)
+        self.history: list[tuple[int, float]] = []  # (arm, log_latency)
 
     def select(self, exclude: Optional[list[int]] = None) -> int:
         """Sample from each arm's posterior; return arm index with lowest sample."""
@@ -64,7 +67,7 @@ class ThompsonSamplingBandit:
         """Return arm with lowest posterior mean (exploitation only)."""
         return int(min(range(len(self.arms)), key=lambda i: self.arms[i].mu))
 
-    def arm_stats(self) -> list[dict]:
+    def arm_stats(self) -> list[dict[str, Any]]:
         return [
             {"arm": i, "mu": a.mu, "std": math.sqrt(a.var), "n": a.n}
             for i, a in enumerate(self.arms)
@@ -77,7 +80,7 @@ class NeuralBandit:
     Falls back to ThompsonSamplingBandit when model has insufficient data.
     """
 
-    def __init__(self, model, num_arms: int = 15, warmup_per_arm: int = 3) -> None:
+    def __init__(self, model: Any, num_arms: int = 15, warmup_per_arm: int = 3) -> None:
         self.model = model
         self.fallback = ThompsonSamplingBandit(num_arms)
         self.num_arms = num_arms
@@ -87,7 +90,7 @@ class NeuralBandit:
     def _warmed_up(self) -> bool:
         return all(c >= self.warmup_per_arm for c in self._arm_counts)
 
-    def select(self, tree, device=None) -> int:
+    def select(self, tree: Any, device: Any = None) -> int:
         if not self._warmed_up():
             # Round-robin during warmup
             arm = min(range(self.num_arms), key=lambda i: self._arm_counts[i])
@@ -108,6 +111,6 @@ class NeuralBandit:
         logger.debug("Neural bandit selected arm=%d (predicted_cost=%.1f)", best, costs[best])
         return best
 
-    def update(self, arm: int, latency_ms: float, tree=None) -> None:
+    def update(self, arm: int, latency_ms: float, tree: Any = None) -> None:
         self._arm_counts[arm] += 1
         self.fallback.update(arm, latency_ms)

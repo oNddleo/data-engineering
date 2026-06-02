@@ -11,12 +11,10 @@ Returns the set of institutions that would fail and the cascade depth.
 """
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-import networkx as nx
-
-from src.config import settings
 from src.algorithms.cycle_detection import build_digraph
+from src.config import settings
 
 log = logging.getLogger(__name__)
 
@@ -26,15 +24,15 @@ class ContagionResult:
     seed_node: str
     failed_nodes: list[str]
     cascade_depth: int
-    fraction_failed: float    # failed / total
+    fraction_failed: float  # failed / total
     total_exposure_lost: float  # $M wiped out
 
 
 def simulate_cascade(
-    edges: list[dict],
+    edges: list[dict[str, object]],
     seed_node: str,
-    shock_fraction: float = None,
-    cascade_threshold: float = None,
+    shock_fraction: float | None = None,
+    cascade_threshold: float | None = None,
 ) -> ContagionResult:
     """
     BFS cascade from seed_node.
@@ -60,7 +58,7 @@ def simulate_cascade(
 
     # Pre-compute total inbound exposure per node
     total_in: dict[str, float] = {n: 0.0 for n in G.nodes()}
-    for u, v, data in G.edges(data=True):
+    for _u, v, data in G.edges(data=True):
         total_in[v] += data.get("weight", 0)
 
     failed = {seed_node}
@@ -69,7 +67,7 @@ def simulate_cascade(
     exposure_lost = 0.0
 
     # Initial shock from seed
-    for _, v, data in G.out_edges(seed_node, data=True):
+    for _, _v, data in G.out_edges(seed_node, data=True):
         exposure_lost += data.get("weight", 0) * shock_fraction
 
     while frontier:
@@ -84,9 +82,10 @@ def simulate_cascade(
                 if t_in > 0 and (lost / t_in) >= cascade_threshold:
                     failed.add(receiver)
                     next_frontier.add(receiver)
-                    exposure_lost += sum(
-                        d.get("weight", 0) for _, _, d in G.out_edges(receiver, data=True)
-                    ) * shock_fraction
+                    exposure_lost += (
+                        sum(d.get("weight", 0) for _, _, d in G.out_edges(receiver, data=True))
+                        * shock_fraction
+                    )
 
         frontier = next_frontier
         if frontier:
@@ -104,7 +103,7 @@ def simulate_cascade(
     )
 
 
-def worst_case_cascade(edges: list[dict]) -> ContagionResult:
+def worst_case_cascade(edges: list[dict[str, object]]) -> ContagionResult:
     """Run cascade simulation for every node and return the worst outcome."""
     G = build_digraph(edges)
     if not G.nodes():

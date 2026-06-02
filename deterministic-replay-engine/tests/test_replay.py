@@ -1,4 +1,3 @@
-import pytest
 from replay_engine.event import Event, EventLog
 from replay_engine.vector_clock import VectorClock
 from replay_engine.replay import ReplayEngine

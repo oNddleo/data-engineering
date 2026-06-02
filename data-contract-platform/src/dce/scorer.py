@@ -7,7 +7,7 @@ import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
 from .validator import ValidationResult
 
@@ -18,7 +18,7 @@ class ProducerScore:
     contract_id: str
     total_runs: int
     passed_runs: int
-    reliability_score: float   # 0.0 – 1.0
+    reliability_score: float  # 0.0 – 1.0
     last_validated_at: str
     last_passed: bool
 
@@ -81,8 +81,14 @@ class ReliabilityStore:
                     len(result.warnings()),
                     json.dumps(result.stats, default=str),
                     json.dumps(
-                        [{"rule": i.rule, "severity": i.severity, "message": i.message}
-                         for i in result.issues]
+                        [
+                            {
+                                "rule": i.rule,
+                                "severity": i.severity,
+                                "message": i.message,
+                            }
+                            for i in result.issues
+                        ]
                     ),
                 ),
             )
@@ -140,7 +146,7 @@ class ReliabilityStore:
         contract_id: str,
         *,
         limit: int = 50,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         with self._conn() as conn:
             rows = conn.execute(
                 """

@@ -1,7 +1,6 @@
 from __future__ import annotations
 import time
 from dataclasses import dataclass, field
-from typing import Optional, Iterator
 
 from ..event import Event, WindowResult, LateEvent
 from ..processor import StreamProcessor

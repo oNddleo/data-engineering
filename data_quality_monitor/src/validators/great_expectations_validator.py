@@ -1,16 +1,18 @@
 from __future__ import annotations
+
 import time
 import uuid
+
 import structlog
-from great_expectations.data_context import FileDataContext
 from great_expectations.core.batch import RuntimeBatchRequest
+from great_expectations.data_context import FileDataContext
 from great_expectations.exceptions import GreatExpectationsError
 
 from ..config import settings
 from ..models import (
+    CheckResult,
     MicroBatch,
     ValidationResult,
-    CheckResult,
     ValidationStatus,
     ValidatorBackend,
 )
@@ -59,7 +61,11 @@ class GreatExpectationsValidator(BaseValidator):
             warnings = sum(1 for c in check_results if c.status == ValidationStatus.WARNING)
             total = len(check_results)
             pass_rate = passed / total if total else 0.0
-            status = ValidationStatus.PASSED if pass_rate >= settings.failure_threshold else ValidationStatus.FAILED
+            status = (
+                ValidationStatus.PASSED
+                if pass_rate >= settings.failure_threshold
+                else ValidationStatus.FAILED
+            )
 
             return ValidationResult(
                 result_id=result_id,
@@ -116,15 +122,17 @@ def _parse_ge_results(ge_result) -> list[CheckResult]:
         unexpected_pct = r.result.get("unexpected_percent", 0.0) or 0.0
         element_count = r.result.get("element_count", 0)
 
-        results.append(CheckResult(
-            check_name=exp_type,
-            expectation_type=exp_type,
-            status=ValidationStatus.PASSED if success else ValidationStatus.FAILED,
-            observed_value=observed,
-            expected_value=r.expectation_config.kwargs,
-            element_count=element_count,
-            unexpected_count=unexpected_count,
-            unexpected_percent=unexpected_pct,
-            details=dict(r.result),
-        ))
+        results.append(
+            CheckResult(
+                check_name=exp_type,
+                expectation_type=exp_type,
+                status=ValidationStatus.PASSED if success else ValidationStatus.FAILED,
+                observed_value=observed,
+                expected_value=r.expectation_config.kwargs,
+                element_count=element_count,
+                unexpected_count=unexpected_count,
+                unexpected_percent=unexpected_pct,
+                details=dict(r.result),
+            )
+        )
     return results

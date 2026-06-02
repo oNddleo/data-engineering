@@ -9,8 +9,15 @@ import sqlglot.expressions as exp
 
 from ..catalog import SchemaCatalog
 from .nodes import (
-    Aggregate, Filter, Join, JoinType, Limit, PlanNode,
-    Project, Sort, TableScan,
+    Aggregate,
+    Filter,
+    Join,
+    JoinType,
+    Limit,
+    PlanNode,
+    Project,
+    Sort,
+    TableScan,
 )
 
 
@@ -44,7 +51,8 @@ class QueryPlanner:
         # 4. GROUP BY / aggregates
         group = stmt.args.get("group")
         agg_fns = [
-            e for e in stmt.expressions
+            e
+            for e in stmt.expressions
             if isinstance(e, (exp.Sum, exp.Avg, exp.Count, exp.Max, exp.Min, exp.Anonymous))
         ]
         if group or agg_fns:
@@ -76,9 +84,7 @@ class QueryPlanner:
     # Scan collection                                                      #
     # ------------------------------------------------------------------ #
 
-    def _collect_scans(
-        self, stmt: exp.Select
-    ) -> tuple[dict[str, TableScan], dict[str, str]]:
+    def _collect_scans(self, stmt: exp.Select) -> tuple[dict[str, TableScan], dict[str, str]]:
         """Return {alias: TableScan} and {alias: qualified_name}."""
         scans: dict[str, TableScan] = {}
         alias_map: dict[str, str] = {}
@@ -103,7 +109,7 @@ class QueryPlanner:
                 pushed_predicates=predicates,
                 estimated_rows=self._estimate_after_filter(schema, predicates),
             )
-            if alias not in scans:          # avoid double-adding FROM table
+            if alias not in scans:  # avoid double-adding FROM table
                 scans[alias] = scan
                 alias_map[alias] = qualified
 
@@ -114,7 +120,7 @@ class QueryPlanner:
                 _add(tbl)
 
         # JOIN clauses — "joins" is a list in sqlglot ≥ 23
-        for join in (stmt.args.get("joins") or []):
+        for join in stmt.args.get("joins") or []:
             tbl = join.this
             if isinstance(tbl, exp.Table):
                 _add(tbl)
@@ -137,7 +143,7 @@ class QueryPlanner:
 
         node: PlanNode = scans[aliases[0]]
 
-        for join in (stmt.args.get("joins") or []):
+        for join in stmt.args.get("joins") or []:
             tbl = join.this
             if not isinstance(tbl, exp.Table):
                 continue
@@ -236,9 +242,7 @@ class QueryPlanner:
     # Projection helpers                                                   #
     # ------------------------------------------------------------------ #
 
-    def _collect_projected_columns(
-        self, stmt: exp.Select, alias: str, schema: Any
-    ) -> list[str]:
+    def _collect_projected_columns(self, stmt: exp.Select, alias: str, schema: Any) -> list[str]:
         needed: set[str] = set()
         for col in stmt.find_all(exp.Column):
             if col.table in (alias, "") or not col.table:
@@ -276,7 +280,7 @@ class QueryPlanner:
                 rows = max(1, int(rows * 0.2))
             else:
                 rows = max(1, int(rows * 0.5))
-        return rows
+        return int(rows)
 
     def _infer_source(self, table_name: str) -> str:
         for qualified in self.catalog.list_tables():

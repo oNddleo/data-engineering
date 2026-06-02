@@ -21,7 +21,9 @@ class ContractRegistry:
 
     def __init__(self, contracts_dir: Path | str):
         self.contracts_dir = Path(contracts_dir)
-        self._registry: dict[str, list[DataContract]] = load_contracts_dir(contracts_dir)
+        self._registry: dict[str, list[DataContract]] = load_contracts_dir(
+            contracts_dir
+        )
 
     def reload(self) -> None:
         self._registry = load_contracts_dir(self.contracts_dir)

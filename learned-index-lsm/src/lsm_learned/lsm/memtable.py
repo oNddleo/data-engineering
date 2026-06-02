@@ -43,7 +43,7 @@ class MemTable:
             return None
         if v is _TOMBSTONE:
             return None
-        return v  # type: ignore[return-value]
+        return v  # type: ignore[no-any-return]
 
     def contains(self, key: int) -> bool:
         return key in self._data and self._data[key] is not _TOMBSTONE
@@ -59,7 +59,7 @@ class MemTable:
         """Sorted (key, value) pairs; tombstones appear as value=None."""
         result = []
         for k, v in self._data.items():
-            result.append((k, None if v is _TOMBSTONE else v))  # type: ignore
+            result.append((k, None if v is _TOMBSTONE else v))
         return result
 
     def clear(self) -> None:

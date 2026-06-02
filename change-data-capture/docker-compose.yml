@@ -1,0 +1,5 @@
+services:
+  cdc:
+    build: .
+    image: change-data-capture:latest
+    command: ["info"]

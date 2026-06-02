@@ -49,7 +49,7 @@ query Notifications($after: String, $updatedAfter: DateTime) {
 """
 
 
-def _graphql(api_key: str, query: str, variables: dict) -> dict:
+def _graphql(api_key: str, query: str, variables: dict[str, Any]) -> dict[str, Any]:
     resp = httpx.post(
         LINEAR_GRAPHQL,
         json={"query": query, "variables": variables},
@@ -60,28 +60,29 @@ def _graphql(api_key: str, query: str, variables: dict) -> dict:
     payload = resp.json()
     if "errors" in payload:
         raise RuntimeError(f"Linear GraphQL error: {payload['errors']}")
-    return payload["data"]
+    return payload["data"]  # type: ignore[no-any-return]
 
 
-@dlt.source(name="linear")
-def linear_source(api_key: str = dlt.secrets.value):
+@dlt.source(name="linear")  # type: ignore[misc]
+def linear_source(api_key: str = dlt.secrets.value) -> Any:
     """dlt source emitting a `notifications` resource from Linear."""
     _key = api_key or settings.linear_api_key
     if not _key:
         raise RuntimeError("LINEAR_API_KEY is required — set it in .env or dlt secrets.")
 
-    @dlt.resource(
+    @dlt.resource(  # type: ignore[misc]
         name="notifications",
         primary_key="id",
         write_disposition="merge",
     )
     def notifications(
-        updated_at: dlt.sources.incremental[str] = dlt.sources.incremental(
-            "updated_at", initial_value="2024-01-01T00:00:00.000Z"
-        ),
+        updated_at: dlt.sources.incremental[str] | None = None,
     ) -> Iterator[dict[str, Any]]:
+        _updated_at: dlt.sources.incremental[str] = updated_at or dlt.sources.incremental(
+            "updated_at", initial_value="2024-01-01T00:00:00.000Z"
+        )
         cursor: str | None = None
-        since = updated_at.last_value or "2024-01-01T00:00:00.000Z"
+        since = _updated_at.last_value or "2024-01-01T00:00:00.000Z"
 
         while True:
             variables: dict[str, Any] = {"updatedAfter": since}

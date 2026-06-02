@@ -8,18 +8,20 @@ Exactly-once guarantee:
   - INSERT … ON CONFLICT DO NOTHING as a second safety net
   - Kafka offset committed only after successful DB write
 """
+
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import structlog
-
 from src.config import settings
 from src.consumers.base_consumer import BaseConsumer
 from src.db import transaction
 from src.models import TransactionStep
-from src.recovery.failure_injector import FailureInjector
+
+if TYPE_CHECKING:
+    from src.recovery.failure_injector import FailureInjector
 
 log = structlog.get_logger(__name__)
 
@@ -54,6 +56,6 @@ class WarehouseConsumer(BaseConsumer):
                 ),
             )
 
-        log.info("warehouse.written",
-                 payment_id=payload["payment_id"],
-                 idempotency_key=idempotency_key)
+        log.info(
+            "warehouse.written", payment_id=payload["payment_id"], idempotency_key=idempotency_key
+        )

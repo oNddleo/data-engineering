@@ -7,13 +7,13 @@ Usage:
     injector = FailureInjector(step="warehouse", rate=0.5) # 50 % fail
     injector.maybe_raise("kafka", idempotency_key)
 """
+
 from __future__ import annotations
 
 import random
 from typing import Any
 
 import structlog
-
 from src.config import settings
 
 log = structlog.get_logger(__name__)

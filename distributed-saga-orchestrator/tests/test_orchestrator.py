@@ -4,7 +4,6 @@ Tests for SagaOrchestrator — happy path, context propagation, retry, recovery.
 
 from __future__ import annotations
 
-import asyncio
 import pytest
 from typing import Any
 
@@ -23,8 +22,10 @@ from saga.exceptions import SagaNotFoundError, SagaNotRecoverableError
 # Minimal step helpers
 # ---------------------------------------------------------------------------
 
+
 class PassStep(SagaStep):
     """Always succeeds; writes its name into context."""
+
     def __init__(self, label: str = "pass") -> None:
         self._label = label
 
@@ -41,6 +42,7 @@ class PassStep(SagaStep):
 
 class FailStep(SagaStep):
     """Always raises on execute."""
+
     @property
     def name(self) -> str:
         return "FailStep"
@@ -54,6 +56,7 @@ class FailStep(SagaStep):
 
 class CountingStep(SagaStep):
     """Tracks how many times execute() is called; fails on first N-1 attempts."""
+
     def __init__(self, fail_times: int = 0) -> None:
         self.call_count = 0
         self._fail_times = fail_times
@@ -80,6 +83,7 @@ class CountingStep(SagaStep):
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def store() -> SagaStore:
     return SagaStore()  # in-memory SQLite
@@ -93,6 +97,7 @@ def orchestrator(store: SagaStore) -> SagaOrchestrator:
 # ---------------------------------------------------------------------------
 # Happy-path tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_all_steps_succeed(orchestrator: SagaOrchestrator) -> None:
@@ -108,7 +113,9 @@ async def test_all_steps_succeed(orchestrator: SagaOrchestrator) -> None:
 
 
 @pytest.mark.asyncio
-async def test_step_outputs_propagate_to_next_steps(orchestrator: SagaOrchestrator) -> None:
+async def test_step_outputs_propagate_to_next_steps(
+    orchestrator: SagaOrchestrator,
+) -> None:
     class ProducerStep(SagaStep):
         async def execute(self, ctx: dict[str, Any]) -> dict[str, Any]:
             return {"produced_value": 42}
@@ -130,7 +137,9 @@ async def test_step_outputs_propagate_to_next_steps(orchestrator: SagaOrchestrat
 
 
 @pytest.mark.asyncio
-async def test_initial_context_available_in_first_step(orchestrator: SagaOrchestrator) -> None:
+async def test_initial_context_available_in_first_step(
+    orchestrator: SagaOrchestrator,
+) -> None:
     class CheckCtxStep(SagaStep):
         async def execute(self, ctx: dict[str, Any]) -> dict[str, Any]:
             assert ctx.get("seed") == "hello"
@@ -147,14 +156,18 @@ async def test_initial_context_available_in_first_step(orchestrator: SagaOrchest
 
 
 @pytest.mark.asyncio
-async def test_empty_steps_completes_immediately(orchestrator: SagaOrchestrator) -> None:
+async def test_empty_steps_completes_immediately(
+    orchestrator: SagaOrchestrator,
+) -> None:
     result = await orchestrator.run([], saga_type="empty")
     assert result.succeeded
     assert result.step_records == []
 
 
 @pytest.mark.asyncio
-async def test_explicit_saga_id_is_preserved(orchestrator: SagaOrchestrator, store: SagaStore) -> None:
+async def test_explicit_saga_id_is_preserved(
+    orchestrator: SagaOrchestrator, store: SagaStore
+) -> None:
     result = await orchestrator.run([PassStep()], saga_id="my-fixed-id")
     assert result.saga_id == "my-fixed-id"
     record = store.load("my-fixed-id")
@@ -165,6 +178,7 @@ async def test_explicit_saga_id_is_preserved(orchestrator: SagaOrchestrator, sto
 # ---------------------------------------------------------------------------
 # Step-status tracking
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_step_statuses_after_success(orchestrator: SagaOrchestrator) -> None:
@@ -178,14 +192,15 @@ async def test_step_statuses_after_success(orchestrator: SagaOrchestrator) -> No
 async def test_step_statuses_after_failure(orchestrator: SagaOrchestrator) -> None:
     result = await orchestrator.run([PassStep("a"), FailStep(), PassStep("b")])
     records = result.step_records
-    assert records[0].status == StepStatus.COMPENSATED   # rolled back
-    assert records[1].status == StepStatus.FAILED        # the failing step
-    assert records[2].status == StepStatus.PENDING       # never ran
+    assert records[0].status == StepStatus.COMPENSATED  # rolled back
+    assert records[1].status == StepStatus.FAILED  # the failing step
+    assert records[2].status == StepStatus.PENDING  # never ran
 
 
 # ---------------------------------------------------------------------------
 # Retry policy
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_step_retried_before_succeeding(orchestrator: SagaOrchestrator) -> None:
@@ -196,9 +211,13 @@ async def test_step_retried_before_succeeding(orchestrator: SagaOrchestrator) ->
 
 
 @pytest.mark.asyncio
-async def test_step_exhausts_retries_and_triggers_rollback(orchestrator: SagaOrchestrator) -> None:
+async def test_step_exhausts_retries_and_triggers_rollback(
+    orchestrator: SagaOrchestrator,
+) -> None:
     preceding = PassStep("pre")
-    step = CountingStep(fail_times=99)  # will always fail (max_attempts=100 would be slow)
+    step = CountingStep(
+        fail_times=99
+    )  # will always fail (max_attempts=100 would be slow)
     step.retry_policy = RetryPolicy(max_attempts=2, backoff_base_seconds=0.0)
     result = await orchestrator.run([preceding, step])
 
@@ -212,17 +231,22 @@ async def test_step_exhausts_retries_and_triggers_rollback(orchestrator: SagaOrc
 # Persistence round-trip
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
-async def test_completed_saga_persisted(store: SagaStore, orchestrator: SagaOrchestrator) -> None:
-    result = await orchestrator.run([PassStep()], saga_id="persist-ok")
+async def test_completed_saga_persisted(
+    store: SagaStore, orchestrator: SagaOrchestrator
+) -> None:
+    await orchestrator.run([PassStep()], saga_id="persist-ok")
     record = store.load("persist-ok")
     assert record is not None
     assert record.status == SagaStatus.COMPLETED
 
 
 @pytest.mark.asyncio
-async def test_failed_saga_persisted(store: SagaStore, orchestrator: SagaOrchestrator) -> None:
-    result = await orchestrator.run([PassStep(), FailStep()], saga_id="persist-fail")
+async def test_failed_saga_persisted(
+    store: SagaStore, orchestrator: SagaOrchestrator
+) -> None:
+    await orchestrator.run([PassStep(), FailStep()], saga_id="persist-fail")
     record = store.load("persist-fail")
     assert record is not None
     assert record.status in (SagaStatus.COMPENSATED, SagaStatus.FAILED)
@@ -232,6 +256,7 @@ async def test_failed_saga_persisted(store: SagaStore, orchestrator: SagaOrchest
 # ---------------------------------------------------------------------------
 # Recovery
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_recover_raises_for_unknown_saga(orchestrator: SagaOrchestrator) -> None:
@@ -265,8 +290,14 @@ async def test_recover_compensates_stuck_running_saga(store: SagaStore) -> None:
         status=SagaStatus.RUNNING,
         context={"alpha": True},
         step_records=[
-            {**asdict(StepRecord(name="PassStep_alpha")), "status": StepStatus.COMPLETED.value},
-            {**asdict(StepRecord(name="PassStep_beta")), "status": StepStatus.RUNNING.value},
+            {
+                **asdict(StepRecord(name="PassStep_alpha")),
+                "status": StepStatus.COMPLETED.value,
+            },
+            {
+                **asdict(StepRecord(name="PassStep_beta")),
+                "status": StepStatus.RUNNING.value,
+            },
         ],
     )
     store.save(stuck_record)

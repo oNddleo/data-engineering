@@ -4,9 +4,9 @@ Event Replay Engine
 Re-processes a stream of historical events through a migration chain,
 producing events conforming to the target schema version.
 """
+
 from __future__ import annotations
 
-import asyncio
 from typing import Any, AsyncIterator
 
 import jsonschema
@@ -132,9 +132,8 @@ class ReplayEngine:
         subject: str,
         from_version: int,
         to_version: int,
-    ) -> list:
+    ) -> list[Any]:
         """Walk version-by-version and auto-generate missing migrations."""
-        from src.registry.models import MigrationScript
 
         versions = await self.registry.list_versions(subject)
         try:
@@ -166,7 +165,9 @@ class ReplayEngine:
             if sv_from is None or sv_to is None:
                 return []
 
-            script = gen.generate(subject, v_from, v_to, sv_from.schema_definition, sv_to.schema_definition)
+            script = gen.generate(
+                subject, v_from, v_to, sv_from.schema_definition, sv_to.schema_definition
+            )
             saved = await self.registry.save_migration(script)
             chain.append(saved)
 

@@ -11,7 +11,7 @@ Sparse representation: `Polynomial.coeffs: dict[Monomial, int]`.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from prov.semiring.base import Semiring
 
@@ -27,7 +27,7 @@ class Monomial:
     The empty tuple is the unit monomial (= 1).
     """
 
-    factors: tuple
+    factors: tuple[Any, ...]
 
     @staticmethod
     def empty() -> Monomial:
@@ -42,14 +42,14 @@ class Monomial:
         return Monomial(((token, power),))
 
     def times(self, other: Monomial) -> Monomial:
-        merged: dict = {}
+        merged: dict[Any, int] = {}
         for tok, p in self.factors + other.factors:
             merged[tok] = merged.get(tok, 0) + p
         items = tuple(sorted(merged.items(), key=lambda kv: repr(kv[0])))
         return Monomial(items)
 
     @property
-    def variables(self) -> set:
+    def variables(self) -> set[Any]:
         return {tok for tok, _p in self.factors}
 
     def __repr__(self) -> str:
@@ -65,7 +65,7 @@ class Monomial:
 class Polynomial:
     """Sparse polynomial in N[X]."""
 
-    coeffs: dict   # Monomial -> int
+    coeffs: dict[Monomial, int]
 
     @staticmethod
     def zero() -> Polynomial:
@@ -86,8 +86,8 @@ class Polynomial:
         return Polynomial({Monomial.empty(): c})
 
     @property
-    def variables(self) -> set:
-        out: set = set()
+    def variables(self) -> set[Any]:
+        out: set[Any] = set()
         for mono in self.coeffs:
             out |= mono.variables
         return out
@@ -120,10 +120,14 @@ class Polynomial:
         return lhs == rhs
 
     def __hash__(self) -> int:
-        return hash(tuple(sorted(
-            ((m, c) for m, c in self.coeffs.items() if c != 0),
-            key=lambda kv: repr(kv[0]),
-        )))
+        return hash(
+            tuple(
+                sorted(
+                    ((m, c) for m, c in self.coeffs.items() if c != 0),
+                    key=lambda kv: repr(kv[0]),
+                )
+            )
+        )
 
 
 class HowProvenance(Semiring[Polynomial]):
@@ -143,7 +147,7 @@ class HowProvenance(Semiring[Polynomial]):
         return Polynomial(out)
 
     def times(self, a: Polynomial, b: Polynomial) -> Polynomial:
-        out: dict = {}
+        out: dict[Monomial, int] = {}
         for ma, ca in a.coeffs.items():
             for mb, cb in b.coeffs.items():
                 m = ma.times(mb)
@@ -158,7 +162,7 @@ class HowProvenance(Semiring[Polynomial]):
     # ---- Evaluation under variable substitution --------------------------
 
     @staticmethod
-    def evaluate(poly: Polynomial, env: dict) -> object:
+    def evaluate(poly: Polynomial, env: dict[Any, Any]) -> object:
         """Substitute variable → value, return the resulting number.
 
         Treats unknown variables as 0.

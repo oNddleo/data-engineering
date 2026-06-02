@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from cctest.codecs import ALPCodec, FSSTCodec, GorillaDeltaCodec, GorillaFloatCodec
+from cctest.codecs import ALPCodec, FSSTCodec, GorillaDeltaCodec
 from cctest.schema import diff_schemas, ChangeKind
 from cctest.selector import EncodingSelector, SelectorConfig
 
@@ -36,7 +36,7 @@ def test_cache_hit(selector, float_column):
 def test_force_reevaluate(selector, float_column):
     codec1 = selector.select("x", float_column)
     codec2 = selector.force_reevaluate("x", float_column)
-    assert type(codec1) == type(codec2)
+    assert type(codec1) is type(codec2)
 
 
 def test_schema_change_evicts_cache(selector, float_column):

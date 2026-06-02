@@ -11,13 +11,13 @@ import asyncio
 import random
 import time
 import uuid
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import AsyncIterator
+from typing import Any, cast
 
 import numpy as np
 
 from src.config import settings
-
 
 INSTITUTION_TIERS = {
     "tier1": {
@@ -48,9 +48,9 @@ class Institution:
     id: str
     name: str
     tier: str
-    balance: float           # $M
+    balance: float  # $M
     lending_capacity: float  # $M available to lend
-    borrow_rate: float       # willingness to borrow (0-1)
+    borrow_rate: float  # willingness to borrow (0-1)
 
 
 @dataclass
@@ -58,26 +58,27 @@ class Transaction:
     tx_id: str
     sender_id: str
     receiver_id: str
-    amount: float      # $M
+    amount: float  # $M
     tx_type: str
     timestamp: float
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class InstitutionRegistry:
-    def __init__(self, n: int = settings.num_institutions):
+    def __init__(self, n: int = settings.num_institutions) -> None:
         self.institutions: dict[str, Institution] = {}
         self._build(n)
 
     def _build(self, n: int) -> None:
         idx = 0
         for tier, spec in INSTITUTION_TIERS.items():
-            count = min(spec["count"], n - idx)
+            count = min(cast(int, spec["count"]), n - idx)
             if count <= 0:
                 break
             for i in range(count):
                 inst_id = f"{spec['prefix']}-{i+1:02d}"
-                balance = random.uniform(*spec["balance_range"])
+                balance_range = cast(tuple[float, float], spec["balance_range"])
+                balance = random.uniform(*balance_range)
                 self.institutions[inst_id] = Institution(
                     id=inst_id,
                     name=f"{spec['prefix']} Institution {i+1}",
@@ -107,20 +108,15 @@ class TransactionGenerator:
     - Occasional circular chains introduced deliberately for stress testing
     """
 
-    def __init__(self, registry: InstitutionRegistry):
+    def __init__(self, registry: InstitutionRegistry) -> None:
         self.registry = registry
         self._ids = registry.all_ids()
-        self._tier1_ids = [
-            i for i, inst in registry.institutions.items() if inst.tier == "tier1"
-        ]
+        self._tier1_ids = [i for i, inst in registry.institutions.items() if inst.tier == "tier1"]
         self._seq = 0
 
     def _pick_sender(self) -> str:
         # Tier-1 are 3x more likely to be senders (major lenders)
-        weights = [
-            3.0 if self.registry.get(i).tier == "tier1" else 1.0
-            for i in self._ids
-        ]
+        weights = [3.0 if self.registry.get(i).tier == "tier1" else 1.0 for i in self._ids]
         return random.choices(self._ids, weights=weights, k=1)[0]
 
     def _pick_receiver(self, sender_id: str) -> str:
@@ -131,17 +127,14 @@ class TransactionGenerator:
             weights = [1.0] * len(candidates)
         else:
             # Lower tiers prefer borrowing from Tier-1
-            weights = [
-                2.0 if self.registry.get(c).tier == "tier1" else 0.5
-                for c in candidates
-            ]
+            weights = [2.0 if self.registry.get(c).tier == "tier1" else 0.5 for c in candidates]
         return random.choices(candidates, weights=weights, k=1)[0]
 
     def _amount(self, sender_id: str) -> float:
         inst = self.registry.get(sender_id)
         # Amount as fraction of lending capacity, log-normal spread
         base = inst.lending_capacity * random.uniform(0.05, 0.40)
-        noise = np.random.lognormal(mean=0, sigma=0.5)
+        noise: float = float(np.random.lognormal(mean=0, sigma=0.5))
         return round(base * noise, 2)
 
     def next_transaction(self) -> Transaction:
@@ -177,12 +170,18 @@ class TransactionGenerator:
                     amount=amount,
                     tx_type="credit_line_draw",
                     timestamp=time.time(),
-                    metadata={"seq": self._seq + i, "injected_cycle": True, "cycle_length": length},
+                    metadata={
+                        "seq": self._seq + i,
+                        "injected_cycle": True,
+                        "cycle_length": length,
+                    },
                 )
             )
         return chain
 
-    async def stream(self, interval_ms: int = settings.transaction_interval_ms) -> AsyncIterator[Transaction]:
+    async def stream(
+        self, interval_ms: int = settings.transaction_interval_ms
+    ) -> AsyncIterator[Transaction]:
         """Yields transactions at a configurable rate; occasionally injects cycles."""
         cycle_countdown = random.randint(30, 80)
         while True:

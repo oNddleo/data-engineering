@@ -13,11 +13,11 @@ class HLCTimestamp:
     def __str__(self) -> str:
         return f"({self.wall_ms}ms,+{self.logical})"
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, int]:
         return {"wall_ms": self.wall_ms, "logical": self.logical}
 
     @classmethod
-    def from_dict(cls, d: dict) -> HLCTimestamp:
+    def from_dict(cls, d: dict[str, int]) -> HLCTimestamp:
         return cls(d["wall_ms"], d["logical"])
 
 

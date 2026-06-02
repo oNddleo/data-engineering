@@ -47,27 +47,28 @@ def _fetch_subject_body(client: httpx.Client, subject_url: str | None) -> str:
         return ""
 
 
-@dlt.source(name="github")
+@dlt.source(name="github")  # type: ignore[misc]
 def github_source(
     token: str = dlt.secrets.value,
     include_bodies: bool = True,
-):
+) -> Any:
     """dlt source emitting a `notifications` resource."""
     if not token:
         token = settings.github_token
     if not token:
         raise RuntimeError("GITHUB_TOKEN is required — set it in .env or dlt secrets.")
 
-    @dlt.resource(
+    @dlt.resource(  # type: ignore[misc]
         name="notifications",
         primary_key="id",
         write_disposition="merge",
     )
     def notifications(
-        updated_at: dlt.sources.incremental[str] = dlt.sources.incremental(
-            "updated_at", initial_value="2024-01-01T00:00:00Z"
-        ),
+        updated_at: dlt.sources.incremental[str] | None = None,
     ) -> Iterator[dict[str, Any]]:
+        _updated_at: dlt.sources.incremental[str] = updated_at or dlt.sources.incremental(
+            "updated_at", initial_value="2024-01-01T00:00:00Z"
+        )
         client = _client(token)
         body_client = httpx.Client(
             headers={
@@ -79,7 +80,7 @@ def github_source(
         params = {
             "all": "true",
             "participating": "false",
-            "since": updated_at.last_value,
+            "since": _updated_at.last_value,
             "per_page": 50,
         }
 

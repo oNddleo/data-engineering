@@ -6,17 +6,18 @@ The adaptive query processing pipeline:
   3. Flag those nodes and report corrected estimates
   4. (Recompiler will re-execute with fixed hints if triggered)
 """
+
 from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 from ..plan.node import PlanNode
-from ..plan.parser import extract_cardinality_errors, get_worst_node
+from ..plan.parser import extract_cardinality_errors
 
 logger = logging.getLogger(__name__)
 
-CRITICAL_THRESHOLD = 100.0   # 100× rule from the AQP literature
+CRITICAL_THRESHOLD = 100.0  # 100× rule from the AQP literature
 
 
 @dataclass
@@ -25,7 +26,7 @@ class CardinalityAlert:
     q_error: float
     estimated: float
     actual: float
-    direction: str   # "over" or "under"
+    direction: str  # "over" or "under"
 
     def __str__(self) -> str:
         return (
@@ -70,13 +71,15 @@ class CardinalityMonitor:
                 act = node.actual_rows_total or 1.0
                 est = node.estimated_rows
                 direction = "over" if est > act else "under"
-                alerts.append(CardinalityAlert(
-                    node=node,
-                    q_error=qe,
-                    estimated=est,
-                    actual=act,
-                    direction=direction,
-                ))
+                alerts.append(
+                    CardinalityAlert(
+                        node=node,
+                        q_error=qe,
+                        estimated=est,
+                        actual=act,
+                        direction=direction,
+                    )
+                )
 
         alerts.sort(key=lambda a: a.q_error, reverse=True)
 

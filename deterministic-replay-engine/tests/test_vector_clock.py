@@ -1,4 +1,3 @@
-import pytest
 from replay_engine.vector_clock import VectorClock, Relation
 
 

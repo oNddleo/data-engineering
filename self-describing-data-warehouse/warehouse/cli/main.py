@@ -12,14 +12,17 @@ Usage examples:
   sdw incidents list
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import sys
-from pathlib import Path
+from typing import Any
+
+from warehouse.core.warehouse import SelfDescribingWarehouse
 
 
-def get_warehouse(db_path: str):
-    from warehouse.core.warehouse import SelfDescribingWarehouse
+def get_warehouse(db_path: str) -> SelfDescribingWarehouse:
     return SelfDescribingWarehouse(db_path=db_path)
 
 
@@ -27,11 +30,11 @@ def get_warehouse(db_path: str):
 #  Formatters                                                          #
 # ------------------------------------------------------------------ #
 
-def _print_json(data):
+def _print_json(data: Any) -> None:
     print(json.dumps(data, indent=2, default=str))
 
 
-def _print_table(rows: list[dict], cols: list[str] | None = None):
+def _print_table(rows: list[dict[str, Any]], cols: list[str] | None = None) -> None:
     if not rows:
         print("  (no results)")
         return
@@ -49,7 +52,7 @@ def _print_table(rows: list[dict], cols: list[str] | None = None):
 #  Commands                                                            #
 # ------------------------------------------------------------------ #
 
-def cmd_describe(args, wh):
+def cmd_describe(args: argparse.Namespace, wh: SelfDescribingWarehouse) -> None:
     data = wh.describe(args.table)
     if "error" in data:
         print(f"Error: {data['error']}", file=sys.stderr)
@@ -91,20 +94,20 @@ def cmd_describe(args, wh):
 
     u = data.get("usage")
     if u:
-        print(f"\n  Usage:")
+        print("\n  Usage:")
         print(f"    Total queries: {u.get('total_queries', 0)}  "
               f"Unique users: {u.get('unique_users', 0)}  "
               f"Last queried: {u.get('last_queried_at', 'never')}")
 
     top_users = data.get("top_users", [])
     if top_users:
-        print(f"    Top users: " + ", ".join(f"{u['queried_by']}({u['query_count']})" for u in top_users))
+        print("    Top users: " + ", ".join(f"{u['queried_by']}({u['query_count']})" for u in top_users))
 
     lin = data.get("lineage", {})
     up = lin.get("upstream", [])
     dn = lin.get("downstream", [])
     if up or dn:
-        print(f"\n  Lineage:")
+        print("\n  Lineage:")
         if up:
             print(f"    Upstream  : {', '.join(t['table_name'] for t in up)}")
         if dn:
@@ -113,7 +116,7 @@ def cmd_describe(args, wh):
     last_inc = data.get("last_incident")
     open_inc = data.get("open_incidents", [])
     if last_inc or open_inc:
-        print(f"\n  Incidents:")
+        print("\n  Incidents:")
         if open_inc:
             print(f"    ⚠ {len(open_inc)} open incident(s)!")
         if last_inc:
@@ -122,7 +125,7 @@ def cmd_describe(args, wh):
     print()
 
 
-def cmd_recommend(args, wh):
+def cmd_recommend(args: argparse.Namespace, wh: SelfDescribingWarehouse) -> None:
     results = wh.recommend(args.query, domain=args.domain, top_k=args.top)
     print(f"\n  Recommendations for: \"{args.query}\"\n")
     if not results:
@@ -133,7 +136,7 @@ def cmd_recommend(args, wh):
         print(str(r))
 
 
-def cmd_catalog(args, wh):
+def cmd_catalog(args: argparse.Namespace, wh: SelfDescribingWarehouse) -> None:
     tables = wh.catalog(domain=args.domain)
     if not tables:
         print("  No tables registered.")
@@ -146,7 +149,7 @@ def cmd_catalog(args, wh):
     print()
 
 
-def cmd_health(args, wh):
+def cmd_health(args: argparse.Namespace, wh: SelfDescribingWarehouse) -> None:
     rows = wh.health_dashboard()
     print(f"\n  Health Dashboard ({len(rows)} tables):\n")
     _print_table(
@@ -157,7 +160,7 @@ def cmd_health(args, wh):
     print()
 
 
-def cmd_lineage(args, wh):
+def cmd_lineage(args: argparse.Namespace, wh: SelfDescribingWarehouse) -> None:
     if args.direction in ("up", "upstream"):
         result = wh.lineage.upstream(args.table)
         label = "Upstream"
@@ -180,7 +183,7 @@ def cmd_lineage(args, wh):
     print()
 
 
-def cmd_quality(args, wh):
+def cmd_quality(args: argparse.Namespace, wh: SelfDescribingWarehouse) -> None:
     if args.run:
         result = wh.quality.run(args.table)
         print(f"\n  Quality run for {args.table}:")
@@ -191,7 +194,7 @@ def cmd_quality(args, wh):
     print(f"  Trend: {wh.quality.trend(args.table)}\n")
 
 
-def cmd_incidents(args, wh):
+def cmd_incidents(args: argparse.Namespace, wh: SelfDescribingWarehouse) -> None:
     if args.action == "list":
         incidents = wh.incidents.open_incidents(args.table or None)
         print(f"\n  Open incidents{' for ' + args.table if args.table else ''}:\n")
@@ -218,7 +221,7 @@ def cmd_incidents(args, wh):
 #  Entry point                                                         #
 # ------------------------------------------------------------------ #
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         prog="sdw",
         description="Self-Describing Data Warehouse CLI",

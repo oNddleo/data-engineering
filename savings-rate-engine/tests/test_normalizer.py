@@ -1,10 +1,10 @@
 """Tests for the rate normalizer — term parsing and canonical snapping."""
-import pytest
 from datetime import datetime
 
-from savings_engine.normalizer import parse_term_days, normalize, CANONICAL_TERMS
-from savings_engine.models.schemas import RateEntry
+import pytest
 
+from savings_engine.models.schemas import RateEntry
+from savings_engine.normalizer import CANONICAL_TERMS, normalize, parse_term_days
 
 # ── parse_term_days ────────────────────────────────────────────────────────────
 

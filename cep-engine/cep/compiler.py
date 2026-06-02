@@ -22,7 +22,7 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import numpy as np
 
@@ -45,11 +45,11 @@ MAX_ENTITIES = 1 << 20  # 1 M entity slots (entity_id % MAX_ENTITIES)
 @dataclass
 class CompiledPattern:
     name: str
-    match_fn: Callable  # (type_id, entity_id, ts, value, flags, step, count, start_ts, last_ts) -> bool
-    step_arr: np.ndarray       # int8[MAX_ENTITIES]
-    count_arr: np.ndarray      # int32[MAX_ENTITIES]
-    start_ts_arr: np.ndarray   # int64[MAX_ENTITIES]
-    last_ts_arr: np.ndarray    # int64[MAX_ENTITIES]
+    match_fn: Callable[..., Any]  # (type_id, entity_id, ts, value, flags, step, count, start_ts, last_ts) -> bool
+    step_arr: np.ndarray[Any, np.dtype[Any]]       # int8[MAX_ENTITIES]
+    count_arr: np.ndarray[Any, np.dtype[Any]]      # int32[MAX_ENTITIES]
+    start_ts_arr: np.ndarray[Any, np.dtype[Any]]   # int64[MAX_ENTITIES]
+    last_ts_arr: np.ndarray[Any, np.dtype[Any]]    # int64[MAX_ENTITIES]
 
     def reset_entity(self, entity_id: int) -> None:
         slot = entity_id % MAX_ENTITIES
@@ -193,7 +193,7 @@ class PatternCompiler:
         return _generate_source(pattern)
 
 
-def _load_or_compile(name: str, source: str) -> Callable:
+def _load_or_compile(name: str, source: str) -> Callable[..., Any]:
     """
     Write *source* to a stable cache path and import it so Numba can cache
     the compiled bytecode to disk (``cache=True`` requires a real file).
@@ -210,14 +210,16 @@ def _load_or_compile(name: str, source: str) -> Callable:
         mod = sys.modules[mod_name]
     else:
         spec = importlib.util.spec_from_file_location(mod_name, cache_path)
+        if spec is None or spec.loader is None:
+            raise RuntimeError(f"Could not load module spec for {mod_name}")
         mod = importlib.util.module_from_spec(spec)
         sys.modules[mod_name] = mod
         spec.loader.exec_module(mod)
 
-    return getattr(mod, f"_cep_match_{name}")
+    return getattr(mod, f"_cep_match_{name}")  # type: ignore[no-any-return]
 
 
-def _warmup(fn: Callable, max_entities: int = MAX_ENTITIES) -> None:
+def _warmup(fn: Callable[..., Any], max_entities: int = MAX_ENTITIES) -> None:
     """Call with dummy data to force Numba to compile the specialisation."""
     fn(
         np.int32(0), np.int64(0), np.int64(0), np.float64(0.0), np.uint32(0),
@@ -231,12 +233,14 @@ def _warmup(fn: Callable, max_entities: int = MAX_ENTITIES) -> None:
 # ---------------------------------------------------------------------------
 # Pure-Python fallback (used when Numba is not installed)
 
-def _make_python_fallback(pattern: Pattern) -> Callable:
+def _make_python_fallback(pattern: Pattern) -> Callable[..., Any]:
     steps = pattern.steps
     window = pattern._total_window_ns
 
-    def match_fn(event_type, entity_id, timestamp, value, flags,
-                 step_arr, count_arr, start_ts_arr, last_ts_arr):
+    def match_fn(
+        event_type: Any, entity_id: Any, timestamp: Any, value: Any, flags: Any,
+        step_arr: Any, count_arr: Any, start_ts_arr: Any, last_ts_arr: Any,
+    ) -> bool:
         slot = entity_id % MAX_ENTITIES
         step = int(step_arr[slot])
         cnt = int(count_arr[slot])
@@ -244,7 +248,7 @@ def _make_python_fallback(pattern: Pattern) -> Callable:
         last_ts = int(last_ts_arr[slot])
         matched = False
 
-        def reset():
+        def reset() -> None:
             step_arr[slot] = 0
             count_arr[slot] = 0
             start_ts_arr[slot] = 0

@@ -8,13 +8,10 @@ from __future__ import annotations
 
 import pytest
 
-pyarrow = pytest.importorskip("pyarrow", reason="pyarrow not installed")
-pa = pyarrow
-import pyarrow as pa
-import pyarrow.dataset as ds
+pa = pytest.importorskip("pyarrow", reason="pyarrow not installed")
 
-from dqp.engines.parquet_engine import ParquetEngine
-from dqp.predicate import (
+from dqp.engines.parquet_engine import ParquetEngine  # noqa: E402
+from dqp.predicate import (  # noqa: E402
     AndPredicate,
     BetweenPredicate,
     ColumnRef,
@@ -24,8 +21,6 @@ from dqp.predicate import (
     IsNullPredicate,
     LikePredicate,
     Literal,
-    NotPredicate,
-    OrPredicate,
 )
 
 

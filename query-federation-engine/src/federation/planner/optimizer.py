@@ -2,23 +2,30 @@
 
 from __future__ import annotations
 
-import itertools
+from typing import Any
 
 from .nodes import (
-    Aggregate, Filter, Join, JoinType, Limit, PlanNode,
-    Project, Sort, TableScan,
+    Aggregate,
+    Filter,
+    Join,
+    JoinType,
+    Limit,
+    PlanNode,
+    Project,
+    Sort,
+    TableScan,
 )
 
 # Relative I/O cost per row for each source type
 SOURCE_SCAN_COST = {
     "postgres": 1.0,
     "mongodb": 1.5,
-    "s3_parquet": 0.8,   # columnar, cheap for projected reads
-    "rest_api": 10.0,    # network round-trips are expensive
+    "s3_parquet": 0.8,  # columnar, cheap for projected reads
+    "rest_api": 10.0,  # network round-trips are expensive
 }
 
 JOIN_HASH_COST_PER_ROW = 2.0
-JOIN_NESTED_LOOP_THRESHOLD = 1_000   # use nested-loop only for tiny tables
+JOIN_NESTED_LOOP_THRESHOLD = 1_000  # use nested-loop only for tiny tables
 
 
 class CostBasedOptimizer:
@@ -43,7 +50,7 @@ class CostBasedOptimizer:
     def _push_projections(self, node: PlanNode) -> PlanNode:
         """Walk the tree and trim projected_columns on TableScans."""
         match node:
-            case Project(child=child, columns=cols, output_names=names):
+            case Project(child=child, columns=cols, output_names=_names):
                 needed = self._columns_needed_by(cols)
                 child = self._prune_columns(child, needed)
                 node.child = self._push_projections(child)
@@ -60,8 +67,9 @@ class CostBasedOptimizer:
                 node.child = self._push_projections(child)
         return node
 
-    def _columns_needed_by(self, expressions: list) -> set[str]:
+    def _columns_needed_by(self, expressions: list[Any]) -> set[str]:
         import sqlglot.expressions as exp
+
         needed: set[str] = set()
         for e in expressions:
             for col in e.find_all(exp.Column):
@@ -70,8 +78,9 @@ class CostBasedOptimizer:
 
     def _prune_columns(self, node: PlanNode, needed: set[str]) -> PlanNode:
         if isinstance(node, TableScan) and node.projected_columns and needed:
-            node.projected_columns = [c for c in node.projected_columns if c in needed] \
-                or node.projected_columns
+            node.projected_columns = [
+                c for c in node.projected_columns if c in needed
+            ] or node.projected_columns
         return node
 
     # ------------------------------------------------------------------ #
@@ -98,9 +107,7 @@ class CostBasedOptimizer:
                 node.child = self._reorder_joins(child)
         return node
 
-    def _flatten_inner_joins(
-        self, node: PlanNode
-    ) -> tuple[list[PlanNode], list]:
+    def _flatten_inner_joins(self, node: PlanNode) -> tuple[list[PlanNode], list[Any]]:
         if not isinstance(node, Join) or node.join_type != JoinType.INNER:
             return [node], []
         left_leaves, left_conds = self._flatten_inner_joins(node.left)
@@ -109,7 +116,7 @@ class CostBasedOptimizer:
         conds = left_conds + right_conds + ([cond] if cond is not None else [])
         return left_leaves + right_leaves, conds
 
-    def _build_left_deep(self, leaves: list[PlanNode], conditions: list) -> PlanNode:
+    def _build_left_deep(self, leaves: list[PlanNode], conditions: list[Any]) -> PlanNode:
         node = leaves[0]
         for right in leaves[1:]:
             cond = conditions.pop(0) if conditions else None
@@ -150,7 +157,9 @@ class CostBasedOptimizer:
                 node.right = self._annotate_costs(right)
                 build_cost = right.estimated_rows * JOIN_HASH_COST_PER_ROW
                 probe_cost = left.estimated_rows * 1.0
-                node.estimated_cost = left.estimated_cost + right.estimated_cost + build_cost + probe_cost
+                node.estimated_cost = (
+                    left.estimated_cost + right.estimated_cost + build_cost + probe_cost
+                )
 
             case Aggregate(child=child):
                 node.child = self._annotate_costs(child)
@@ -172,7 +181,8 @@ class CostBasedOptimizer:
 # Module-level helper
 # ──────────────────────────────────────────────────────────────────────────────
 
-def _extract_join_keys_from_condition(condition) -> tuple[list[str], list[str]]:
+
+def _extract_join_keys_from_condition(condition: Any) -> tuple[list[str], list[str]]:
     """Re-derive left_keys / right_keys from a join ON expression."""
     if condition is None:
         return [], []

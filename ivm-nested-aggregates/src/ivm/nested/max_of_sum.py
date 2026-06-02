@@ -22,7 +22,7 @@ class MaxOfSum:
     _sums: dict[Any, float] = field(default_factory=dict)
     _max_value: float = float("-inf")
     _max_key: Any = None
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def insert(self, key: Any, amount: float) -> tuple[float, Any]:
         with self._lock:

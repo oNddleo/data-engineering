@@ -1,14 +1,12 @@
 """Tests for the adaptive engine and runtime re-optimizer."""
-import pytest
+
 from adaptive_engine import (
     AdaptiveEngine,
     Catalog,
     FilterNode,
     HashJoinNode,
     AggregateNode,
-    SortNode,
     ScanNode,
-    ProjectNode,
     eq,
     gt,
 )
@@ -20,9 +18,16 @@ def make_large_catalog() -> Catalog:
     # Deliberately underestimate row counts to trigger adaptive switching
     catalog.create_table(
         "events",
-        [{"id": i, "user_id": i % 100, "type": "click" if i % 3 else "view", "value": i}
-         for i in range(5_000)],
-        estimated_rows=100,   # <-- gross underestimate → ratio ≈ 50x
+        [
+            {
+                "id": i,
+                "user_id": i % 100,
+                "type": "click" if i % 3 else "view",
+                "value": i,
+            }
+            for i in range(5_000)
+        ],
+        estimated_rows=100,  # <-- gross underestimate → ratio ≈ 50x
     )
     catalog.create_table(
         "users",
@@ -55,7 +60,11 @@ class TestAdaptiveEngineBasic:
         plan = ScanNode(table="events")
         _, report = engine.execute(plan)
         # Should detect hot path and switch to push for the root operator
-        assert report.reopt_rounds > 0 or len(report.mode_switches) > 0 or report.total_rows == 5_000
+        assert (
+            report.reopt_rounds > 0
+            or len(report.mode_switches) > 0
+            or report.total_rows == 5_000
+        )
 
 
 class TestAdaptiveFilter:
@@ -131,7 +140,7 @@ class TestReOptimizer:
         reopt = ReOptimizer(catalog, hot_threshold=2.0)
         # Simulate left being much smaller in reality
         actual_counts = {
-            plan.left.node_id: 5,    # actual left is tiny
+            plan.left.node_id: 5,  # actual left is tiny
             plan.right.node_id: 1000,
         }
         new_plan = reopt.reoptimize(plan, actual_counts)
@@ -142,7 +151,8 @@ class TestReOptimizer:
         catalog = Catalog()
         catalog.create_table("t", [{"a": i, "b": i * 2} for i in range(100)])
 
-        from adaptive_engine.expressions import gt, eq
+        from adaptive_engine.expressions import gt
+
         plan = FilterNode(
             child=FilterNode(
                 child=ScanNode(table="t"),
@@ -155,7 +165,7 @@ class TestReOptimizer:
         plan = Optimizer(catalog).optimize(plan)
 
         reopt = ReOptimizer(catalog)
-        new_plan = reopt.reoptimize(plan, {})
+        _new_plan = reopt.reoptimize(plan, {})  # noqa: F841
         assert len(reopt.reoptimizations) > 0
 
     def test_results_identical_after_reopt(self):

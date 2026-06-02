@@ -1,9 +1,8 @@
 """Tests for QueryPlanner and CostBasedOptimizer."""
 
-import pytest
 from federation.planner import CostBasedOptimizer, QueryPlanner, explain_plan
 from federation.planner.nodes import (
-    Aggregate, Filter, Join, JoinType, Limit, Project, Sort, TableScan,
+    Join, Limit, Project, TableScan,
 )
 
 

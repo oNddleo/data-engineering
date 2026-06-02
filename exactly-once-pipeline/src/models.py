@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -27,7 +27,7 @@ class TransactionStep(str, Enum):
     COMPENSATING = "COMPENSATING"
 
 
-class PaymentEvent(BaseModel):
+class PaymentEvent(BaseModel):  # type: ignore[misc]
     payment_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     idempotency_key: str = Field(default_factory=lambda: str(uuid.uuid4()))
     sender_account: str
@@ -42,20 +42,20 @@ class PaymentEvent(BaseModel):
     model_config = {"json_encoders": {Decimal: str, datetime: lambda v: v.isoformat()}}
 
 
-class OutboxEntry(BaseModel):
-    id: Optional[int] = None
+class OutboxEntry(BaseModel):  # type: ignore[misc]
+    id: int | None = None
     idempotency_key: str
     aggregate_type: str = "payment"
     aggregate_id: str
     event_type: str = "PaymentCreated"
     payload: dict[str, Any]
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    published_at: Optional[datetime] = None
+    published_at: datetime | None = None
     retry_count: int = 0
-    last_error: Optional[str] = None
+    last_error: str | None = None
 
 
-class TransactionState(BaseModel):
+class TransactionState(BaseModel):  # type: ignore[misc]
     transaction_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     idempotency_key: str
     payment_id: str
@@ -65,9 +65,9 @@ class TransactionState(BaseModel):
     notification_ack: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    completed_at: Optional[datetime] = None
-    failed_at: Optional[datetime] = None
-    error_message: Optional[str] = None
+    completed_at: datetime | None = None
+    failed_at: datetime | None = None
+    error_message: str | None = None
     retry_count: int = 0
     metadata: dict[str, Any] = Field(default_factory=dict)
 

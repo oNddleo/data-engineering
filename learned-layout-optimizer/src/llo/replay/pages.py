@@ -12,7 +12,7 @@ physical rewrite.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -27,7 +27,9 @@ if TYPE_CHECKING:
 PAGE_ROWS = 64
 
 
-def apply_layout(data: NDArray[np.integer], cols: list[str], action: Action) -> NDArray[np.int64]:
+def apply_layout(
+    data: NDArray[np.integer[Any]], cols: list[str], action: Action
+) -> NDArray[np.int64]:
     """Return the row-permutation induced by ``action``.
 
     ``data`` is shape (n, n_cols). The returned permutation can be applied
@@ -56,7 +58,7 @@ def apply_layout(data: NDArray[np.integer], cols: list[str], action: Action) -> 
 
 
 def pages_scanned(
-    data: NDArray[np.integer],
+    data: NDArray[np.integer[Any]],
     perm: NDArray[np.int64],
     cols: list[str],
     query: Query,
@@ -87,7 +89,7 @@ def pages_scanned(
 
 
 def expected_pages(
-    data: NDArray[np.integer],
+    data: NDArray[np.integer[Any]],
     cols: list[str],
     action: Action,
     workload: list[Query],
@@ -100,7 +102,7 @@ def expected_pages(
 
 
 def reward(
-    data: NDArray[np.integer],
+    data: NDArray[np.integer[Any]],
     cols: list[str],
     action: Action,
     workload: list[Query],

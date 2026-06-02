@@ -10,14 +10,15 @@ On every ``insert``, the SchemaEvolutionTracker checks whether the incoming
 columns represent a schema change; affected columns have their codec choices
 re-evaluated automatically.
 """
+
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 
-from .codecs import Codec, EncodedColumn
+from .codecs import EncodedColumn
 from .schema import SchemaEvolutionTracker
 from .selector import EncodingSelector, SelectorConfig
 
@@ -39,7 +40,7 @@ class ColumnStore:
     # Write path
     # ------------------------------------------------------------------
 
-    def insert(self, columns: dict[str, np.ndarray]) -> None:
+    def insert(self, columns: dict[str, np.ndarray[Any, np.dtype[Any]]]) -> None:
         """Compress and store *columns*.  Schema changes trigger re-evaluation."""
         diff = self._tracker.observe(columns, selector=self._selector)
         if diff.has_changes:
@@ -55,21 +56,27 @@ class ColumnStore:
     # Read path
     # ------------------------------------------------------------------
 
-    def retrieve(self, columns: Optional[list[str]] = None) -> dict[str, np.ndarray]:
+    def retrieve(
+        self, columns: Optional[list[str]] = None
+    ) -> dict[str, np.ndarray[Any, np.dtype[Any]]]:
         """Decompress and concatenate all stored chunks for each column."""
         names = columns if columns is not None else list(self._store.keys())
-        result: dict[str, np.ndarray] = {}
+        result: dict[str, np.ndarray[Any, np.dtype[Any]]] = {}
         for name in names:
             chunks = self._store.get(name, [])
             if not chunks:
                 continue
-            codec = self._selector.select.__self__  # noqa: not ideal – look up via name
             decoded_chunks = []
             for chunk in chunks:
                 from .codecs import ALL_CODECS
-                codec_obj = next((c for c in ALL_CODECS if c.name == chunk.codec_name), None)
+
+                codec_obj = next(
+                    (c for c in ALL_CODECS if c.name == chunk.codec_name), None
+                )
                 if codec_obj is None:
-                    raise KeyError(f"Unknown codec {chunk.codec_name!r} in stored chunk")
+                    raise KeyError(
+                        f"Unknown codec {chunk.codec_name!r} in stored chunk"
+                    )
                 decoded_chunks.append(codec_obj.decode(chunk))
             result[name] = np.concatenate(decoded_chunks)
         return result
@@ -90,11 +97,13 @@ class ColumnStore:
     def original_bytes(self) -> dict[str, int]:
         result: dict[str, int] = {}
         for name, chunks in self._store.items():
-            total = sum(c.original_len * _dtype_itemsize(c.original_dtype) for c in chunks)
+            total = sum(
+                c.original_len * _dtype_itemsize(c.original_dtype) for c in chunks
+            )
             result[name] = total
         return result
 
-    def compression_summary(self) -> dict[str, dict]:
+    def compression_summary(self) -> dict[str, dict[str, Any]]:
         sb = self.storage_bytes()
         ob = self.original_bytes()
         summary = {}

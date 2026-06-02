@@ -1,0 +1,53 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dedup-with-bloom"
+version = "0.1.0"
+description = "Bloom-filter-backed streaming deduplicator — probabilistic membership for at-most-once delivery."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "sophie-nguyenthuthuy" }]
+keywords = ["bloom", "dedup", "streaming", "probabilistic", "membership"]
+classifiers = ["Development Status :: 4 - Beta"]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "hypothesis>=6.100", "mypy>=1.10", "ruff>=0.5"]
+
+[project.scripts]
+bloomdedup = "bloomdedup.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/sophie-nguyenthuthuy/data-engineering/tree/main/dedup-with-bloom"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bloomdedup"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF", "TCH"]
+ignore = ["E501", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B", "SIM", "TCH"]
+"src/bloomdedup/__init__.py" = ["TCH004"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra --strict-markers"
+markers = ["slow: marks tests as slow", "property: hypothesis property tests"]

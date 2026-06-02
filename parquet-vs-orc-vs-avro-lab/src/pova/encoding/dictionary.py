@@ -16,9 +16,6 @@ from typing import Any
 
 from pova.encoding.plain import plain_decode, plain_encode
 
-if False:  # pragma: no cover — forward refs only
-    pass
-
 
 def dictionary_encode(values: list[Any], ctype) -> bytes:  # type: ignore[no-untyped-def]
     seen: dict[Any, int] = {}

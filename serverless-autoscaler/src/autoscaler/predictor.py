@@ -3,8 +3,6 @@ from __future__ import annotations
 import logging
 import warnings
 from datetime import datetime
-from typing import Optional
-from uuid import uuid4
 
 import numpy as np
 
@@ -34,7 +32,7 @@ class ARIMAPredictor:
         job_id: str,
         history: list[JobRun],
         target_start: datetime,
-    ) -> Optional[ResourceForecast]:
+    ) -> ResourceForecast | None:
         completed = [r for r in history if r.peak_workers is not None]
         if len(completed) < self._cfg.min_history_points:
             logger.warning(
@@ -45,7 +43,10 @@ class ARIMAPredictor:
             )
             return self._percentile_forecast(job_id, completed, target_start)
 
-        series = np.array([float(r.peak_workers) for r in completed], dtype=float)
+        series = np.array(
+            [float(r.peak_workers) for r in completed],  # type: ignore[arg-type]
+            dtype=float,
+        )
         return self._arima_forecast(job_id, series, completed, target_start)
 
     # ------------------------------------------------------------------ #
@@ -58,7 +59,7 @@ class ARIMAPredictor:
         series: np.ndarray,
         completed: list[JobRun],
         target_start: datetime,
-    ) -> Optional[ResourceForecast]:
+    ) -> ResourceForecast | None:
         try:
             from statsmodels.tsa.statespace.sarimax import SARIMAX
 
@@ -83,13 +84,15 @@ class ARIMAPredictor:
             upper = int(ci.iloc[0, 1])
 
             predicted_workers = max(1, int(mean * self._cfg.safety_factor))
-            predicted_cpu, predicted_mem = self._extrapolate_resources(
-                completed, predicted_workers
-            )
+            predicted_cpu, predicted_mem = self._extrapolate_resources(completed, predicted_workers)
 
             logger.info(
                 "job=%s ARIMA forecast workers=%d [%d–%d] AIC=%.1f",
-                job_id, predicted_workers, lower, upper, fit.aic,
+                job_id,
+                predicted_workers,
+                lower,
+                upper,
+                fit.aic,
             )
             return ResourceForecast(
                 job_id=job_id,
@@ -117,7 +120,7 @@ class ARIMAPredictor:
         job_id: str,
         completed: list[JobRun],
         target_start: datetime,
-    ) -> Optional[ResourceForecast]:
+    ) -> ResourceForecast | None:
         if not completed:
             logger.warning("job=%s no completed runs at all — cannot forecast", job_id)
             return None
@@ -148,9 +151,7 @@ class ARIMAPredictor:
     # ------------------------------------------------------------------ #
 
     @staticmethod
-    def _extrapolate_resources(
-        completed: list[JobRun], target_workers: int
-    ) -> tuple[float, float]:
+    def _extrapolate_resources(completed: list[JobRun], target_workers: int) -> tuple[float, float]:
         """Linear extrapolation of CPU/memory from historical peak_workers ratios."""
         cpu_per_worker = [
             r.peak_cpu_millicores / r.peak_workers

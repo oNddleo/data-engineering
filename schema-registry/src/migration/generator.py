@@ -3,6 +3,7 @@ Auto-Migration Generator
 ========================
 Diffs two JSON schemas and produces a best-effort MigrationScript.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -123,7 +124,7 @@ class MigrationGenerator:
         )
 
 
-def _is_safe_cast(from_type: str | list, to_type: str | list) -> bool:
+def _is_safe_cast(from_type: str | list[Any], to_type: str | list[Any]) -> bool:
     """integer → number is safe; string → integer is not."""
     safe = {("integer", "number"), ("integer", "string"), ("number", "string")}
     if isinstance(from_type, str) and isinstance(to_type, str):

@@ -4,6 +4,8 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
+from typing import Any
+
 import numpy as np
 
 
@@ -11,12 +13,11 @@ import numpy as np
 class EncodedColumn:
     codec_name: str
     data: bytes
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     original_dtype: str = ""
     original_len: int = 0
 
     def total_bytes(self) -> int:
-        import struct
         meta_bytes = 0
         for v in self.metadata.values():
             if isinstance(v, (int, float)):
@@ -39,11 +40,19 @@ class BenchmarkResult:
 
     @property
     def ratio(self) -> float:
-        return self.original_bytes / self.compressed_bytes if self.compressed_bytes else 0.0
+        return (
+            self.original_bytes / self.compressed_bytes
+            if self.compressed_bytes
+            else 0.0
+        )
 
     @property
     def space_saving(self) -> float:
-        return 1.0 - self.compressed_bytes / self.original_bytes if self.original_bytes else 0.0
+        return (
+            1.0 - self.compressed_bytes / self.original_bytes
+            if self.original_bytes
+            else 0.0
+        )
 
     def __str__(self) -> str:
         status = "OK" if self.lossless else "LOSSY"
@@ -58,30 +67,34 @@ class Codec(ABC):
     name: str = "base"
 
     @abstractmethod
-    def encode(self, data: np.ndarray) -> EncodedColumn: ...
+    def encode(self, data: np.ndarray[Any, np.dtype[Any]]) -> EncodedColumn: ...
 
     @abstractmethod
-    def decode(self, encoded: EncodedColumn) -> np.ndarray: ...
+    def decode(self, encoded: EncodedColumn) -> np.ndarray[Any, np.dtype[Any]]: ...
 
-    def supports_dtype(self, dtype: np.dtype) -> bool:
+    def supports_dtype(self, dtype: np.dtype[Any]) -> bool:
         return True
 
-    def benchmark(self, data: np.ndarray, rounds: int = 5) -> BenchmarkResult:
+    def benchmark(
+        self, data: np.ndarray[Any, np.dtype[Any]], rounds: int = 5
+    ) -> BenchmarkResult:
         original_bytes = data.nbytes
 
         encode_times = []
-        encoded = None
+        encoded: EncodedColumn | None = None
         for _ in range(rounds):
             t0 = time.perf_counter()
             encoded = self.encode(data)
             encode_times.append(time.perf_counter() - t0)
+        assert encoded is not None, "rounds must be > 0"
 
         decode_times = []
-        decoded = None
+        decoded: np.ndarray[Any, np.dtype[Any]] | None = None
         for _ in range(rounds):
             t0 = time.perf_counter()
             decoded = self.decode(encoded)
             decode_times.append(time.perf_counter() - t0)
+        assert decoded is not None, "rounds must be > 0"
 
         if data.dtype.kind == "U" or data.dtype.kind == "O":
             lossless = list(data) == list(decoded)

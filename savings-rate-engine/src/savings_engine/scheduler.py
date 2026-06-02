@@ -7,10 +7,10 @@ Usage (standalone):
 
 The scheduler also exposes start_scheduler() so the CLI command can call it.
 """
+
 import logging
 import signal
 import sys
-from typing import Optional
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -21,7 +21,7 @@ from savings_engine.pipeline import run_pipeline
 logger = logging.getLogger(__name__)
 
 
-def _job(bank_codes: Optional[list[str]] = None) -> None:
+def _job(bank_codes: list[str] | None = None) -> None:
     logger.info("Scheduler triggered scrape run")
     try:
         run_pipeline(bank_codes)
@@ -31,7 +31,7 @@ def _job(bank_codes: Optional[list[str]] = None) -> None:
 
 def start_scheduler(
     interval_hours: int = settings.scrape_interval_hours,
-    bank_codes: Optional[list[str]] = None,
+    bank_codes: list[str] | None = None,
 ) -> None:
     """Start the blocking scheduler.  Runs the pipeline once immediately, then on interval."""
     scheduler = BlockingScheduler(timezone="Asia/Ho_Chi_Minh")
@@ -47,7 +47,7 @@ def start_scheduler(
         coalesce=True,
     )
 
-    def _shutdown(signum, frame):
+    def _shutdown(signum: int, frame: object) -> None:
         logger.info("Signal %s received — shutting down scheduler", signum)
         scheduler.shutdown(wait=False)
         sys.exit(0)

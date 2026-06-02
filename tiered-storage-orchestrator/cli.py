@@ -87,7 +87,8 @@ def put(ctx: click.Context, key: str, value_json: str, meta: str | None) -> None
             value = json.loads(value_json)
             metadata = json.loads(meta) if meta else {}
             record = await orch.put(key, value, metadata=metadata)
-            click.echo(f"✓ Stored  key={record.key}  tier={record.tier.value}  size={record.size_bytes}B")
+            msg = f"✓ Stored  key={record.key}  tier={record.tier.value}  size={record.size_bytes}B"
+            click.echo(msg)
         finally:
             await orch.stop()
 

@@ -7,31 +7,33 @@ Each log entry contains:
 This produces a tamper-evident chain: altering any past entry breaks all
 subsequent hashes, detectable on verification.
 """
+
 from __future__ import annotations
 
 import hashlib
 import json
-import os
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from sbv_reporting.utils.config import get_config
 
 try:
     import numpy as np
-    _NP_TYPES = (np.integer, np.floating, np.bool_)
+
+    _NP_TYPES: tuple[type, ...] = (np.integer, np.floating, np.bool_)
 except ImportError:
     _NP_TYPES = ()
 
 
 class _SafeEncoder(json.JSONEncoder):
     """Serialise NumPy scalars and other non-standard types."""
-    def default(self, obj):
-        if _NP_TYPES and isinstance(obj, _NP_TYPES):
-            return obj.item()
-        return super().default(obj)
 
-from sbv_reporting.utils.config import get_config
+    def default(self, obj: Any) -> Any:
+        if _NP_TYPES and isinstance(obj, _NP_TYPES):
+            np_obj: Any = obj
+            return np_obj.item()
+        return super().default(obj)
 
 
 class AuditTrail:
@@ -59,7 +61,7 @@ class AuditTrail:
         details: dict[str, Any],
         operator: str = "SYSTEM",
         level: str = "INFO",
-    ) -> dict:
+    ) -> dict[str, Any]:
         entry: dict[str, Any] = {
             "run_id": self.run_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -68,7 +70,9 @@ class AuditTrail:
             "operator": operator,
             "details": details,
         }
-        canonical = json.dumps(entry, sort_keys=True, ensure_ascii=False, cls=_SafeEncoder)
+        canonical = json.dumps(
+            entry, sort_keys=True, ensure_ascii=False, cls=_SafeEncoder
+        )
         entry["prev_hash"] = self._chain_hash
         entry["entry_hash"] = hashlib.sha256(
             (self._chain_hash + canonical).encode()
@@ -98,7 +102,9 @@ class AuditTrail:
             if stored_prev != prev_hash:
                 errors.append(f"Line {i+1}: prev_hash mismatch (chain broken)")
 
-            canonical = json.dumps(entry, sort_keys=True, ensure_ascii=False, cls=_SafeEncoder)
+            canonical = json.dumps(
+                entry, sort_keys=True, ensure_ascii=False, cls=_SafeEncoder
+            )
             computed = hashlib.sha256((prev_hash + canonical).encode()).hexdigest()
             if computed != stored_hash:
                 errors.append(f"Line {i+1}: entry_hash mismatch (entry tampered)")
@@ -108,7 +114,7 @@ class AuditTrail:
         return len(errors) == 0, errors
 
     # ------------------------------------------------------------------
-    def summary(self) -> dict:
+    def summary(self) -> dict[str, Any]:
         lines = self.log_path.read_text(encoding="utf-8").strip().splitlines()
         events: dict[str, int] = {}
         for raw in lines:

@@ -1,6 +1,14 @@
 from datetime import datetime
+
 from sqlalchemy import (
-    Column, String, Float, Integer, DateTime, ForeignKey, Boolean, Index, UniqueConstraint
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
 )
 from sqlalchemy.orm import DeclarativeBase, relationship
 
@@ -28,6 +36,7 @@ class Bank(Base):
 
 class RateSnapshot(Base):
     """One scrape run per bank produces one snapshot containing N rate records."""
+
     __tablename__ = "rate_snapshots"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -39,23 +48,22 @@ class RateSnapshot(Base):
     bank = relationship("Bank", back_populates="snapshots")
     records = relationship("RateRecord", back_populates="snapshot", cascade="all, delete-orphan")
 
-    __table_args__ = (
-        Index("ix_snapshots_bank_scraped", "bank_code", "scraped_at"),
-    )
+    __table_args__ = (Index("ix_snapshots_bank_scraped", "bank_code", "scraped_at"),)
 
 
 class RateRecord(Base):
     """A single interest rate row within a snapshot."""
+
     __tablename__ = "rate_records"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     snapshot_id = Column(Integer, ForeignKey("rate_snapshots.id"), nullable=False)
     bank_code = Column(String(20), nullable=False)  # denormalized for fast queries
-    term_days = Column(Integer, nullable=False)       # canonical term in days
-    term_label = Column(String(50))                   # original label, e.g. "3 tháng"
-    rate_pa = Column(Float, nullable=False)            # % per annum
-    rate_type = Column(String(30), default="standard") # standard | online | promotional
-    min_amount_vnd = Column(Integer)                   # minimum deposit in VND, nullable
+    term_days = Column(Integer, nullable=False)  # canonical term in days
+    term_label = Column(String(50))  # original label, e.g. "3 tháng"
+    rate_pa = Column(Float, nullable=False)  # % per annum
+    rate_type = Column(String(30), default="standard")  # standard | online | promotional
+    min_amount_vnd = Column(Integer)  # minimum deposit in VND, nullable
     currency = Column(String(5), default="VND")
 
     snapshot = relationship("RateSnapshot", back_populates="records")

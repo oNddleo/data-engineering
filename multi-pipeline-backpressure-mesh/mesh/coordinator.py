@@ -4,22 +4,25 @@ Listens to all backpressure signals on the bus, maintains a per-job pressure
 registry, and emits throttle commands to upstream ancestors using an
 exponential-decay propagation model.
 """
+
 from __future__ import annotations
 
 import asyncio
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import TYPE_CHECKING
 
-from .bus import BackpressureBus
-from .metrics import BackpressureLevel, BackpressureSignal, ThrottleCommand
-from .topology import PipelineTopology
+from .metrics import BackpressureSignal, ThrottleCommand
+
+if TYPE_CHECKING:
+    from .bus import BackpressureBus
+    from .topology import PipelineTopology
 
 logger = logging.getLogger(__name__)
 
 _DECAY_WINDOW_SECS = 10.0  # time before pressure score decays to zero
-_HOP_ATTENUATION = 0.7     # throttle factor is multiplied by this per hop
+_HOP_ATTENUATION = 0.7  # throttle factor is multiplied by this per hop
 
 
 @dataclass
@@ -27,7 +30,7 @@ class _PressureRecord:
     signal: BackpressureSignal
     expires_at: float = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.expires_at = time.monotonic() + _DECAY_WINDOW_SECS
 
     @property
@@ -57,7 +60,7 @@ class BackpressureCoordinator:
         self._pressure: dict[str, _PressureRecord] = {}
         self._current_throttles: dict[str, float] = {}  # job_id → last factor sent
         self._lock = asyncio.Lock()
-        self._task: Optional[asyncio.Task] = None
+        self._task: asyncio.Task[None] | None = None
 
     async def start(self) -> None:
         await self._bus.subscribe_signals(self._on_signal)
@@ -97,7 +100,7 @@ class BackpressureCoordinator:
 
         commands = []
         for job_id, hop in ancestors.items():
-            attenuation = _HOP_ATTENUATION ** hop
+            attenuation = _HOP_ATTENUATION**hop
             throttle_factor = max(0.0, 1.0 - signal.score * attenuation)
             node = self._topo.get_node(job_id)
             throttle_factor = 1.0 - (1.0 - throttle_factor) * node.propagation_weight
@@ -136,7 +139,7 @@ class BackpressureCoordinator:
             required: dict[str, float] = {}  # job_id → minimum factor (most restrictive)
             for sig_job_id, rec in self._pressure.items():
                 for job_id, hop in self._topo.upstream_ancestors(sig_job_id).items():
-                    attenuation = _HOP_ATTENUATION ** hop
+                    attenuation = _HOP_ATTENUATION**hop
                     factor = max(0.0, 1.0 - rec.signal.score * attenuation)
                     required[job_id] = min(required.get(job_id, 1.0), factor)
 

@@ -1,0 +1,5 @@
+services:
+  aqipipe:
+    build: .
+    image: air-quality-iot-pipeline:latest
+    command: ["info"]

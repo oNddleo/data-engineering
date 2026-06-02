@@ -29,9 +29,7 @@ class SlidingWindow(Window):
     def assign(self, event_time: float) -> list[WindowAssignment]:
         # Earliest window that could contain event_time ends at
         # the first multiple-of-slide that is > event_time.
-        last_start = (
-            math.floor(event_time / self.slide_seconds) * self.slide_seconds
-        )
+        last_start = math.floor(event_time / self.slide_seconds) * self.slide_seconds
         windows = []
         start = last_start
         while start + self.size_seconds > event_time:
@@ -47,6 +45,5 @@ class SlidingWindow(Window):
 
     def __repr__(self) -> str:
         return (
-            f"SlidingWindow(size={self.size_seconds}s, "
-            f"slide={self.slide_seconds}s)"
+            f"SlidingWindow(size={self.size_seconds}s, " f"slide={self.slide_seconds}s)"
         )

@@ -1,0 +1,5 @@
+services:
+  bhyt:
+    build: .
+    image: healthcare-claims-processor:latest
+    command: ["info"]

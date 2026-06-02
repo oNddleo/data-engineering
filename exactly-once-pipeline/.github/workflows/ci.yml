@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "exactly-once-pipeline/**"
+  pull_request:
+    paths:
+      - "exactly-once-pipeline/**"
+
+defaults:
+  run:
+    working-directory: exactly-once-pipeline
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: pip install -e . ruff mypy hypothesis pytest
+
+      - name: Ruff lint
+        run: python -m ruff check src/exactlyonce/ tests/
+
+      - name: Ruff format check
+        run: python -m ruff format --check src/exactlyonce/ tests/
+
+      - name: Mypy strict
+        run: python -m mypy --strict --package exactlyonce
+
+      - name: Pytest
+        run: python -m pytest tests/ -q --tb=short

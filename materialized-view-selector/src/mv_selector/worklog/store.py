@@ -7,16 +7,15 @@ optimizer always works with aggregate statistics rather than raw rows.
 
 from __future__ import annotations
 
-import json
 import sqlite3
+from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Generator, Optional
+from typing import Any
 
 from ..models import QueryRecord, Warehouse
 from ..query_analyzer import fingerprint
-
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS query_records (
@@ -44,7 +43,7 @@ CREATE TABLE IF NOT EXISTS ingestion_log (
 
 
 class WorklogStore:
-    def __init__(self, path: Optional[Path] = None) -> None:
+    def __init__(self, path: Path | None = None) -> None:
         self._path = path or Path(".worklog.db")
         self._init()
 
@@ -109,11 +108,11 @@ class WorklogStore:
 
     def load(
         self,
-        warehouse: Optional[Warehouse] = None,
+        warehouse: Warehouse | None = None,
         limit: int = 50_000,
     ) -> list[QueryRecord]:
         where = ""
-        params: list = []
+        params: list[Any] = []
         if warehouse:
             where = "WHERE warehouse = ?"
             params.append(warehouse.value)
@@ -125,17 +124,14 @@ class WorklogStore:
             ).fetchall()
         return [_row_to_record(r) for r in rows]
 
-    def record_ingestion(
-        self, warehouse: Warehouse, row_count: int
-    ) -> None:
+    def record_ingestion(self, warehouse: Warehouse, row_count: int) -> None:
         with self._db() as con:
             con.execute(
-                "INSERT INTO ingestion_log (warehouse, fetched_at, row_count) "
-                "VALUES (?,?,?)",
+                "INSERT INTO ingestion_log (warehouse, fetched_at, row_count) " "VALUES (?,?,?)",
                 (warehouse.value, datetime.utcnow().isoformat(), row_count),
             )
 
-    def stats(self) -> dict:
+    def stats(self) -> dict[str, Any]:
         with self._db() as con:
             total = con.execute(
                 "SELECT COUNT(*), SUM(frequency), SUM(cost_usd) FROM query_records"

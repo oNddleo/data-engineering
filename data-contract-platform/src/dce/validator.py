@@ -7,13 +7,14 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 
-from .contract import DataContract, FieldSchema, SLARule, SemanticRule
+from .contract import DataContract, FieldSchema
 
 # ------------------------------------------------------------------ #
 # Result types
 # ------------------------------------------------------------------ #
+
 
 @dataclass
 class ValidationIssue:
@@ -39,7 +40,7 @@ class ValidationResult:
     def warnings(self) -> list[ValidationIssue]:
         return [i for i in self.issues if i.severity == "warning"]
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "contract_id": self.contract_id,
             "contract_version": self.contract_version,
@@ -68,7 +69,7 @@ class ValidationResult:
 # Type mapping
 # ------------------------------------------------------------------ #
 
-_TYPE_MAP: dict[str, type | tuple] = {
+_TYPE_MAP: dict[str, type | tuple[type, ...]] = {
     "string": str,
     "integer": (int,),
     "number": (int, float),
@@ -80,21 +81,35 @@ _TYPE_MAP: dict[str, type | tuple] = {
 }
 
 _PANDAS_DTYPE_MAP: dict[str, list[str]] = {
-    "string":    ["object", "string", "StringDtype"],
-    "integer":   ["int8", "int16", "int32", "int64", "Int8", "Int16", "Int32", "Int64"],
-    "number":    ["float16", "float32", "float64", "int8", "int16", "int32", "int64",
-                  "Int8", "Int16", "Int32", "Int64", "Float32", "Float64"],
-    "boolean":   ["bool", "boolean"],
-    "date":      ["object", "string", "datetime64[ns]", "datetime64[us]"],
+    "string": ["object", "string", "StringDtype"],
+    "integer": ["int8", "int16", "int32", "int64", "Int8", "Int16", "Int32", "Int64"],
+    "number": [
+        "float16",
+        "float32",
+        "float64",
+        "int8",
+        "int16",
+        "int32",
+        "int64",
+        "Int8",
+        "Int16",
+        "Int32",
+        "Int64",
+        "Float32",
+        "Float64",
+    ],
+    "boolean": ["bool", "boolean"],
+    "date": ["object", "string", "datetime64[ns]", "datetime64[us]"],
     "timestamp": ["object", "string", "datetime64[ns]", "datetime64[us]"],
-    "array":     ["object"],
-    "object":    ["object"],
+    "array": ["object"],
+    "object": ["object"],
 }
 
 
 # ------------------------------------------------------------------ #
 # Validator
 # ------------------------------------------------------------------ #
+
 
 class ContractValidator:
     def __init__(self, contract: DataContract):
@@ -114,9 +129,13 @@ class ContractValidator:
         }
 
         self._check_schema(df, issues)
-        self._check_sla(df, issues, stats,
-                        freshness_seconds=freshness_seconds,
-                        latency_seconds=latency_seconds)
+        self._check_sla(
+            df,
+            issues,
+            stats,
+            freshness_seconds=freshness_seconds,
+            latency_seconds=latency_seconds,
+        )
         self._check_semantic(df, issues)
 
         has_errors = any(i.severity == "error" for i in issues)
@@ -138,11 +157,13 @@ class ContractValidator:
         # Required fields present
         for fname, fschema in field_map.items():
             if fname not in df.columns:
-                issues.append(ValidationIssue(
-                    rule="schema.required_field",
-                    severity="error",
-                    message=f"Required field '{fname}' missing from dataset",
-                ))
+                issues.append(
+                    ValidationIssue(
+                        rule="schema.required_field",
+                        severity="error",
+                        message=f"Required field '{fname}' missing from dataset",
+                    )
+                )
                 continue
 
             series = df[fname]
@@ -151,37 +172,47 @@ class ContractValidator:
 
             type_ok = any(dtype_str.startswith(a) or dtype_str == a for a in allowed)
             if not type_ok:
-                issues.append(ValidationIssue(
-                    rule="schema.type_mismatch",
-                    severity="error",
-                    message=(
-                        f"Field '{fname}' expected type '{fschema.type}' "
-                        f"but got pandas dtype '{dtype_str}'"
-                    ),
-                    details={"field": fname, "expected": fschema.type, "actual": dtype_str},
-                ))
+                issues.append(
+                    ValidationIssue(
+                        rule="schema.type_mismatch",
+                        severity="error",
+                        message=(
+                            f"Field '{fname}' expected type '{fschema.type}' "
+                            f"but got pandas dtype '{dtype_str}'"
+                        ),
+                        details={
+                            "field": fname,
+                            "expected": fschema.type,
+                            "actual": dtype_str,
+                        },
+                    )
+                )
 
             if not fschema.nullable:
                 null_count = int(series.isna().sum())
                 if null_count > 0:
-                    issues.append(ValidationIssue(
-                        rule="schema.null_violation",
-                        severity="error",
-                        message=f"Non-nullable field '{fname}' has {null_count} null value(s)",
-                        details={"field": fname, "null_count": null_count},
-                    ))
+                    issues.append(
+                        ValidationIssue(
+                            rule="schema.null_violation",
+                            severity="error",
+                            message=f"Non-nullable field '{fname}' has {null_count} null value(s)",
+                            details={"field": fname, "null_count": null_count},
+                        )
+                    )
 
             self._check_field_constraints(fname, series, fschema, issues)
 
         # Unexpected fields (warning only)
         for col in df.columns:
             if col not in field_map:
-                issues.append(ValidationIssue(
-                    rule="schema.unexpected_field",
-                    severity="warning",
-                    message=f"Field '{col}' not declared in contract",
-                    details={"field": col},
-                ))
+                issues.append(
+                    ValidationIssue(
+                        rule="schema.unexpected_field",
+                        severity="warning",
+                        message=f"Field '{col}' not declared in contract",
+                        details={"field": col},
+                    )
+                )
 
     def _check_field_constraints(
         self,
@@ -199,43 +230,54 @@ class ContractValidator:
         if "min" in c and len(non_null) > 0:
             bad = int((non_null < c["min"]).sum())
             if bad:
-                issues.append(ValidationIssue(
-                    rule="schema.constraint.min",
-                    severity="error",
-                    message=f"Field '{fname}': {bad} value(s) below min={c['min']}",
-                    details={"field": fname, "min": c["min"], "violations": bad},
-                ))
+                issues.append(
+                    ValidationIssue(
+                        rule="schema.constraint.min",
+                        severity="error",
+                        message=f"Field '{fname}': {bad} value(s) below min={c['min']}",
+                        details={"field": fname, "min": c["min"], "violations": bad},
+                    )
+                )
 
         if "max" in c and len(non_null) > 0:
             bad = int((non_null > c["max"]).sum())
             if bad:
-                issues.append(ValidationIssue(
-                    rule="schema.constraint.max",
-                    severity="error",
-                    message=f"Field '{fname}': {bad} value(s) above max={c['max']}",
-                    details={"field": fname, "max": c["max"], "violations": bad},
-                ))
+                issues.append(
+                    ValidationIssue(
+                        rule="schema.constraint.max",
+                        severity="error",
+                        message=f"Field '{fname}': {bad} value(s) above max={c['max']}",
+                        details={"field": fname, "max": c["max"], "violations": bad},
+                    )
+                )
 
         if "unique" in c and c["unique"]:
             dup_count = int(series.duplicated().sum())
             if dup_count:
-                issues.append(ValidationIssue(
-                    rule="schema.constraint.unique",
-                    severity="error",
-                    message=f"Field '{fname}': {dup_count} duplicate value(s)",
-                    details={"field": fname, "duplicate_count": dup_count},
-                ))
+                issues.append(
+                    ValidationIssue(
+                        rule="schema.constraint.unique",
+                        severity="error",
+                        message=f"Field '{fname}': {dup_count} duplicate value(s)",
+                        details={"field": fname, "duplicate_count": dup_count},
+                    )
+                )
 
         if "allowed_values" in c:
             allowed_set = set(c["allowed_values"])
             bad_vals = set(non_null.unique()) - allowed_set
             if bad_vals:
-                issues.append(ValidationIssue(
-                    rule="schema.constraint.allowed_values",
-                    severity="error",
-                    message=f"Field '{fname}': unexpected value(s) {sorted(str(v) for v in bad_vals)}",
-                    details={"field": fname, "unexpected": sorted(str(v) for v in bad_vals)},
-                ))
+                issues.append(
+                    ValidationIssue(
+                        rule="schema.constraint.allowed_values",
+                        severity="error",
+                        message=f"Field '{fname}': unexpected value(s) {sorted(str(v) for v in bad_vals)}",
+                        details={
+                            "field": fname,
+                            "unexpected": sorted(str(v) for v in bad_vals),
+                        },
+                    )
+                )
 
     # ---------------------------------------------------------------- #
 
@@ -252,15 +294,17 @@ class ContractValidator:
                 row_count = len(df)
                 stats["row_count"] = row_count
                 if row_count < rule.threshold:
-                    issues.append(ValidationIssue(
-                        rule=f"sla.{rule.name}",
-                        severity="error",
-                        message=(
-                            f"SLA '{rule.name}': row count {row_count} "
-                            f"below threshold {rule.threshold}"
-                        ),
-                        details={"actual": row_count, "threshold": rule.threshold},
-                    ))
+                    issues.append(
+                        ValidationIssue(
+                            rule=f"sla.{rule.name}",
+                            severity="error",
+                            message=(
+                                f"SLA '{rule.name}': row count {row_count} "
+                                f"below threshold {rule.threshold}"
+                            ),
+                            details={"actual": row_count, "threshold": rule.threshold},
+                        )
+                    )
 
             elif rule.rule_type == "completeness":
                 # threshold is minimum non-null fraction (0–1)
@@ -268,48 +312,64 @@ class ContractValidator:
                 if len(df) == 0:
                     continue
                 required_cols = [
-                    f.name for f in self.contract.fields
+                    f.name
+                    for f in self.contract.fields
                     if not f.nullable and f.name in df.columns
                 ]
                 subset = df[required_cols] if required_cols else df
                 completeness = float(subset.notna().mean().mean())
                 stats["completeness"] = round(completeness, 4)
                 if completeness < rule.threshold:
-                    issues.append(ValidationIssue(
-                        rule=f"sla.{rule.name}",
-                        severity="error",
-                        message=(
-                            f"SLA '{rule.name}': completeness {completeness:.2%} "
-                            f"below threshold {rule.threshold:.2%}"
-                        ),
-                        details={"actual": completeness, "threshold": rule.threshold},
-                    ))
+                    issues.append(
+                        ValidationIssue(
+                            rule=f"sla.{rule.name}",
+                            severity="error",
+                            message=(
+                                f"SLA '{rule.name}': completeness {completeness:.2%} "
+                                f"below threshold {rule.threshold:.2%}"
+                            ),
+                            details={
+                                "actual": completeness,
+                                "threshold": rule.threshold,
+                            },
+                        )
+                    )
 
             elif rule.rule_type == "freshness" and freshness_seconds is not None:
                 stats["freshness_seconds"] = freshness_seconds
                 if freshness_seconds > rule.threshold:
-                    issues.append(ValidationIssue(
-                        rule=f"sla.{rule.name}",
-                        severity="error",
-                        message=(
-                            f"SLA '{rule.name}': data is {freshness_seconds}s old, "
-                            f"max allowed {rule.threshold}{rule.unit}"
-                        ),
-                        details={"actual_seconds": freshness_seconds, "threshold": rule.threshold},
-                    ))
+                    issues.append(
+                        ValidationIssue(
+                            rule=f"sla.{rule.name}",
+                            severity="error",
+                            message=(
+                                f"SLA '{rule.name}': data is {freshness_seconds}s old, "
+                                f"max allowed {rule.threshold}{rule.unit}"
+                            ),
+                            details={
+                                "actual_seconds": freshness_seconds,
+                                "threshold": rule.threshold,
+                            },
+                        )
+                    )
 
             elif rule.rule_type == "latency" and latency_seconds is not None:
                 stats["latency_seconds"] = latency_seconds
                 if latency_seconds > rule.threshold:
-                    issues.append(ValidationIssue(
-                        rule=f"sla.{rule.name}",
-                        severity="error",
-                        message=(
-                            f"SLA '{rule.name}': pipeline latency {latency_seconds}s "
-                            f"exceeded threshold {rule.threshold}{rule.unit}"
-                        ),
-                        details={"actual_seconds": latency_seconds, "threshold": rule.threshold},
-                    ))
+                    issues.append(
+                        ValidationIssue(
+                            rule=f"sla.{rule.name}",
+                            severity="error",
+                            message=(
+                                f"SLA '{rule.name}': pipeline latency {latency_seconds}s "
+                                f"exceeded threshold {rule.threshold}{rule.unit}"
+                            ),
+                            details={
+                                "actual_seconds": latency_seconds,
+                                "threshold": rule.threshold,
+                            },
+                        )
+                    )
 
     # ---------------------------------------------------------------- #
 
@@ -318,16 +378,20 @@ class ContractValidator:
             try:
                 result = eval(rule.expression, {"df": df, "pd": pd})  # noqa: S307
                 if result is False or (hasattr(result, "all") and not result.all()):
-                    issues.append(ValidationIssue(
-                        rule=f"semantic.{rule.name}",
-                        severity=rule.severity,
-                        message=f"Semantic rule '{rule.name}' failed: {rule.description}",
-                        details={"expression": rule.expression},
-                    ))
+                    issues.append(
+                        ValidationIssue(
+                            rule=f"semantic.{rule.name}",
+                            severity=rule.severity,
+                            message=f"Semantic rule '{rule.name}' failed: {rule.description}",
+                            details={"expression": rule.expression},
+                        )
+                    )
             except Exception as exc:
-                issues.append(ValidationIssue(
-                    rule=f"semantic.{rule.name}",
-                    severity="error",
-                    message=f"Semantic rule '{rule.name}' raised an exception: {exc}",
-                    details={"expression": rule.expression, "error": str(exc)},
-                ))
+                issues.append(
+                    ValidationIssue(
+                        rule=f"semantic.{rule.name}",
+                        severity="error",
+                        message=f"Semantic rule '{rule.name}' raised an exception: {exc}",
+                        details={"expression": rule.expression, "error": str(exc)},
+                    )
+                )

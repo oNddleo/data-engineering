@@ -1,0 +1,5 @@
+services:
+  vnprop:
+    build: .
+    image: vn-property-listing-normalizer:latest
+    command: ["info"]

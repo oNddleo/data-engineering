@@ -8,19 +8,21 @@ Writes to two sinks atomically:
 Idempotency key prevents the same notification from being sent twice even
 if the consumer crashes between processing and committing the Kafka offset.
 """
+
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import redis
 import structlog
-
 from src.config import settings
 from src.consumers.base_consumer import BaseConsumer
 from src.db import transaction
 from src.models import TransactionStep
-from src.recovery.failure_injector import FailureInjector
+
+if TYPE_CHECKING:
+    from src.recovery.failure_injector import FailureInjector
 
 log = structlog.get_logger(__name__)
 
@@ -68,20 +70,24 @@ class NotificationConsumer(BaseConsumer):
             )
 
         # ── Push to Redis notification queue ──────────────────────────
-        notification = json.dumps({
-            "idempotency_key": idempotency_key,
-            "payment_id": payment_id,
-            "recipient": sender,
-            "subject": subject,
-            "body": body,
-        })
+        notification = json.dumps(
+            {
+                "idempotency_key": idempotency_key,
+                "payment_id": payment_id,
+                "recipient": sender,
+                "subject": subject,
+                "body": body,
+            }
+        )
         r = get_redis()
         pipe = r.pipeline()
         pipe.lpush(f"notifications:{sender}", notification)
         pipe.expire(f"notifications:{sender}", 86400)
         pipe.execute()
 
-        log.info("notification.sent",
-                 payment_id=payment_id,
-                 idempotency_key=idempotency_key,
-                 recipient=sender)
+        log.info(
+            "notification.sent",
+            payment_id=payment_id,
+            idempotency_key=idempotency_key,
+            recipient=sender,
+        )

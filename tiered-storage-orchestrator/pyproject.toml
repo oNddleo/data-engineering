@@ -54,4 +54,8 @@ select = ["E", "F", "I", "UP"]
 
 [tool.mypy]
 python_version = "3.11"
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["boto3.*", "botocore.*", "redis.*", "asyncpg.*", "pyarrow.*", "fakeredis.*", "moto.*", "dotenv.*"]
 ignore_missing_imports = true

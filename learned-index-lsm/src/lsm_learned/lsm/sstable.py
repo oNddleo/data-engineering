@@ -12,11 +12,11 @@ The index is kept in memory; data records are read on demand via mmap.
 
 from __future__ import annotations
 
+import io
 import mmap
-import os
 import struct
 from pathlib import Path
-from typing import Iterator, Optional
+from typing import Any, Iterator, Optional
 
 import numpy as np
 
@@ -25,12 +25,12 @@ from ..indexes.bloom import BloomFilter
 from ..indexes.rmi import RMI
 
 _MAGIC = b"LSMLRND1"
-_HEADER_FMT = ">8sQII"   # magic, num_entries, index_interval, reserved
+_HEADER_FMT = ">8sQII"  # magic, num_entries, index_interval, reserved
 _HEADER_SIZE = struct.calcsize(_HEADER_FMT)
-_RECORD_FMT = ">qq"      # key (int64), value (int64)
+_RECORD_FMT = ">qq"  # key (int64), value (int64)
 _RECORD_SIZE = struct.calcsize(_RECORD_FMT)
 _TOMBSTONE_VALUE = -(2**63)
-_INDEX_INTERVAL = 128    # one sparse-index entry per N records
+_INDEX_INTERVAL = 128  # one sparse-index entry per N records
 
 
 class SSTableBuilder:
@@ -62,8 +62,8 @@ class SSTableBuilder:
                 f.write(struct.pack(_RECORD_FMT, k, raw_v))
 
             # Write sparse index after data
-            index_start = f.tell()
-            for (ik, io_) in sparse_index:
+            _index_start = f.tell()  # noqa: F841
+            for ik, io_ in sparse_index:
                 f.write(struct.pack(">qq", ik, io_))
 
             # Rewrite header with correct values
@@ -86,11 +86,13 @@ class SSTable:
         self._path = Path(path)
         self._use_rmi = use_rmi
         self._mmap: mmap.mmap | None = None
-        self._file = None
+        self._file: io.BufferedReader | None = None
         self._num_entries = 0
         self._index_interval = _INDEX_INTERVAL
-        self._sparse_keys: np.ndarray = np.array([], dtype=np.int64)
-        self._sparse_offsets: np.ndarray = np.array([], dtype=np.int64)
+        self._sparse_keys: np.ndarray[Any, np.dtype[Any]] = np.array([], dtype=np.int64)
+        self._sparse_offsets: np.ndarray[Any, np.dtype[Any]] = np.array(
+            [], dtype=np.int64
+        )
         self._bloom: BloomFilter | None = None
         self._rmi: RMI | None = None
         self._btree: BTreeIndex | None = None

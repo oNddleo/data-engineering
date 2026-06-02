@@ -93,7 +93,7 @@ class UCBPolicy:
     """UCB1 contextual bandit over a fixed action set."""
 
     actions: list[Action]
-    c: float = math.sqrt(2.0)
+    c: float = 1.4142135623730951
     _plays: dict[str, int] = field(default_factory=lambda: defaultdict(int))
     _reward_sum: dict[str, float] = field(default_factory=lambda: defaultdict(float))
     _total_plays: int = 0

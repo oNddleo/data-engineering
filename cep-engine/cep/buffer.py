@@ -10,7 +10,7 @@ Layout (bytes):
 
 import struct
 from multiprocessing.shared_memory import SharedMemory
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 
@@ -42,8 +42,10 @@ class RingBuffer:
             self._shm = SharedMemory(name=name, create=False)
             self._owner = False
 
-        self._header = np.ndarray((8,), dtype=np.int64, buffer=self._shm.buf[:_HEADER_BYTES])
-        self._data = np.ndarray(
+        self._header: np.ndarray[Any, np.dtype[Any]] = np.ndarray(
+            (8,), dtype=np.int64, buffer=self._shm.buf[:_HEADER_BYTES]
+        )
+        self._data: np.ndarray[Any, np.dtype[Any]] = np.ndarray(
             (capacity,), dtype=EVENT_DTYPE, buffer=self._shm.buf[_HEADER_BYTES:]
         )
 
@@ -76,7 +78,7 @@ class RingBuffer:
         # with a short spin.
         self._header[0] += 1
 
-    def push_batch(self, events: np.ndarray) -> None:
+    def push_batch(self, events: np.ndarray[Any, np.dtype[Any]]) -> None:
         """Write a contiguous batch of events (faster for bulk ingestion)."""
         n = len(events)
         cursor = int(self._header[0])
@@ -86,7 +88,7 @@ class RingBuffer:
         self._header[0] = cursor + n
 
     # ------------------------------------------------------------------
-    def read_recent(self, n: int) -> np.ndarray:
+    def read_recent(self, n: int) -> np.ndarray[Any, np.dtype[Any]]:
         """Return up to the last *n* events as a contiguous numpy array copy."""
         cursor = int(self._header[0])
         n = min(n, cursor, self._capacity)
@@ -102,7 +104,7 @@ class RingBuffer:
             # Wrap-around: stitch two slices
             return np.concatenate([self._data[start:], self._data[:end]])
 
-    def read_from_cursor(self, from_cursor: int) -> tuple[np.ndarray, int]:
+    def read_from_cursor(self, from_cursor: int) -> tuple[np.ndarray[Any, np.dtype[Any]], int]:
         """
         Return all events since *from_cursor* and the new cursor position.
 
@@ -125,7 +127,7 @@ class RingBuffer:
         if self._owner:
             self._shm.unlink()
 
-    def __del__(self):
+    def __del__(self) -> None:
         try:
             self._shm.close()
             if self._owner:

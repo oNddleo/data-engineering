@@ -1,0 +1,5 @@
+services:
+  shopeedw:
+    build: .
+    image: shopee-product-scraper-warehouse:latest
+    command: ["info"]

@@ -1,0 +1,32 @@
+name: self-describing-data-warehouse
+on:
+  push:
+    paths: ["self-describing-data-warehouse/**", ".github/workflows/ci.yml"]
+  pull_request:
+    paths: ["self-describing-data-warehouse/**", ".github/workflows/ci.yml"]
+jobs:
+  ci:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: self-describing-data-warehouse
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: self-describing-data-warehouse/pyproject.toml
+      - name: Install
+        run: pip install -e ".[dev]" mypy ruff
+      - name: Lint
+        run: python -m ruff check warehouse/ tests/
+      - name: Type check
+        run: python -m mypy --strict warehouse/
+      - name: Test
+        run: python -m pytest tests/ -q

@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import json
-import sqlite3
 from datetime import datetime
-from pathlib import Path
-from typing import Any
 
-import aiosqlite
+import aiosqlite  # type: ignore[import-not-found]
 
-from .models import CompatibilityMode, MigrationScript, MigrationStep, SchemaType, SchemaVersion, SubjectConfig
+from .models import (
+    CompatibilityMode,
+    MigrationScript,
+    MigrationStep,
+    SchemaType,
+    SchemaVersion,
+    SubjectConfig,
+)
 
 
 DB_SCHEMA = """
@@ -170,7 +174,7 @@ class Storage:
             "DELETE FROM schema_versions WHERE subject = ? AND version = ?", (subject, version)
         )
         await self.db.commit()
-        return cur.rowcount > 0
+        return bool(cur.rowcount > 0)
 
     def _row_to_schema_version(self, row: aiosqlite.Row) -> SchemaVersion:
         return SchemaVersion(
@@ -211,7 +215,9 @@ class Storage:
         script.id = cursor.lastrowid
         return script
 
-    async def get_migration(self, subject: str, from_version: int, to_version: int) -> MigrationScript | None:
+    async def get_migration(
+        self, subject: str, from_version: int, to_version: int
+    ) -> MigrationScript | None:
         async with self.db.execute(
             "SELECT * FROM migration_scripts WHERE subject=? AND from_version=? AND to_version=?",
             (subject, from_version, to_version),

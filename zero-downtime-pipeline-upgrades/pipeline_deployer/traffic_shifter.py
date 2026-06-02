@@ -3,27 +3,32 @@ Traffic shifter — gradually moves traffic from v1 to v2 in steps,
 gated on the divergence tracker staying below the configured threshold.
 """
 
+from __future__ import annotations
+
 import logging
 import threading
 import time
 from enum import Enum, auto
-from typing import Callable, Dict, Any, Optional
+from typing import TYPE_CHECKING, Any
 
-from .comparator import DivergenceTracker
-from .config import DeploymentConfig
-from .shadow_runner import ShadowRunner
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from .comparator import DivergenceTracker
+    from .config import DeploymentConfig
+    from .shadow_runner import ShadowRunner
 
 logger = logging.getLogger(__name__)
 
 
 class ShiftState(Enum):
-    IDLE = auto()          # Not yet started
-    SHADOW_ONLY = auto()   # v2 running in shadow, 0 % live traffic
-    SHIFTING = auto()      # Actively stepping traffic toward v2
-    PROMOTED = auto()      # v2 at 100 %, v1 still in shadow for safety
-    ROLLED_BACK = auto()   # Returned to v1 due to divergence spike
-    PAUSED = auto()        # Operator paused automatic shifting
-    COMPLETE = auto()      # v1 shadow torn down — upgrade fully complete
+    IDLE = auto()  # Not yet started
+    SHADOW_ONLY = auto()  # v2 running in shadow, 0 % live traffic
+    SHIFTING = auto()  # Actively stepping traffic toward v2
+    PROMOTED = auto()  # v2 at 100 %, v1 still in shadow for safety
+    ROLLED_BACK = auto()  # Returned to v1 due to divergence spike
+    PAUSED = auto()  # Operator paused automatic shifting
+    COMPLETE = auto()  # v1 shadow torn down — upgrade fully complete
 
 
 class TrafficShifter:
@@ -55,8 +60,8 @@ class TrafficShifter:
         runner: ShadowRunner,
         tracker: DivergenceTracker,
         config: DeploymentConfig,
-        on_promoted: Optional[Callable[[], None]] = None,
-        on_rolled_back: Optional[Callable[[], None]] = None,
+        on_promoted: Callable[[], None] | None = None,
+        on_rolled_back: Callable[[], None] | None = None,
     ) -> None:
         self.runner = runner
         self.tracker = tracker
@@ -65,10 +70,10 @@ class TrafficShifter:
         self.on_rolled_back = on_rolled_back
 
         self._state = ShiftState.IDLE
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
         self._stop_event = threading.Event()
         self._state_lock = threading.Lock()
-        self._shift_history: list[Dict[str, Any]] = []
+        self._shift_history: list[dict[str, Any]] = []
 
     # ------------------------------------------------------------------
     # State
@@ -142,8 +147,12 @@ class TrafficShifter:
 
     def _tick(self) -> None:
         state = self._state
-        if state in (ShiftState.IDLE, ShiftState.PAUSED,
-                     ShiftState.ROLLED_BACK, ShiftState.COMPLETE):
+        if state in (
+            ShiftState.IDLE,
+            ShiftState.PAUSED,
+            ShiftState.ROLLED_BACK,
+            ShiftState.COMPLETE,
+        ):
             return
 
         divergence = self.tracker.window_divergence_rate
@@ -152,7 +161,10 @@ class TrafficShifter:
 
         logger.info(
             "Tick | state=%s v2=%.0f%% divergence=%.2f%% samples=%d",
-            state.name, current_pct * 100, divergence * 100, samples,
+            state.name,
+            current_pct * 100,
+            divergence * 100,
+            samples,
         )
 
         # Rollback check (runs even when PROMOTED — v2 may still regress)
@@ -161,7 +173,8 @@ class TrafficShifter:
             and current_pct > 0.0
             and divergence > self.config.rollback_threshold
         ):
-            self._do_rollback(reason=f"divergence={divergence:.2%} > rollback_threshold={self.config.rollback_threshold:.2%}")
+            rb = self.config.rollback_threshold
+            self._do_rollback(reason=f"divergence={divergence:.2%} > rollback_threshold={rb:.2%}")
             return
 
         # Nothing more to do once fully promoted
@@ -170,14 +183,18 @@ class TrafficShifter:
 
         # Gate: need enough samples before advancing
         if samples < self.config.min_samples_for_promotion:
-            logger.info("Waiting for more samples (%d/%d)", samples, self.config.min_samples_for_promotion)
+            logger.info(
+                "Waiting for more samples (%d/%d)", samples, self.config.min_samples_for_promotion
+            )
             return
 
         # Gate: divergence must be below threshold
         if divergence > self.config.divergence_threshold:
             logger.info(
                 "Divergence too high (%.2f%% > %.2f%%) — holding at v2=%.0f%%",
-                divergence * 100, self.config.divergence_threshold * 100, current_pct * 100,
+                divergence * 100,
+                self.config.divergence_threshold * 100,
+                current_pct * 100,
             )
             return
 
@@ -212,13 +229,15 @@ class TrafficShifter:
     # History
     # ------------------------------------------------------------------
 
-    def _record_shift_event(self, event: str, v2_pct: float, **extra) -> None:
-        self._shift_history.append({
-            "ts": time.time(),
-            "event": event,
-            "v2_percentage": round(v2_pct, 4),
-            **extra,
-        })
+    def _record_shift_event(self, event: str, v2_pct: float, **extra: Any) -> None:
+        self._shift_history.append(
+            {
+                "ts": time.time(),
+                "event": event,
+                "v2_percentage": round(v2_pct, 4),
+                **extra,
+            }
+        )
 
-    def history(self) -> list:
+    def history(self) -> list[dict[str, Any]]:
         return list(self._shift_history)

@@ -3,9 +3,11 @@ Usage tracker — records every query against the warehouse and aggregates
 popularity stats for the recommender.
 """
 
+from __future__ import annotations
+
 import sqlite3
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any
 
 
 def _now() -> str:
@@ -33,7 +35,7 @@ class UsageTracker:
         )
         self.conn.commit()
 
-    def stats(self, table_name: str) -> dict:
+    def stats(self, table_name: str) -> dict[str, Any]:
         row = self.conn.execute(
             """
             SELECT
@@ -48,7 +50,7 @@ class UsageTracker:
         ).fetchone()
         return dict(row) if row else {}
 
-    def top_tables(self, limit: int = 10) -> list[dict]:
+    def top_tables(self, limit: int = 10) -> list[dict[str, Any]]:
         """Tables ranked by query frequency."""
         rows = self.conn.execute(
             """
@@ -64,7 +66,7 @@ class UsageTracker:
         ).fetchall()
         return [dict(r) for r in rows]
 
-    def top_users(self, table_name: str, limit: int = 5) -> list[dict]:
+    def top_users(self, table_name: str, limit: int = 5) -> list[dict[str, Any]]:
         rows = self.conn.execute(
             """
             SELECT queried_by, COUNT(*) as query_count
@@ -78,7 +80,7 @@ class UsageTracker:
         ).fetchall()
         return [dict(r) for r in rows]
 
-    def recent_queries(self, table_name: str, limit: int = 5) -> list[dict]:
+    def recent_queries(self, table_name: str, limit: int = 5) -> list[dict[str, Any]]:
         rows = self.conn.execute(
             """
             SELECT queried_at, queried_by, query_preview, execution_ms
@@ -106,7 +108,7 @@ class UsageTracker:
                 if last_dt.tzinfo is None:
                     last_dt = last_dt.replace(tzinfo=timezone.utc)
                 days_ago = (datetime.now(timezone.utc) - last_dt).days
-                recency_score = max(0, 100 - days_ago * 10)
+                recency_score = float(max(0, 100 - days_ago * 10))
             except ValueError:
                 recency_score = 0.0
         else:

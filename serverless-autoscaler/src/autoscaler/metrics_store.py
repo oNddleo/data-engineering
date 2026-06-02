@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
 
 from sqlalchemy import (
     Boolean,
@@ -22,7 +21,7 @@ from .models import ColdStartSavingRecord, JobRun, JobStatus, ScalingAction
 logger = logging.getLogger(__name__)
 
 
-class Base(DeclarativeBase):
+class Base(DeclarativeBase):  # type: ignore[misc]
     pass
 
 
@@ -112,7 +111,7 @@ class MetricsStore:
             )
         return [self._row_to_run(r) for r in rows]
 
-    def get_run(self, run_id: str) -> Optional[JobRun]:
+    def get_run(self, run_id: str) -> JobRun | None:
         with Session(self._engine) as s:
             row = s.get(JobRunRow, run_id)
             return self._row_to_run(row) if row else None
@@ -165,7 +164,7 @@ class MetricsStore:
                     "FROM cold_start_savings"
                 )
             ).scalar()
-        return float(result)
+        return float(result if result is not None else 0)
 
     def savings_by_job(self) -> dict[str, float]:
         with Session(self._engine) as s:
@@ -184,11 +183,7 @@ class MetricsStore:
     def purge_old_records(self) -> int:
         cutoff = datetime.utcnow() - timedelta(days=self._retention_days)
         with Session(self._engine) as s:
-            deleted = (
-                s.query(JobRunRow)
-                .filter(JobRunRow.finished_at < cutoff)
-                .delete()
-            )
+            deleted = int(s.query(JobRunRow).filter(JobRunRow.finished_at < cutoff).delete())
             s.commit()
         logger.info("Purged %d old job run records", deleted)
         return deleted

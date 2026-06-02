@@ -3,9 +3,10 @@
 Each operator is an iterator that yields rows on demand.
 The root operator drives everything top-down; data flows bottom-up.
 """
+
 from __future__ import annotations
 from collections import defaultdict
-from typing import Iterator
+from typing import Any, Iterator
 
 from .catalog import Catalog
 from .expressions import Row
@@ -60,7 +61,9 @@ class VolcanoExecutor:
             case BufferNode():
                 yield from node.rows
             case _:
-                raise NotImplementedError(f"No volcano executor for {type(node).__name__}")
+                raise NotImplementedError(
+                    f"No volcano executor for {type(node).__name__}"
+                )
 
     # ------------------------------------------------------------------
     # Operator implementations
@@ -114,19 +117,19 @@ class VolcanoExecutor:
 
     def _aggregate(self, node: AggregateNode) -> Iterator[Row]:
         assert node.child
-        groups: dict[tuple, dict] = {}
+        groups: dict[tuple[Any, ...], dict[str, Any]] = {}
 
         for row in self._iter(node.child):
             group_key = tuple(row.get(c) for c in node.group_by)
             if group_key not in groups:
-                groups[group_key] = {
-                    col: row.get(col) for col in node.group_by
-                }
+                groups[group_key] = {col: row.get(col) for col in node.group_by}
                 for out_col, func, _ in node.aggregates:
                     groups[group_key][out_col] = _agg_init(func)
             for out_col, func, in_col in node.aggregates:
                 val = 1 if in_col == "*" else row.get(in_col)
-                groups[group_key][out_col] = _agg_step(func, groups[group_key][out_col], val)
+                groups[group_key][out_col] = _agg_step(
+                    func, groups[group_key][out_col], val
+                )
 
         for group_key, acc in groups.items():
             result = dict(acc)
@@ -138,7 +141,9 @@ class VolcanoExecutor:
         assert node.child
         rows = list(self._iter(node.child))
         for col, ascending in reversed(node.order_by):
-            rows.sort(key=lambda r: (r.get(col) is None, r.get(col)), reverse=not ascending)
+            rows.sort(
+                key=lambda r: (r.get(col) is None, r.get(col)), reverse=not ascending
+            )
         yield from rows
 
     def _limit(self, node: LimitNode) -> Iterator[Row]:
@@ -158,8 +163,6 @@ class VolcanoExecutor:
 # ------------------------------------------------------------------
 # Aggregate helpers
 # ------------------------------------------------------------------
-
-from typing import Any
 
 
 def _agg_init(func: str) -> Any:

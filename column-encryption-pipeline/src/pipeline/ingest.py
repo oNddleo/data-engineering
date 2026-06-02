@@ -36,7 +36,7 @@ class IngestPipeline:
         engine: EncryptionEngine | None = None,
         registry: KeyRegistry | None = None,
         store: RecordStore | None = None,
-    ):
+    ) -> None:
         cfg = get_config()
         self._kms = kms_client or KMSClient()
         self._engine = engine or EncryptionEngine(self._kms)
@@ -131,5 +131,8 @@ class IngestPipeline:
         if customer is None:
             raise CustomerNotFoundError(f"Customer not registered: {customer_id}")
         if customer.forgotten:
-            raise CustomerForgottenError(f"Customer {customer_id} has been forgotten — data is cryptographically inaccessible")
+            raise CustomerForgottenError(
+                f"Customer {customer_id} has been forgotten"
+                " — data is cryptographically inaccessible"
+            )
         return customer

@@ -1,5 +1,5 @@
 from pathlib import Path
-import yaml
+import yaml  # type: ignore[import-untyped]
 from .models import PipelineConfig, RunResult
 from .sources import SOURCE_REGISTRY
 from .destinations import DESTINATION_REGISTRY
@@ -37,7 +37,9 @@ def run_pipeline(config: PipelineConfig) -> RunResult:
         source = source_cls(config.source.params)
         records = source.fetch(config.source.query)
         rows_extracted = len(records)
-        logger.info(f"[{config.name}] extracted {rows_extracted} rows from {config.source.type}")
+        logger.info(
+            f"[{config.name}] extracted {rows_extracted} rows from {config.source.type}"
+        )
 
         # 2. Transform
         mapper = FieldMapper(config.destination.field_mappings)
@@ -49,7 +51,9 @@ def run_pipeline(config: PipelineConfig) -> RunResult:
             raise ValueError(f"Unknown destination type: {config.destination.type!r}")
         dest = dest_cls(config.destination.params)
         rows_synced = dest.send(records)
-        logger.info(f"[{config.name}] synced {rows_synced} rows to {config.destination.type}")
+        logger.info(
+            f"[{config.name}] synced {rows_synced} rows to {config.destination.type}"
+        )
 
         return RunResult(
             pipeline=config.name,

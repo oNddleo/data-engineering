@@ -19,12 +19,13 @@ class SlackDestination(BaseDestination):
 
     def __init__(self, params: dict[str, Any]) -> None:
         super().__init__(params)
-        from slack_sdk import WebClient  # lazy import — optional dependency
+        from slack_sdk import WebClient  # type: ignore[import-not-found]  # lazy import — optional dependency
+
         token = params.get("token", settings.slack_bot_token)
         self._client = WebClient(token=token)
-        self._channel = params["channel"]
-        self._template = params.get("message_template", "{record}")
-        self._batch_summary = params.get("batch_summary", False)
+        self._channel: str = params["channel"]
+        self._template: str = params.get("message_template", "{record}")
+        self._batch_summary: bool = params.get("batch_summary", False)
 
     def _format_record(self, record: dict[str, Any]) -> str:
         try:
@@ -36,7 +37,8 @@ class SlackDestination(BaseDestination):
         self._client.chat_postMessage(channel=self._channel, text=text)
 
     def send(self, records: list[dict[str, Any]]) -> int:
-        from slack_sdk.errors import SlackApiError  # lazy import
+        from slack_sdk.errors import SlackApiError  # type: ignore[import-not-found]  # lazy import
+
         if not records:
             return 0
 
@@ -58,6 +60,10 @@ class SlackDestination(BaseDestination):
                 self._post(self._format_record(record))
                 synced += 1
             except SlackApiError as e:
-                logger.error(f"SlackDestination: failed on record {record}: {e.response['error']}")
-        logger.info(f"SlackDestination: sent {synced}/{len(records)} messages to {self._channel}")
+                logger.error(
+                    f"SlackDestination: failed on record {record}: {e.response['error']}"
+                )
+        logger.info(
+            f"SlackDestination: sent {synced}/{len(records)} messages to {self._channel}"
+        )
         return synced

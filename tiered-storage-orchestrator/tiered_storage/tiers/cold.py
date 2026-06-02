@@ -13,8 +13,8 @@ try:
     import boto3
     from botocore.exceptions import ClientError
 except ImportError:
-    boto3 = None  # type: ignore
-    ClientError = Exception  # type: ignore
+    boto3 = None
+    ClientError = Exception
 
 from tiered_storage.schemas import DataRecord, Tier, TierMetrics
 from tiered_storage.tiers.base import BaseTier
@@ -51,10 +51,10 @@ class ColdTier(BaseTier):
         self._prefix = prefix.rstrip("/")
         self._use_glacier = use_glacier
         self._s3: Any = None
-        self._s3_kwargs: dict = {"region_name": region}
+        self._s3_kwargs: dict[str, Any] = {"region_name": region}
         if endpoint_url:
             self._s3_kwargs["endpoint_url"] = endpoint_url
-        self._manifest: dict[str, dict] = {}
+        self._manifest: dict[str, dict[str, Any]] = {}
 
     def connect(self) -> None:
         if self._local:
@@ -88,6 +88,7 @@ class ColdTier(BaseTier):
             )
 
     def _object_path(self, key: str) -> Path:
+        assert self._local is not None, "_object_path called without local_path configured"
         safe = key.replace("/", "__")
         return self._local / f"{safe}.json.gz"
 
@@ -103,7 +104,7 @@ class ColdTier(BaseTier):
         if key not in self._manifest:
             return None
 
-        data: Optional[dict] = None
+        data: Optional[dict[str, Any]] = None
 
         if self._local:
             path = self._object_path(key)
@@ -206,7 +207,7 @@ class ColdTier(BaseTier):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _record_to_dict(r: DataRecord) -> dict:
+    def _record_to_dict(r: DataRecord) -> dict[str, Any]:
         return {
             "key": r.key,
             "value": r.value,
@@ -219,7 +220,7 @@ class ColdTier(BaseTier):
         }
 
     @staticmethod
-    def _dict_to_record(d: dict) -> DataRecord:
+    def _dict_to_record(d: dict[str, Any]) -> DataRecord:
         return DataRecord(
             key=d["key"],
             value=d["value"],

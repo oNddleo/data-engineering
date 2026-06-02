@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone, timedelta
-import random
+from datetime import datetime, timezone
 
 from .models import (
-    AnalysisReport, ExpensivePattern, Platform, QueryRecord,
-    Recommendation, RecommendationType, Severity, TableStats,
+    AnalysisReport,
+    ExpensivePattern,
+    Platform,
+    Recommendation,
+    RecommendationType,
+    Severity,
+    TableStats,
 )
 
 
@@ -18,12 +22,14 @@ def build_demo_report(platform: str = "bigquery") -> AnalysisReport:
     # ── synthetic tables ───────────────────────────────────────────────
     tables = [
         TableStats(
-            table_id="myproject.analytics.events" if plat == Platform.BIGQUERY else "ANALYTICS.PUBLIC.EVENTS",
+            table_id="myproject.analytics.events"
+            if plat == Platform.BIGQUERY
+            else "ANALYTICS.PUBLIC.EVENTS",
             platform=plat,
             row_count=2_400_000_000,
-            size_bytes=1_200 * 1024 ** 3,
+            size_bytes=1_200 * 1024**3,
             query_count=3_421,
-            total_bytes_scanned=980 * 1024 ** 4,
+            total_bytes_scanned=980 * 1024**4,
             total_cost_usd=5_975.0,
             filter_columns=["event_date", "user_id", "country", "event_type"],
             join_columns=["user_id"],
@@ -33,21 +39,23 @@ def build_demo_report(platform: str = "bigquery") -> AnalysisReport:
             table_id="myproject.dw.orders" if plat == Platform.BIGQUERY else "DW.PUBLIC.ORDERS",
             platform=plat,
             row_count=180_000_000,
-            size_bytes=90 * 1024 ** 3,
+            size_bytes=90 * 1024**3,
             query_count=1_102,
-            total_bytes_scanned=72 * 1024 ** 4,
+            total_bytes_scanned=72 * 1024**4,
             total_cost_usd=450.0,
             filter_columns=["created_at", "status", "customer_id"],
             join_columns=["customer_id", "product_id"],
             group_by_columns=["created_at", "status"],
         ),
         TableStats(
-            table_id="myproject.ml.feature_store" if plat == Platform.BIGQUERY else "ML.PUBLIC.FEATURE_STORE",
+            table_id="myproject.ml.feature_store"
+            if plat == Platform.BIGQUERY
+            else "ML.PUBLIC.FEATURE_STORE",
             platform=plat,
             row_count=50_000_000,
-            size_bytes=25 * 1024 ** 3,
+            size_bytes=25 * 1024**3,
             query_count=680,
-            total_bytes_scanned=18 * 1024 ** 4,
+            total_bytes_scanned=18 * 1024**4,
             total_cost_usd=112.5,
             filter_columns=["snapshot_date", "entity_id"],
             join_columns=["entity_id"],
@@ -71,7 +79,9 @@ def build_demo_report(platform: str = "bigquery") -> AnalysisReport:
                 "CREATE OR REPLACE TABLE `myproject.analytics.events`\n"
                 "PARTITION BY DATE(event_date)\n"
                 "AS SELECT * FROM `myproject.analytics.events`;"
-            ) if plat == Platform.BIGQUERY else (
+            )
+            if plat == Platform.BIGQUERY
+            else (
                 "CREATE OR REPLACE TABLE ANALYTICS.PUBLIC.EVENTS\n"
                 "PARTITION BY (event_date)\n"
                 "AS SELECT * FROM ANALYTICS.PUBLIC.EVENTS;"
@@ -90,11 +100,9 @@ def build_demo_report(platform: str = "bigquery") -> AnalysisReport:
                 "Adding clustering keys (user_id, country) will improve filter pruning "
                 "within partitions, saving an estimated additional 20% on scan cost."
             ),
-            action=(
-                "ALTER TABLE `myproject.analytics.events` CLUSTER BY user_id, country;"
-            ) if plat == Platform.BIGQUERY else (
-                "ALTER TABLE ANALYTICS.PUBLIC.EVENTS CLUSTER BY (user_id, country);"
-            ),
+            action=("ALTER TABLE `myproject.analytics.events` CLUSTER BY user_id, country;")
+            if plat == Platform.BIGQUERY
+            else ("ALTER TABLE ANALYTICS.PUBLIC.EVENTS CLUSTER BY (user_id, country);"),
             estimated_savings_usd_monthly=1_195.0,
             affected_query_count=2_890,
             evidence={"suggested_cluster_keys": ["user_id", "country"]},
@@ -113,7 +121,9 @@ def build_demo_report(platform: str = "bigquery") -> AnalysisReport:
                 "CREATE OR REPLACE TABLE `myproject.dw.orders`\n"
                 "PARTITION BY DATE(created_at)\n"
                 "AS SELECT * FROM `myproject.dw.orders`;"
-            ) if plat == Platform.BIGQUERY else (
+            )
+            if plat == Platform.BIGQUERY
+            else (
                 "CREATE OR REPLACE TABLE DW.PUBLIC.ORDERS\n"
                 "PARTITION BY (created_at)\n"
                 "AS SELECT * FROM DW.PUBLIC.ORDERS;"
@@ -193,7 +203,7 @@ def build_demo_report(platform: str = "bigquery") -> AnalysisReport:
         history_days=30,
         total_queries_analyzed=12_450,
         total_cost_usd=8_320.0,
-        total_bytes_processed=int(1_180 * 1024 ** 4),
+        total_bytes_processed=int(1_180 * 1024**4),
         recommendations=recs,
         expensive_patterns=patterns,
         top_tables=tables,

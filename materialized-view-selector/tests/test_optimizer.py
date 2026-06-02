@@ -1,6 +1,5 @@
 """Tests for greedy + SA optimizer."""
 
-import pytest
 from mv_selector.models import CandidateView
 from mv_selector.optimizer import AnnealingSelector, GreedySelector
 
@@ -82,7 +81,7 @@ class TestAnnealingSelector:
     def test_history_nondecreasing(self):
         sa = AnnealingSelector(seed=1, max_iterations=10_000)
         result = sa.select(CANDIDATES, BUDGET)
-        for a, b in zip(result.incumbent_history, result.incumbent_history[1:]):
+        for a, b in zip(result.incumbent_history, result.incumbent_history[1:], strict=False):
             assert b >= a - 1e-9
 
     def test_result_metadata(self):

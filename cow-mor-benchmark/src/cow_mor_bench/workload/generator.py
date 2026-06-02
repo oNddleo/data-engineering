@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-import random
-import time
 from dataclasses import dataclass, field
 
 import numpy as np
-import pyarrow as pa
 
 from cow_mor_bench.data.generator import generate_table, generate_update_batch, primary_key_for
-from cow_mor_bench.engines.base import ReadResult, StorageEngine, WriteResult
+from cow_mor_bench.engines.base import StorageEngine
 from cow_mor_bench.workload.patterns import WorkloadProfile
 
 
@@ -49,7 +46,9 @@ class WorkloadTrace:
 
     def summarise(self) -> None:
         write_ops = [o for o in self.operations if o.op in ("insert", "update", "delete", "create")]
-        read_ops = [o for o in self.operations if o.op in ("full_scan", "point_lookup", "range_scan")]
+        read_ops = [
+            o for o in self.operations if o.op in ("full_scan", "point_lookup", "range_scan")
+        ]
         compact_ops = [o for o in self.operations if o.op in ("compact",)]
 
         self.total_write_s = sum(o.duration_s for o in write_ops)
@@ -70,9 +69,7 @@ class WorkloadTrace:
             r_ms = np.array([o.duration_s * 1000 for o in read_ops])
             self.p50_read_ms = float(np.percentile(r_ms, 50))
             self.p95_read_ms = float(np.percentile(r_ms, 95))
-            self.avg_delta_files_per_read = float(
-                np.mean([o.delta_files for o in read_ops])
-            )
+            self.avg_delta_files_per_read = float(np.mean([o.delta_files for o in read_ops]))
 
 
 class WorkloadGenerator:
@@ -120,14 +117,21 @@ class WorkloadGenerator:
 
         # Seed the table
         initial_data = generate_table(
-            self._schema_name, self._table_size, start_id=1,
+            self._schema_name,
+            self._table_size,
+            start_id=1,
             seed=int(self._rng.integers(0, 2**31)),
         )
         res = self._engine.create_table(initial_data)
-        trace.operations.append(OperationRecord(
-            op="create", duration_s=res.duration_s, rows=res.rows_written,
-            bytes_io=res.bytes_written, files=res.files_written,
-        ))
+        trace.operations.append(
+            OperationRecord(
+                op="create",
+                duration_s=res.duration_s,
+                rows=res.rows_written,
+                bytes_io=res.bytes_written,
+                files=res.files_written,
+            )
+        )
 
         current_table = initial_data
         compact_counter = 0
@@ -136,75 +140,119 @@ class WorkloadGenerator:
             op = self._choose_op()
 
             if op == "insert":
-                n = max(1, int(self._rng.integers(
-                    self._profile.rows_per_write // 2,
-                    self._profile.rows_per_write * 2,
-                )))
+                n = max(
+                    1,
+                    int(
+                        self._rng.integers(
+                            self._profile.rows_per_write // 2,
+                            self._profile.rows_per_write * 2,
+                        )
+                    ),
+                )
                 rows = generate_table(
-                    self._schema_name, n, start_id=self._next_id,
+                    self._schema_name,
+                    n,
+                    start_id=self._next_id,
                     seed=int(self._rng.integers(0, 2**31)),
                 )
                 self._next_id += n
                 r = self._engine.insert(rows)
-                trace.operations.append(OperationRecord(
-                    op="insert", duration_s=r.duration_s, rows=r.rows_written,
-                    bytes_io=r.bytes_written, files=r.files_written,
-                ))
+                trace.operations.append(
+                    OperationRecord(
+                        op="insert",
+                        duration_s=r.duration_s,
+                        rows=r.rows_written,
+                        bytes_io=r.bytes_written,
+                        files=r.files_written,
+                    )
+                )
 
             elif op == "update":
                 updated = generate_update_batch(
-                    current_table, self._profile.update_fraction,
-                    self._schema_name, seed=int(self._rng.integers(0, 2**31)),
+                    current_table,
+                    self._profile.update_fraction,
+                    self._schema_name,
+                    seed=int(self._rng.integers(0, 2**31)),
                 )
                 r = self._engine.update(updated)
-                trace.operations.append(OperationRecord(
-                    op="update", duration_s=r.duration_s, rows=r.rows_written,
-                    bytes_io=r.bytes_written, files=r.files_written,
-                ))
+                trace.operations.append(
+                    OperationRecord(
+                        op="update",
+                        duration_s=r.duration_s,
+                        rows=r.rows_written,
+                        bytes_io=r.bytes_written,
+                        files=r.files_written,
+                    )
+                )
 
             elif op == "delete":
                 n_del = max(1, int(self._table_size * 0.005))
                 pk_vals = self._rng.integers(1, self._table_size, size=n_del).tolist()
                 r = self._engine.delete([int(v) for v in pk_vals])
-                trace.operations.append(OperationRecord(
-                    op="delete", duration_s=r.duration_s, rows=0,
-                    bytes_io=r.bytes_written, files=r.files_written,
-                ))
+                trace.operations.append(
+                    OperationRecord(
+                        op="delete",
+                        duration_s=r.duration_s,
+                        rows=0,
+                        bytes_io=r.bytes_written,
+                        files=r.files_written,
+                    )
+                )
 
             elif op == "full_scan":
-                r = self._engine.full_scan()
-                trace.operations.append(OperationRecord(
-                    op="full_scan", duration_s=r.duration_s, rows=r.rows_returned,
-                    bytes_io=r.bytes_scanned, files=r.files_scanned,
-                    delta_files=r.delta_files_merged,
-                ))
+                rr = self._engine.full_scan()
+                trace.operations.append(
+                    OperationRecord(
+                        op="full_scan",
+                        duration_s=rr.duration_s,
+                        rows=rr.rows_returned,
+                        bytes_io=rr.bytes_scanned,
+                        files=rr.files_scanned,
+                        delta_files=rr.delta_files_merged,
+                    )
+                )
 
             elif op == "point_lookup":
                 pk_val = int(self._rng.integers(1, self._table_size))
-                r = self._engine.point_lookup(pk_val)
-                trace.operations.append(OperationRecord(
-                    op="point_lookup", duration_s=r.duration_s, rows=r.rows_returned,
-                    bytes_io=r.bytes_scanned, files=r.files_scanned,
-                    delta_files=r.delta_files_merged,
-                ))
+                rr = self._engine.point_lookup(pk_val)
+                trace.operations.append(
+                    OperationRecord(
+                        op="point_lookup",
+                        duration_s=rr.duration_s,
+                        rows=rr.rows_returned,
+                        bytes_io=rr.bytes_scanned,
+                        files=rr.files_scanned,
+                        delta_files=rr.delta_files_merged,
+                    )
+                )
 
             elif op == "range_scan":
                 lo = int(self._rng.integers(1, self._table_size - 1))
                 hi = lo + int(self._rng.integers(100, self._table_size // 10))
-                r = self._engine.range_scan(lo, hi)
-                trace.operations.append(OperationRecord(
-                    op="range_scan", duration_s=r.duration_s, rows=r.rows_returned,
-                    bytes_io=r.bytes_scanned, files=r.files_scanned,
-                    delta_files=r.delta_files_merged,
-                ))
+                rr = self._engine.range_scan(lo, hi)
+                trace.operations.append(
+                    OperationRecord(
+                        op="range_scan",
+                        duration_s=rr.duration_s,
+                        rows=rr.rows_returned,
+                        bytes_io=rr.bytes_scanned,
+                        files=rr.files_scanned,
+                        delta_files=rr.delta_files_merged,
+                    )
+                )
 
             compact_counter += 1
             if self._compact_every and compact_counter >= self._compact_every:
                 cr = self._engine.compact()
-                trace.operations.append(OperationRecord(
-                    op="compact", duration_s=cr.duration_s, rows=cr.rows_written,
-                    bytes_io=cr.bytes_written, files=cr.files_written,
-                ))
+                trace.operations.append(
+                    OperationRecord(
+                        op="compact",
+                        duration_s=cr.duration_s,
+                        rows=cr.rows_written,
+                        bytes_io=cr.bytes_written,
+                        files=cr.files_written,
+                    )
+                )
                 compact_counter = 0
 
         trace.summarise()

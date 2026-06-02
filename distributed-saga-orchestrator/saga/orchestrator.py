@@ -7,11 +7,8 @@ from dataclasses import asdict
 from typing import Any
 
 from .exceptions import (
-    SagaAlreadyRunningError,
     SagaNotFoundError,
     SagaNotRecoverableError,
-    StepCompensationError,
-    StepExecutionError,
 )
 from .persistence import SagaRecord, SagaStatus, SagaStore
 from .step import SagaStep, StepRecord, StepStatus
@@ -48,7 +45,7 @@ class SagaResult:
         return self._record.failure_reason
 
     @property
-    def compensation_errors(self) -> list[dict]:
+    def compensation_errors(self) -> list[dict[str, Any]]:
         return list(self._record.compensation_errors)
 
     @property
@@ -114,12 +111,12 @@ class SagaOrchestrator:
             saga_type=saga_type,
             status=SagaStatus.RUNNING,
             context=context,
-            step_records=[
-                asdict(StepRecord(name=s.name)) for s in steps
-            ],
+            step_records=[asdict(StepRecord(name=s.name)) for s in steps],
         )
         self._store.save(record)
-        logger.info("Saga %s (%s) started with %d steps", saga_id, saga_type, len(steps))
+        logger.info(
+            "Saga %s (%s) started with %d steps", saga_id, saga_type, len(steps)
+        )
 
         completed: list[int] = []
 
@@ -130,10 +127,14 @@ class SagaOrchestrator:
             rec["attempts"] = 0
             self._store.save(record)
 
-            logger.debug("  → Executing step [%d/%d] %s", idx + 1, len(steps), step.name)
+            logger.debug(
+                "  → Executing step [%d/%d] %s", idx + 1, len(steps), step.name
+            )
             result = await step._execute_with_retry(context)
 
-            rec["attempts"] = result.duration_ms  # reuse field for timing? No — store properly
+            rec["attempts"] = (
+                result.duration_ms
+            )  # reuse field for timing? No — store properly
             rec["attempts"] = getattr(step.retry_policy, "max_attempts", 1)
             rec["completed_at"] = time.time()
 
@@ -144,7 +145,9 @@ class SagaOrchestrator:
                 record.context = context
                 completed.append(idx)
                 self._store.save(record)
-                logger.debug("  ✓ Step %s completed in %.1f ms", step.name, result.duration_ms)
+                logger.debug(
+                    "  ✓ Step %s completed in %.1f ms", step.name, result.duration_ms
+                )
             else:
                 rec["status"] = StepStatus.FAILED.value
                 rec["error_message"] = str(result.error)
@@ -155,7 +158,9 @@ class SagaOrchestrator:
 
                 logger.warning(
                     "  ✗ Step %s failed: %s — starting compensation for %d steps",
-                    step.name, result.error, len(completed),
+                    step.name,
+                    result.error,
+                    len(completed),
                 )
                 await self._compensate(steps, completed, record, context)
                 return SagaResult(record)
@@ -201,7 +206,7 @@ class SagaOrchestrator:
         record: SagaRecord,
         context: dict[str, Any],
     ) -> None:
-        compensation_errors: list[dict] = []
+        compensation_errors: list[dict[str, Any]] = []
 
         for idx in reversed(completed):
             step = steps[idx]
@@ -227,18 +232,21 @@ class SagaOrchestrator:
             self._store.save(record)
 
         record.compensation_errors = compensation_errors
-        record.status = SagaStatus.COMPENSATED if not compensation_errors else SagaStatus.FAILED
+        record.status = (
+            SagaStatus.COMPENSATED if not compensation_errors else SagaStatus.FAILED
+        )
         record.completed_at = time.time()
         self._store.save(record)
 
         if compensation_errors:
             logger.error(
                 "Saga %s compensation finished with %d error(s)",
-                record.saga_id, len(compensation_errors),
+                record.saga_id,
+                len(compensation_errors),
             )
         else:
             logger.info("Saga %s fully compensated", record.saga_id)
 
     @staticmethod
-    def _get_step_rec(record: SagaRecord, idx: int) -> dict:
+    def _get_step_rec(record: SagaRecord, idx: int) -> dict[str, Any]:
         return record.step_records[idx]

@@ -50,6 +50,10 @@ disallow_any_generics = true
 module = ["rich.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["benchmarks.*"]
+ignore_errors = true
+
 [tool.ruff]
 line-length = 100
 target-version = "py310"

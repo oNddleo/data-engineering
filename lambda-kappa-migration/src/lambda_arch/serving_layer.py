@@ -7,10 +7,7 @@ from typing import Any
 
 from src.lambda_arch.models import (
     BatchView,
-    EventTypeSummary,
-    HourlyEventCounts,
     RealTimeView,
-    UserTotals,
 )
 
 logger = logging.getLogger(__name__)
@@ -82,7 +79,9 @@ class ServingLayer:
     ) -> None:
         for user_id, vals in source.items():
             entry = target.setdefault(user_id, {"total_amount": 0.0, "event_count": 0})
-            entry["total_amount"] = float(entry["total_amount"]) + float(vals.get("total_amount", 0.0))
+            entry["total_amount"] = float(entry["total_amount"]) + float(
+                vals.get("total_amount", 0.0)
+            )
             entry["event_count"] = int(entry["event_count"]) + int(vals.get("event_count", 0))
 
     @staticmethod
@@ -93,4 +92,6 @@ class ServingLayer:
         for et, vals in source.items():
             entry = target.setdefault(et, {"count": 0, "total_amount": 0.0, "avg_amount": 0.0})
             entry["count"] = int(entry["count"]) + int(vals.get("count", 0))
-            entry["total_amount"] = float(entry["total_amount"]) + float(vals.get("total_amount", 0.0))
+            entry["total_amount"] = float(entry["total_amount"]) + float(
+                vals.get("total_amount", 0.0)
+            )

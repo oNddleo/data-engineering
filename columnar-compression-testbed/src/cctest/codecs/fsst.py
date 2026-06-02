@@ -10,11 +10,12 @@ Algorithm overview
 5. Encode left-to-right with longest-match-first.
 6. Each encoded string is prefixed with its 2-byte length (max 64 KiB/string).
 """
+
 from __future__ import annotations
 
 import struct
 from collections import defaultdict
-from typing import Sequence
+from typing import Any, Sequence
 
 import numpy as np
 
@@ -25,7 +26,9 @@ _MAX_SYMBOL_LEN = 8
 _MAX_SYMBOLS = 254
 
 
-def _build_symbol_table(strings: Sequence[bytes], max_symbols: int = _MAX_SYMBOLS) -> list[bytes]:
+def _build_symbol_table(
+    strings: Sequence[bytes], max_symbols: int = _MAX_SYMBOLS
+) -> list[bytes]:
     freq: dict[bytes, int] = defaultdict(int)
     for s in strings:
         n = len(s)
@@ -33,7 +36,9 @@ def _build_symbol_table(strings: Sequence[bytes], max_symbols: int = _MAX_SYMBOL
             for i in range(n - length + 1):
                 freq[s[i : i + length]] += 1
 
-    candidates = sorted(freq.items(), key=lambda kv: (len(kv[0]) - 1) * kv[1], reverse=True)
+    candidates = sorted(
+        freq.items(), key=lambda kv: (len(kv[0]) - 1) * kv[1], reverse=True
+    )
     return [sym for sym, _ in candidates[:max_symbols]]
 
 
@@ -78,7 +83,7 @@ class FSSTCodec(Codec):
     def __init__(self, sample_fraction: float = 0.1) -> None:
         self.sample_fraction = sample_fraction
 
-    def supports_dtype(self, dtype: np.dtype) -> bool:
+    def supports_dtype(self, dtype: np.dtype[Any]) -> bool:
         return dtype.kind in ("U", "O", "S")
 
     def _adaptive_max_symbols(self, n_strings: int, total_raw_bytes: int) -> int:
@@ -86,7 +91,7 @@ class FSSTCodec(Codec):
         budget = max(8, total_raw_bytes // (5 * 7))  # ~15% headroom
         return min(_MAX_SYMBOLS, n_strings // 4 + 1, budget)
 
-    def encode(self, data: np.ndarray) -> EncodedColumn:
+    def encode(self, data: np.ndarray[Any, np.dtype[Any]]) -> EncodedColumn:
         strings = [s.encode() if isinstance(s, str) else bytes(s) for s in data]
 
         if not strings:
@@ -134,17 +139,19 @@ class FSSTCodec(Codec):
             original_len=len(data),
         )
 
-    def decode(self, encoded: EncodedColumn) -> np.ndarray:
+    def decode(self, encoded: EncodedColumn) -> np.ndarray[Any, np.dtype[Any]]:
         raw = encoded.data
         n = encoded.metadata["n"]
         sym_bytes = encoded.metadata["sym_bytes"]
 
         # Parse symbol table
         pos = 0
-        n_syms = raw[pos]; pos += 1
+        n_syms = raw[pos]
+        pos += 1
         symbols: list[bytes] = []
         for _ in range(n_syms):
-            sym_len = raw[pos]; pos += 1
+            sym_len = raw[pos]
+            pos += 1
             symbols.append(raw[pos : pos + sym_len])
             pos += sym_len
 
@@ -152,8 +159,10 @@ class FSSTCodec(Codec):
 
         strings = []
         for _ in range(n):
-            (enc_len,) = struct.unpack_from("<H", raw, pos); pos += 2
-            chunk = raw[pos : pos + enc_len]; pos += enc_len
+            (enc_len,) = struct.unpack_from("<H", raw, pos)
+            pos += 2
+            chunk = raw[pos : pos + enc_len]
+            pos += enc_len
             strings.append(_decode_string(chunk, symbols).decode())
 
         return np.array(strings, dtype=object)

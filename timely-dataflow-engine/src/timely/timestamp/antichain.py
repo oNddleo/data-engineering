@@ -22,7 +22,7 @@ class Antichain:
     """Set of pairwise-incomparable timestamps."""
 
     _elements: set[Timestamp] = field(default_factory=set)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def insert(self, t: Timestamp) -> None:
         """Insert `t` if not already dominated; remove any element t dominates."""

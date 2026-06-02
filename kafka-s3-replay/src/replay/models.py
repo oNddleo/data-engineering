@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -45,13 +45,13 @@ class Event(BaseModel):
 
     @property
     def event_id(self) -> str:
-        return hashlib.sha1(
-            f"{self.topic}:{self.partition}:{self.offset}".encode()
-        ).hexdigest()[:12]
+        return hashlib.sha1(f"{self.topic}:{self.partition}:{self.offset}".encode()).hexdigest()[
+            :12
+        ]
 
     def model_post_init(self, __context: Any) -> None:
         if self.timestamp.tzinfo is None:
-            self.timestamp = self.timestamp.replace(tzinfo=timezone.utc)
+            self.timestamp = self.timestamp.replace(tzinfo=UTC)
 
 
 class TimeWindow(BaseModel):
@@ -61,11 +61,11 @@ class TimeWindow(BaseModel):
     end: datetime
 
     @model_validator(mode="after")
-    def validate_window(self) -> "TimeWindow":
+    def validate_window(self) -> TimeWindow:
         if self.start.tzinfo is None:
-            self.start = self.start.replace(tzinfo=timezone.utc)
+            self.start = self.start.replace(tzinfo=UTC)
         if self.end.tzinfo is None:
-            self.end = self.end.replace(tzinfo=timezone.utc)
+            self.end = self.end.replace(tzinfo=UTC)
         if self.end <= self.start:
             raise ValueError("end must be after start")
         delta = self.end - self.start
@@ -75,7 +75,7 @@ class TimeWindow(BaseModel):
 
     def contains(self, ts: datetime) -> bool:
         if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=timezone.utc)
+            ts = ts.replace(tzinfo=UTC)
         return self.start <= ts <= self.end
 
     @property

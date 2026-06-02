@@ -6,9 +6,9 @@ import gzip
 import io
 import json
 import logging
-from collections.abc import AsyncIterator
-from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from collections.abc import AsyncIterator, Iterator
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any
 
 import anyio
 import boto3
@@ -34,7 +34,7 @@ class S3ArchiveReader:
 
     def __init__(self, config: S3ArchiveConfig) -> None:
         self.config = config
-        kwargs: dict = {"region_name": config.region}
+        kwargs: dict[str, Any] = {"region_name": config.region}
         if config.endpoint_url:
             kwargs["endpoint_url"] = config.endpoint_url
         self._s3 = boto3.client("s3", **kwargs)
@@ -56,7 +56,7 @@ class S3ArchiveReader:
                 key: str = obj["Key"]
                 last_modified: datetime = obj["LastModified"]
                 if last_modified.tzinfo is None:
-                    last_modified = last_modified.replace(tzinfo=timezone.utc)
+                    last_modified = last_modified.replace(tzinfo=UTC)
                 # Pre-filter: skip objects whose last-modified date is before window start
                 # (files modified before the window can't contain events inside it)
                 if last_modified < window.start:
@@ -82,7 +82,11 @@ class S3ArchiveReader:
         for topic in topics:
             keys = await self.list_files(topic, window)
             for key in keys:
-                total += await anyio.to_thread.run_sync(lambda k=key: self._count_in_file(k, window))
+
+                def _count(k: str = key) -> int:
+                    return self._count_in_file(k, window)
+
+                total += await anyio.to_thread.run_sync(_count)
         return total
 
     # ------------------------------------------------------------------
@@ -92,7 +96,8 @@ class S3ArchiveReader:
     def _fetch_object(self, key: str) -> bytes:
         try:
             resp = self._s3.get_object(Bucket=self.config.bucket, Key=key)
-            return resp["Body"].read()
+            data: bytes = resp["Body"].read()
+            return data
         except botocore.exceptions.ClientError as exc:
             raise RuntimeError(f"Failed to fetch s3://{self.config.bucket}/{key}: {exc}") from exc
 
@@ -125,7 +130,7 @@ class S3ArchiveReader:
         partition: int,
         offset_start: int,
         window: TimeWindow,
-    ):
+    ) -> Iterator[Event]:
         if key.endswith(".gz"):
             body = gzip.decompress(body)
 
@@ -146,7 +151,7 @@ class S3ArchiveReader:
         partition: int,
         offset_start: int,
         window: TimeWindow,
-    ):
+    ) -> Iterator[Event]:
         """Parse Kafka Connect JSON/JSONL format."""
         offset = offset_start
         for line in body.splitlines():
@@ -175,10 +180,7 @@ class S3ArchiveReader:
                 value=json.dumps(value_raw).encode(),
                 timestamp=ts,
                 source_path=key,
-                headers={
-                    k: str(v).encode()
-                    for k, v in record.get("headers", {}).items()
-                },
+                headers={k: str(v).encode() for k, v in record.get("headers", {}).items()},
             )
             offset += 1
 
@@ -190,7 +192,7 @@ class S3ArchiveReader:
         partition: int,
         offset_start: int,
         window: TimeWindow,
-    ):
+    ) -> Iterator[Event]:
         """Parse Confluent/Kafka Connect Avro files."""
         reader = fastavro.reader(io.BytesIO(body))
         offset = offset_start
@@ -212,26 +214,27 @@ class S3ArchiveReader:
             offset += 1
 
     @staticmethod
-    def _extract_timestamp(record: dict) -> datetime | None:
+    def _extract_timestamp(record: dict[str, Any]) -> datetime | None:
         for field in ("timestamp", "ts", "event_time", "created_at", "time"):
             raw = record.get(field)
             if raw is None:
                 continue
             try:
-                if isinstance(raw, (int, float)):
+                if isinstance(raw, int | float):
                     # epoch millis
                     if raw > 1e12:
                         raw = raw / 1000
-                    return datetime.fromtimestamp(raw, tz=timezone.utc)
+                    return datetime.fromtimestamp(raw, tz=UTC)
                 if isinstance(raw, str):
                     from dateutil.parser import parse
-                    dt = parse(raw)
+
+                    dt: datetime = parse(raw)
                     if dt.tzinfo is None:
-                        dt = dt.replace(tzinfo=timezone.utc)
+                        dt = dt.replace(tzinfo=UTC)
                     return dt
                 if isinstance(raw, datetime):
                     if raw.tzinfo is None:
-                        return raw.replace(tzinfo=timezone.utc)
+                        return raw.replace(tzinfo=UTC)
                     return raw
             except Exception:
                 continue

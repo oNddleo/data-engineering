@@ -1,13 +1,16 @@
 """Logical query plan node hierarchy."""
+
 from __future__ import annotations
+from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional
 from .expressions import Expr
 
 
 @dataclass
 class PlanNode:
     """Base class for all query plan nodes."""
+
     estimated_rows: int = 0
     node_id: str = ""  # filled by optimizer
 
@@ -22,6 +25,7 @@ class PlanNode:
 # Leaf nodes
 # ------------------------------------------------------------------
 
+
 @dataclass
 class ScanNode(PlanNode):
     table: str = ""
@@ -33,6 +37,7 @@ class ScanNode(PlanNode):
 # ------------------------------------------------------------------
 # Unary nodes
 # ------------------------------------------------------------------
+
 
 @dataclass
 class FilterNode(PlanNode):
@@ -105,10 +110,12 @@ class LimitNode(PlanNode):
 # Binary / join nodes
 # ------------------------------------------------------------------
 
+
 @dataclass
 class HashJoinNode(PlanNode):
     """Build hash table from right child, probe with left child."""
-    left: Optional[PlanNode] = None   # probe side
+
+    left: Optional[PlanNode] = None  # probe side
     right: Optional[PlanNode] = None  # build side
     left_key: str = ""
     right_key: str = ""
@@ -127,6 +134,7 @@ class HashJoinNode(PlanNode):
 @dataclass
 class NestedLoopJoinNode(PlanNode):
     """Fallback O(n²) join for small inputs or inequality predicates."""
+
     left: Optional[PlanNode] = None
     right: Optional[PlanNode] = None
     predicate: Optional[Expr] = None
@@ -142,11 +150,13 @@ class NestedLoopJoinNode(PlanNode):
 # Internal: materialized buffer node (used by adaptive engine)
 # ------------------------------------------------------------------
 
+
 @dataclass
 class BufferNode(PlanNode):
     """Wraps pre-materialized rows; inserted by adaptive engine when a
     subtree is replaced by push-based execution."""
-    rows: list[dict] = field(default_factory=list)
+
+    rows: list[dict[str, Any]] = field(default_factory=list)
     source_repr: str = ""
 
     def children(self) -> list[PlanNode]:
@@ -160,7 +170,8 @@ class BufferNode(PlanNode):
 # Visitor helpers
 # ------------------------------------------------------------------
 
-def walk(node: PlanNode):
+
+def walk(node: PlanNode) -> Iterator[PlanNode]:
     """Pre-order traversal of the plan tree."""
     yield node
     for child in node.children():

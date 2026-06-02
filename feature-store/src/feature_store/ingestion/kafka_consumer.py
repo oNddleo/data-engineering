@@ -5,6 +5,7 @@ offline (Parquet) stores atomically within a micro-batch.
 Consistency guarantee: a message is committed to Kafka only after both
 stores have accepted the write, so replays produce the same state.
 """
+
 from __future__ import annotations
 
 import json
@@ -52,7 +53,7 @@ class FeatureConsumer:
             "enable.auto.commit": False,
             "max.poll.interval.ms": 300_000,
             "fetch.min.bytes": 1,
-            "fetch.wait.max.ms": 10,    # match our latency budget
+            "fetch.wait.max.ms": 10,  # match our latency budget
         }
         self._consumer = Consumer(conf)
         self._consumer.subscribe([topic])
@@ -97,7 +98,7 @@ class FeatureConsumer:
 
     def _process_batch(self, messages: list[Message]) -> None:
         # Group by feature group for batch writes
-        by_group: dict[str, list[tuple[str, dict, datetime]]] = {}
+        by_group: dict[str, list[tuple[str, dict[str, Any], datetime]]] = {}
         for msg in messages:
             try:
                 event = json.loads(msg.value())
@@ -136,7 +137,8 @@ class FeatureConsumer:
         # Write to offline store (Parquet) — training lineage
         for group, records in by_group.items():
             try:
-                self._offline.write_batch(group, records)
+                offline_records: list[tuple[str, dict[str, Any], datetime | None]] = list(records)
+                self._offline.write_batch(group, offline_records)
             except Exception as exc:
                 log.error("offline write failed", group=group, error=str(exc))
                 errors.append(exc)
@@ -167,6 +169,7 @@ class FeatureConsumer:
 
 def main() -> None:
     import structlog
+
     structlog.configure(
         processors=[
             structlog.stdlib.add_log_level,
@@ -177,12 +180,8 @@ def main() -> None:
         bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
         topic=os.getenv("KAFKA_TOPIC", "feature-events"),
         group_id=os.getenv("CONSUMER_GROUP_ID", "feature-store-consumer"),
-        offline_store=OfflineStore(
-            base_path=os.getenv("OFFLINE_STORE_PATH", "./data/offline")
-        ),
-        online_store=OnlineStore(
-            redis_url=os.getenv("REDIS_URL", "redis://localhost:6379")
-        ),
+        offline_store=OfflineStore(base_path=os.getenv("OFFLINE_STORE_PATH", "./data/offline")),
+        online_store=OnlineStore(redis_url=os.getenv("REDIS_URL", "redis://localhost:6379")),
     )
     consumer.run()
 

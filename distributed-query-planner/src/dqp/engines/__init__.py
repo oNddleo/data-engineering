@@ -1,4 +1,5 @@
 """Engines subpackage: base class and concrete engine implementations."""
+
 from __future__ import annotations
 
 from dqp.engines.base import EngineBase, EngineCapability, PushdownResult

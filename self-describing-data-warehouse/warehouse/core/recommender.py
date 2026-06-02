@@ -3,10 +3,12 @@ Table recommender — answers "which table should I use for X?" by ranking
 all registered tables on relevance, quality, freshness, usage, and reliability.
 """
 
+from __future__ import annotations
+
 import re
 import sqlite3
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 from warehouse.core.quality import QualityScorer
 from warehouse.core.freshness import FreshnessMonitor
@@ -26,7 +28,7 @@ class Recommendation:
     usage_score: float
     reliability_score: float
     composite_score: float
-    tags: list
+    tags: list[Any]
     is_deprecated: bool
     deprecation_note: str
 
@@ -73,7 +75,7 @@ class TableRecommender:
         Return the top-k tables most relevant to the natural-language query.
         """
         sql = "SELECT * FROM meta_tables WHERE 1=1"
-        params: list = []
+        params: list[Any] = []
         if domain:
             sql += " AND domain=?"
             params.append(domain)
@@ -118,7 +120,7 @@ class TableRecommender:
         results.sort(key=lambda r: r.composite_score, reverse=True)
         return results[:top_k]
 
-    def _relevance(self, query: str, table: dict) -> float:
+    def _relevance(self, query: str, table: dict[str, Any]) -> float:
         """
         Keyword-overlap relevance between query and table metadata.
         Simple but effective for demonstration; swap in a vector store for prod.

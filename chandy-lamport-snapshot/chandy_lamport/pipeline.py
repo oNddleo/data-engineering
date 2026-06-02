@@ -21,16 +21,15 @@ Recovery procedure:
   5. Restart all nodes.
   6. Source nodes resume from their checkpointed offset + 1.
 """
+
 from __future__ import annotations
 
 import logging
 import threading
-import time
 import uuid
 from typing import Dict, List, Optional
 
 from .channel import Channel
-from .message import DataMessage
 from .node import (
     AggregatorNode,
     MergeNode,
@@ -49,10 +48,12 @@ class Pipeline:
 
     def __init__(self, source_total: int = 20, source_interval: float = 0.06) -> None:
         # Nodes
-        self.source_a = SourceNode("SourceA", total=source_total,
-                                   interval=source_interval)
-        self.source_b = SourceNode("SourceB", total=source_total,
-                                   interval=source_interval)
+        self.source_a = SourceNode(
+            "SourceA", total=source_total, interval=source_interval
+        )
+        self.source_b = SourceNode(
+            "SourceB", total=source_total, interval=source_interval
+        )
         self.slow_tx = SlowTransformNode("SlowTx", fn=lambda x: x * 2, delay=0.12)
         self.merge = MergeNode("Merge")
         self.aggregator = AggregatorNode("Aggregator")
@@ -82,8 +83,12 @@ class Pipeline:
         self.sink.add_in_channel(self.ch_agg_sink)
 
         self._all_nodes: List[Node] = [
-            self.source_a, self.source_b, self.slow_tx,
-            self.merge, self.aggregator, self.sink,
+            self.source_a,
+            self.source_b,
+            self.slow_tx,
+            self.merge,
+            self.aggregator,
+            self.sink,
         ]
         self._source_nodes: List[Node] = [self.source_a, self.source_b]
 
@@ -176,8 +181,11 @@ class Pipeline:
             n.stop()
 
         all_channels = [
-            self.ch_a_merge, self.ch_b_slow, self.ch_slow_merge,
-            self.ch_merge_agg, self.ch_agg_sink,
+            self.ch_a_merge,
+            self.ch_b_slow,
+            self.ch_slow_merge,
+            self.ch_merge_agg,
+            self.ch_agg_sink,
         ]
 
         # 2. Drain channels
@@ -202,15 +210,15 @@ class Pipeline:
             for ch_name, msgs in ns.channel_states.items():
                 if not msgs:
                     continue
-                ch = channel_map.get(ch_name)
-                if ch is None:
+                target = channel_map.get(ch_name)
+                if target is None:
                     log.error(f"[Recovery] Unknown channel {ch_name}")
                     continue
                 log.info(
                     f"[Recovery] Re-injecting {len(msgs)} in-transit msg(s) → {ch_name}"
                 )
                 for m in msgs:
-                    ch.send(m)
+                    target.send(m)
                 total_replayed += len(msgs)
 
         log.info(f"[Recovery] Replayed {total_replayed} in-transit message(s) total")

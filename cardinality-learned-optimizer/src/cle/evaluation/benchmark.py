@@ -8,16 +8,17 @@ This module:
   - Runs them under the Bao selector and baseline (PostgreSQL default)
   - Reports per-query and aggregate statistics
 """
+
 from __future__ import annotations
+
 import json
 import logging
-import time
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
-from ..db.connector import ConnectionPool, DBConfig
+from ..db.connector import ConnectionPool
 from ..db.interceptor import QueryInterceptor
-from .metrics import workload_q_error_stats, latency_speedup_stats, print_metric_table
+from .metrics import latency_speedup_stats, print_metric_table, workload_q_error_stats
 
 logger = logging.getLogger(__name__)
 
@@ -47,18 +48,20 @@ class BaselineBenchmark:
         self,
         queries: list[tuple[str, str]],
         timeout_ms: int = 120_000,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         results = []
         for name, sql in queries:
             logger.info("Baseline: %s", name)
             try:
                 plan, latency = self.interceptor.explain_analyze(sql, timeout_ms)
-                results.append({
-                    "name": name,
-                    "latency_ms": latency,
-                    "plan": plan,
-                    "error": None,
-                })
+                results.append(
+                    {
+                        "name": name,
+                        "latency_ms": latency,
+                        "plan": plan,
+                        "error": None,
+                    }
+                )
             except Exception as e:
                 logger.warning("Baseline failed %s: %s", name, e)
                 results.append({"name": name, "latency_ms": None, "plan": None, "error": str(e)})
@@ -67,11 +70,11 @@ class BaselineBenchmark:
 
 def run_comparison_benchmark(
     pool: ConnectionPool,
-    bao_selector,
+    bao_selector: Any,
     queries: Optional[list[tuple[str, str]]] = None,
     timeout_ms: int = 120_000,
     results_path: Optional[Path] = None,
-) -> dict:
+) -> dict[str, Any]:
     """Compare Bao vs baseline on JOB workload."""
     if queries is None:
         queries = load_job_queries()
@@ -88,13 +91,15 @@ def run_comparison_benchmark(
         logger.info("Bao: %s", name)
         try:
             r = bao_selector.run_query(sql)
-            bao_results.append({
-                "name": name,
-                "latency_ms": r.latency_ms,
-                "arm": r.chosen_arm,
-                "adaptive_speedup": r.adaptive_speedup,
-                "error": None,
-            })
+            bao_results.append(
+                {
+                    "name": name,
+                    "latency_ms": r.latency_ms,
+                    "arm": r.chosen_arm,
+                    "adaptive_speedup": r.adaptive_speedup,
+                    "error": None,
+                }
+            )
         except Exception as e:
             logger.warning("Bao failed %s: %s", name, e)
             bao_results.append({"name": name, "latency_ms": None, "error": str(e)})
@@ -124,7 +129,8 @@ def run_comparison_benchmark(
                 "baseline_ms": b["latency_ms"],
                 "bao_ms": o["latency_ms"],
                 "speedup": (b["latency_ms"] / max(o["latency_ms"], 0.001))
-                           if b["latency_ms"] and o["latency_ms"] else None,
+                if b["latency_ms"] and o["latency_ms"]
+                else None,
                 "arm": o.get("arm"),
                 "adaptive_speedup": o.get("adaptive_speedup", 1.0),
             }

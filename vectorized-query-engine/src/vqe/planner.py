@@ -1,4 +1,5 @@
 """Logical plan → Physical operator tree (planner)."""
+
 from __future__ import annotations
 
 from typing import List

@@ -9,17 +9,14 @@ Verifies:
     (FIFO guarantee).
   - A GlobalSnapshot is assembled once every node has reported.
 """
+
 from __future__ import annotations
 
-import threading
 import time
-from collections import defaultdict
 from typing import List
 
-import pytest
 
 from chandy_lamport import (
-    AggregatorNode,
     Channel,
     DataMessage,
     GlobalSnapshot,
@@ -43,11 +40,11 @@ def make_linear_pipeline(n_msgs: int = 5):
     Returns (source, transform, sink, channels).
     """
     src = SourceNode("src", total=n_msgs, interval=0.02)
-    tx  = TransformNode("tx",  fn=lambda x: x + 100)
+    tx = TransformNode("tx", fn=lambda x: x + 100)
     snk = SinkNode("snk")
 
     ch_s_t = Channel("src", "tx")
-    ch_t_s = Channel("tx",  "snk")
+    ch_t_s = Channel("tx", "snk")
 
     src.add_out_channel(ch_s_t)
     tx.add_in_channel(ch_s_t)
@@ -79,9 +76,7 @@ class TestSnapshotCoordinator:
 
     def test_fires_only_once_on_duplicate_reports(self):
         received: List[GlobalSnapshot] = []
-        coord = SnapshotCoordinator(
-            "snap-2", ["A", "B"], on_complete=received.append
-        )
+        coord = SnapshotCoordinator("snap-2", ["A", "B"], on_complete=received.append)
         for _ in range(3):
             coord.receive(NodeSnapshot("A", {}, {}))
             coord.receive(NodeSnapshot("B", {}, {}))
@@ -102,9 +97,7 @@ class TestNodeSnapshotMachine:
     """Drive the Chandy-Lamport state machine directly without threading."""
 
     def _make_coord(self, node_ids, snapshots):
-        return SnapshotCoordinator(
-            "snap-x", node_ids, on_complete=snapshots.append
-        )
+        return SnapshotCoordinator("snap-x", node_ids, on_complete=snapshots.append)
 
     def test_source_node_completes_immediately(self):
         snapshots: List[GlobalSnapshot] = []
@@ -155,16 +148,16 @@ class TestNodeSnapshotMachine:
         merge.set_coordinator(coord)
 
         marker = Marker("snap-x", "ext")
-        merge._on_marker(marker, ch1)          # first marker on ch1
+        merge._on_marker(marker, ch1)  # first marker on ch1
         # inject data on ch2 (simulates in-transit messages)
         msg = DataMessage(content=99, origin_seq=99)
-        ch2.start_recording()                  # already started by _on_marker
+        ch2.start_recording()  # already started by _on_marker
         ch2.record_if_needed(msg)
-        merge._on_marker(marker, ch2)          # second marker on ch2
+        merge._on_marker(marker, ch2)  # second marker on ch2
 
         ns = snapshots[0].node_snapshots["merge"]
-        assert ns.channel_states[ch1.name] == []          # first channel: empty
-        assert len(ns.channel_states[ch2.name]) == 1      # slow channel: 1 in-transit
+        assert ns.channel_states[ch1.name] == []  # first channel: empty
+        assert len(ns.channel_states[ch2.name]) == 1  # slow channel: 1 in-transit
 
 
 # ── integration: linear pipeline snapshot ─────────────────────────────────────
@@ -175,7 +168,7 @@ class TestLinearPipelineSnapshot:
         src, tx, snk, _ = make_linear_pipeline(n_msgs=8)
         for n in (src, tx, snk):
             n.start()
-        time.sleep(0.3)   # let a few messages flow
+        time.sleep(0.3)  # let a few messages flow
 
         snapshots: List[GlobalSnapshot] = []
         coord = SnapshotCoordinator(

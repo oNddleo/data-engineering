@@ -8,20 +8,18 @@ Verifies:
     already-sent messages).
   - Pipeline produces correct results end-to-end after recovery.
 """
+
 from __future__ import annotations
 
 import time
 from typing import List
 
-import pytest
 
 from chandy_lamport import (
     AggregatorNode,
     Channel,
     DataMessage,
     GlobalSnapshot,
-    MergeNode,
-    NodeSnapshot,
     Pipeline,
     SinkNode,
     SnapshotCoordinator,
@@ -45,6 +43,7 @@ class TestStateRestoration:
 
     def test_restore_clears_seen_ids(self):
         from chandy_lamport.node import TransformNode
+
         tx = TransformNode("tx", fn=lambda x: x)
         tx.setup()
         tx._seen.add("abc")
@@ -161,12 +160,11 @@ class TestPipelineRecovery:
 
         seqs = p.sink.received_seqs
         from collections import Counter
+
         counts = Counter(seqs)
         # Each of 1..N should appear exactly twice (once from A, once from B)
         for s in range(1, N + 1):
-            assert counts[s] == 2, (
-                f"seq {s} appeared {counts[s]} times (expected 2)"
-            )
+            assert counts[s] == 2, f"seq {s} appeared {counts[s]} times (expected 2)"
 
 
 # ── integration: recovery with in-transit messages ────────────────────────────
@@ -200,7 +198,7 @@ class TestInTransitRecovery:
             n.setup()
             n.start()
 
-        time.sleep(0.15)   # let all 3 messages flow
+        time.sleep(0.15)  # let all 3 messages flow
 
         # Snapshot
         result: List[GlobalSnapshot] = []
@@ -246,6 +244,6 @@ class TestInTransitRecovery:
 
         # seq=99 must appear exactly once in sink
         seqs = snk.received_seqs
-        assert seqs.count(99) == 1, (
-            f"In-transit message seq=99 should appear once, got {seqs.count(99)}"
-        )
+        assert (
+            seqs.count(99) == 1
+        ), f"In-transit message seq=99 should appear once, got {seqs.count(99)}"

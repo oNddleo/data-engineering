@@ -6,7 +6,7 @@ import datetime
 import os
 import time
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from rich.console import Console
 from rich.panel import Panel
@@ -208,7 +208,7 @@ def _wrap_fault_recording(
 ) -> None:
     orig_loop = periodic._loop
 
-    def patched_loop():
+    def patched_loop() -> None:
         import random, time, threading
         while periodic._running:
             jitter = random.uniform(0, periodic._heal_duration * 0.5)
@@ -224,7 +224,7 @@ def _wrap_fault_recording(
             time.sleep(periodic._fault_duration + random.uniform(0, periodic._fault_duration * 0.5))
             periodic._nemesis.stop()
 
-    periodic._loop = patched_loop
+    periodic._loop = patched_loop  # type: ignore[method-assign]
     # Restart the thread with the patched loop
     if periodic._thread and periodic._thread.is_alive():
         periodic._running = False
@@ -235,9 +235,9 @@ def _wrap_fault_recording(
 
 
 def _print_summary(
-    result,
-    entries,
-    fault_events,
+    result: Any,
+    entries: Any,
+    fault_events: Any,
     elapsed: float,
     report_path: str,
 ) -> None:

@@ -2,9 +2,9 @@
 Feature store Python client — wraps the serving API for ML model inference.
 Designed for <10ms round-trip on localhost / same-VPC deployments.
 """
+
 from __future__ import annotations
 
-import time
 from typing import Any
 
 import httpx
@@ -28,15 +28,15 @@ class FeatureStoreClient:
         if resp.status_code == 404:
             return None
         resp.raise_for_status()
-        return resp.json()["features"]
+        result: dict[str, Any] = resp.json()["features"]
+        return result
 
-    def get_batch(
-        self, requests: list[tuple[str, str]]
-    ) -> list[dict[str, Any] | None]:
+    def get_batch(self, requests: list[tuple[str, str]]) -> list[dict[str, Any] | None]:
         payload = {"requests": [{"group": g, "entity_id": e} for g, e in requests]}
         resp = self._http.post("/features/batch", json=payload)
         resp.raise_for_status()
-        return [r["features"] for r in resp.json()["results"]]
+        results: list[dict[str, Any] | None] = [r["features"] for r in resp.json()["results"]]
+        return results
 
     def write(
         self,
@@ -51,8 +51,9 @@ class FeatureStoreClient:
         )
         resp.raise_for_status()
 
-    def health(self) -> dict:
-        return self._http.get("/health").json()
+    def health(self) -> dict[str, Any]:
+        result: dict[str, Any] = self._http.get("/health").json()
+        return result
 
     def close(self) -> None:
         self._http.close()
@@ -84,11 +85,10 @@ class AsyncFeatureStoreClient:
         if resp.status_code == 404:
             return None
         resp.raise_for_status()
-        return resp.json()["features"]
+        result: dict[str, Any] = resp.json()["features"]
+        return result
 
-    async def get_batch(
-        self, requests: list[tuple[str, str]]
-    ) -> list[dict[str, Any] | None]:
+    async def get_batch(self, requests: list[tuple[str, str]]) -> list[dict[str, Any] | None]:
         payload = {"requests": [{"group": g, "entity_id": e} for g, e in requests]}
         resp = await self._http.post("/features/batch", json=payload)
         resp.raise_for_status()

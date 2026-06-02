@@ -1,9 +1,8 @@
 """Tests for shared feature transformation functions."""
+
 import math
-from datetime import datetime, timezone
 
 import pytest
-
 from feature_store.transformations import build_registry
 
 
@@ -146,6 +145,6 @@ class TestRegistryConsistency:
         for feat in registry.all_features():
             batch_val = feat.compute(record, ctx)
             stream_val = feat.compute(record, ctx)
-            assert batch_val == stream_val, (
-                f"Feature {feat.name} produced different values: {batch_val} vs {stream_val}"
-            )
+            assert (
+                batch_val == stream_val
+            ), f"Feature {feat.name} produced different values: {batch_val} vs {stream_val}"

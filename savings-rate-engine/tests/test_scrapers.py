@@ -1,10 +1,11 @@
 """Tests for all scraper mock_rates() — verifies each scraper produces valid output."""
-import pytest
 from datetime import datetime
 
-from savings_engine.scrapers.registry import SCRAPER_REGISTRY
+import pytest
+
 from savings_engine.models.schemas import RateEntry
 from savings_engine.normalizer import normalize
+from savings_engine.scrapers.registry import SCRAPER_REGISTRY
 
 
 @pytest.fixture(autouse=True, scope="module")

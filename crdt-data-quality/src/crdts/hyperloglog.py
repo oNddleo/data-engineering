@@ -12,12 +12,13 @@ Standard error: 1.04 / sqrt(2^b)
   b=10 → ~1024 registers, ~1.6% error
   b=14 → ~16384 registers, ~0.81% error
 """
+
 from __future__ import annotations
 import hashlib
 import math
 import struct
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import Any, List, cast
 
 
 _ALPHA = {
@@ -36,7 +37,7 @@ def _alpha(m: int) -> float:
 def _hash64(value: Any) -> int:
     raw = str(value).encode()
     digest = hashlib.sha256(raw).digest()
-    return struct.unpack(">Q", digest[:8])[0]
+    return cast(int, struct.unpack(">Q", digest[:8])[0])
 
 
 def _rho(bits: int, max_bits: int) -> int:
@@ -53,9 +54,9 @@ class HyperLogLogCRDT:
     precision: int = 10  # b: number of index bits; m = 2^b registers
     registers: List[int] = field(default_factory=list)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.registers:
-            self.registers = [0] * (2 ** self.precision)
+            self.registers = [0] * (2**self.precision)
 
     @property
     def m(self) -> int:
@@ -75,7 +76,7 @@ class HyperLogLogCRDT:
         """Estimate of distinct elements with bias correction."""
         m = self.m
         alpha = _alpha(m)
-        raw = alpha * m * m / sum(2 ** -r for r in self.registers)
+        raw = alpha * m * m / sum(2**-r for r in self.registers)
 
         # small range correction
         if raw <= 2.5 * m:
@@ -84,8 +85,8 @@ class HyperLogLogCRDT:
                 return int(round(m * math.log(m / zeros)))
 
         # large range correction
-        if raw > (1 / 30) * (2 ** 32):
-            return int(round(-(2 ** 32) * math.log(1 - raw / (2 ** 32))))
+        if raw > (1 / 30) * (2**32):
+            return int(round(-(2**32) * math.log(1 - raw / (2**32))))
 
         return int(round(raw))
 
@@ -116,7 +117,7 @@ class HyperLogLogCRDT:
     def error_rate(self) -> float:
         return 1.04 / math.sqrt(self.m)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "node_id": self.node_id,
             "precision": self.precision,
@@ -124,7 +125,7 @@ class HyperLogLogCRDT:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "HyperLogLogCRDT":
+    def from_dict(cls, data: dict[str, Any]) -> "HyperLogLogCRDT":
         return cls(
             node_id=data["node_id"],
             precision=data["precision"],

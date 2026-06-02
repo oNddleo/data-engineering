@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from savings_engine.analyzer.trends import compute_trend, TrendSummary
-from savings_engine.analyzer.comparisons import compare_banks, best_rates_table
+from savings_engine.analyzer.comparisons import best_rates_table, compare_banks
+from savings_engine.analyzer.trends import TrendSummary, compute_trend
 from savings_engine.storage.database import get_db
 from savings_engine.storage.repository import RateRepository
 
@@ -15,10 +15,11 @@ router = APIRouter()
 
 # ── Pydantic response models ───────────────────────────────────────────────────
 
+
 class TrendPointOut(BaseModel):
     scraped_at: datetime
     rate_pa: float
-    delta_from_prev: Optional[float]
+    delta_from_prev: float | None
 
 
 class TrendOut(BaseModel):
@@ -26,9 +27,9 @@ class TrendOut(BaseModel):
     term_days: int
     rate_type: str
     current_rate: float
-    change_7d: Optional[float]
-    change_30d: Optional[float]
-    change_90d: Optional[float]
+    change_7d: float | None
+    change_30d: float | None
+    change_90d: float | None
     min_rate: float
     max_rate: float
     avg_rate: float
@@ -43,7 +44,7 @@ class ComparisonOut(BaseModel):
     rate_pa: float
     rate_type: str
     rank: int
-    scraped_at: Optional[datetime]
+    scraped_at: datetime | None
 
 
 class BestRatesTableOut(BaseModel):
@@ -53,6 +54,7 @@ class BestRatesTableOut(BaseModel):
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
 
+
 @router.get("/trends/{bank_code}", response_model=TrendOut)
 def rate_trend(
     bank_code: str,
@@ -60,7 +62,7 @@ def rate_trend(
     rate_type: str = Query("standard"),
     days_back: int = Query(90, ge=7, le=365, description="How many days of history to include"),
     db: Session = Depends(get_db),
-):
+) -> Any:
     """
     Time-series trend for a specific bank + term.
     Returns change deltas (7d / 30d / 90d) and directional signal.
@@ -72,7 +74,7 @@ def rate_trend(
     since = datetime.utcnow() - timedelta(days=days_back)
     history = repo.get_rate_history(bank_code.upper(), term_days, rate_type, since=since)
 
-    summary: Optional[TrendSummary] = compute_trend(history, bank_code.upper(), term_days, rate_type)
+    summary: TrendSummary | None = compute_trend(history, bank_code.upper(), term_days, rate_type)
     if summary is None:
         raise HTTPException(404, f"No history found for {bank_code} / {term_days}d / {rate_type}")
 
@@ -105,7 +107,7 @@ def compare(
     rate_type: str = Query("standard"),
     top_n: int = Query(10, ge=1, le=50),
     db: Session = Depends(get_db),
-):
+) -> Any:
     """Rank all banks by rate for a given term."""
     repo = RateRepository(db)
     comparisons = compare_banks(repo, term_days, rate_type=rate_type, top_n=top_n)
@@ -130,7 +132,7 @@ def best_table(
         description="Comma-separated list of term_days, e.g. 30,90,180,365",
     ),
     db: Session = Depends(get_db),
-):
+) -> Any:
     """Best rates across multiple terms in one call — ideal for a dashboard overview."""
     try:
         term_list = [int(t.strip()) for t in terms.split(",")]

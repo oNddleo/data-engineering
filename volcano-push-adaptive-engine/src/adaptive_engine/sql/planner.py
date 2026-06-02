@@ -15,20 +15,41 @@ Algorithm
 7. Wrap in LimitNode for LIMIT/OFFSET.
 8. Wrap in ProjectNode for the SELECT column list (outermost).
 """
+
 from __future__ import annotations
+
 from typing import Any
 
 from ..catalog import Catalog
 from ..expressions import (
-    AndExpr, BinOp, ColRef, Expr, Literal, NotExpr, OrExpr,
+    AndExpr,
+    BinOp,
+    ColRef,
+    Expr,
+    Literal,
+    NotExpr,
+    OrExpr,
 )
 from ..plan import (
-    AggregateNode, FilterNode, HashJoinNode, LimitNode,
-    PlanNode, ProjectNode, ScanNode, SortNode,
+    AggregateNode,
+    FilterNode,
+    HashJoinNode,
+    LimitNode,
+    PlanNode,
+    ProjectNode,
+    ScanNode,
+    SortNode,
 )
 from .parser import (
-    ParseError, Parser, SqlAgg, SqlBinOp, SqlColRef, SqlExpr,
-    SqlIsNull, SqlLiteral, SqlQuery, SqlUnaryOp,
+    Parser,
+    SqlAgg,
+    SqlBinOp,
+    SqlColRef,
+    SqlExpr,
+    SqlIsNull,
+    SqlLiteral,
+    SqlQuery,
+    SqlUnaryOp,
 )
 
 
@@ -122,6 +143,7 @@ class Planner:
 # Key extraction for equi-joins
 # ------------------------------------------------------------------
 
+
 def _extract_equi_keys(
     on_expr: SqlExpr,
     alias_map: dict[str, str],
@@ -140,14 +162,17 @@ def _extract_equi_keys(
 # SELECT column resolution
 # ------------------------------------------------------------------
 
+
 def _select_columns(
-    items: list,
+    items: list[Any],
     catalog: Catalog,
     from_table: str,
-    joins: list,
+    joins: list[Any],
 ) -> list[str] | None:
     """Return projected column list, or None for SELECT *."""
-    all_star = all(isinstance(i.expr, SqlLiteral) and i.expr.value == "*" for i in items)
+    all_star = all(
+        isinstance(i.expr, SqlLiteral) and i.expr.value == "*" for i in items
+    )
     if all_star:
         return None
 
@@ -179,6 +204,7 @@ def _select_columns(
 # Expression translation
 # ------------------------------------------------------------------
 
+
 def _to_expr(sql_expr: SqlExpr) -> Expr:
     """Translate a SqlExpr to the engine's Expr hierarchy."""
     match sql_expr:
@@ -207,6 +233,7 @@ def _to_expr(sql_expr: SqlExpr) -> Expr:
 # ------------------------------------------------------------------
 # Selectivity estimation from SQL predicates
 # ------------------------------------------------------------------
+
 
 def _estimate_selectivity(
     sql_expr: SqlExpr,
@@ -245,6 +272,7 @@ def _estimate_selectivity(
 # Helpers
 # ------------------------------------------------------------------
 
+
 def _col_name(expr: SqlExpr | None) -> str:
     if expr is None:
         return "*"
@@ -258,5 +286,5 @@ def _agg_alias(agg: SqlAgg) -> str:
     return f"{agg.func}_{arg}"
 
 
-def _collect_aggs(items: list) -> list[SqlAgg]:
+def _collect_aggs(items: list[Any]) -> list[SqlAgg]:
     return [i.expr for i in items if isinstance(i.expr, SqlAgg)]

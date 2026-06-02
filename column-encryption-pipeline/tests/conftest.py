@@ -1,8 +1,8 @@
 """Shared pytest fixtures — all tests run fully in-memory / on temp disk."""
 
 import os
+
 import pytest
-import tempfile
 
 # Force local mode for all tests
 os.environ["KMS_MODE"] = "local"
@@ -18,6 +18,7 @@ def tmp_dir(tmp_path):
 def cfg(tmp_path):
     """Override config to use temp directory."""
     import src.config as config_module
+
     config_module._config = None  # reset singleton
 
     os.environ["LOCAL_KMS_STORE_PATH"] = str(tmp_path / "kms_store.json")
@@ -33,8 +34,9 @@ def cfg(tmp_path):
 
 @pytest.fixture
 def kms_client(cfg):
-    from src.kms.client import KMSClient
     import src.kms.client as kms_mod
+    from src.kms.client import KMSClient
+
     kms_mod._local_kms_instance = None  # reset singleton
     return KMSClient()
 
@@ -42,36 +44,42 @@ def kms_client(cfg):
 @pytest.fixture
 def registry(cfg):
     from src.kms.key_registry import KeyRegistry
+
     return KeyRegistry(cfg.key_registry_path)
 
 
 @pytest.fixture
 def store(cfg):
     from src.storage.s3_store import RecordStore
+
     return RecordStore()
 
 
 @pytest.fixture
 def engine(kms_client):
     from src.encryption.engine import EncryptionEngine
+
     return EncryptionEngine(kms_client)
 
 
 @pytest.fixture
 def pipeline(cfg, kms_client, engine, registry, store):
     from src.pipeline.ingest import IngestPipeline
+
     return IngestPipeline(kms_client, engine, registry, store)
 
 
 @pytest.fixture
 def rotation_pipeline(cfg, kms_client, engine, registry, store):
     from src.pipeline.rotation import RotationPipeline
+
     return RotationPipeline(kms_client, engine, registry, store, progress=False)
 
 
 @pytest.fixture
 def rtbf_executor(cfg, kms_client, registry, store, tmp_path):
     from src.rtbf.executor import RTBFExecutor
+
     return RTBFExecutor(kms_client, registry, store, audit_log_path=str(tmp_path / "audit.jsonl"))
 
 

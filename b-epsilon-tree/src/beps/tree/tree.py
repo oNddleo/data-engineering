@@ -21,7 +21,10 @@ so newest-wins is unambiguous.
 from __future__ import annotations
 
 import threading
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 from beps.stats.amplification import WriteAmpStats
 from beps.tree.message import Message, Op
@@ -91,11 +94,11 @@ class BEpsilonTree:
     def __contains__(self, key: bytes) -> bool:
         return self.get(key) is not None
 
-    def items(self):
+    def items(self) -> Iterator[tuple[bytes, Any]]:
         with self._lock:
             yield from self._items(self._root)
 
-    def iter_range(self, lo: bytes, hi: bytes):
+    def iter_range(self, lo: bytes, hi: bytes) -> Iterator[tuple[bytes, Any]]:
         for k, v in self.items():
             if k < lo:
                 continue
@@ -218,7 +221,7 @@ class BEpsilonTree:
 
     # ---- Iteration --------------------------------------------------------
 
-    def _items(self, node: Node):
+    def _items(self, node: Node) -> Iterator[tuple[bytes, Any]]:
         """Tree-ordered (key, value) iteration. We materialise the buffer's
         net effect by replaying messages onto a copy-on-write per-leaf view.
 
@@ -236,12 +239,13 @@ class BEpsilonTree:
             lo = node.pivots[idx - 1] if idx > 0 else None
             hi = node.pivots[idx] if idx < len(node.pivots) else None
             relevant = [
-                m for m in node.buffer
-                if (lo is None or m.key >= lo) and (hi is None or m.key < hi)
+                m for m in node.buffer if (lo is None or m.key >= lo) and (hi is None or m.key < hi)
             ]
             yield from self._items_with_overrides(child, relevant)
 
-    def _items_with_overrides(self, node: Node, overrides: list[Message]):
+    def _items_with_overrides(
+        self, node: Node, overrides: list[Message]
+    ) -> Iterator[tuple[bytes, Any]]:
         """Same as _items but the caller passes additional messages from
         ancestor buffers that target keys in this subtree."""
         if isinstance(node, LeafNode):
@@ -263,8 +267,7 @@ class BEpsilonTree:
             lo = node.pivots[idx - 1] if idx > 0 else None
             hi = node.pivots[idx] if idx < len(node.pivots) else None
             relevant = [
-                m for m in local
-                if (lo is None or m.key >= lo) and (hi is None or m.key < hi)
+                m for m in local if (lo is None or m.key >= lo) and (hi is None or m.key < hi)
             ]
             yield from self._items_with_overrides(child, relevant)
 

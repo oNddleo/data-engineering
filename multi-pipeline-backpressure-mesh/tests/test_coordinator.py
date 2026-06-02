@@ -1,4 +1,7 @@
 """Tests for BackpressureCoordinator signal propagation."""
+
+from __future__ import annotations
+
 import asyncio
 
 import pytest
@@ -10,20 +13,20 @@ from mesh.topology import PipelineTopology
 
 
 @pytest.fixture
-def linear_topo():
+def linear_topo() -> PipelineTopology:
     return PipelineTopology.linear("A", "B", "C")
 
 
 @pytest.mark.asyncio
-async def test_signal_triggers_upstream_throttle(linear_topo):
+async def test_signal_triggers_upstream_throttle(linear_topo: PipelineTopology) -> None:
     """When C signals backpressure, both A and B should receive throttle commands."""
     bus = InMemoryBus()
     coordinator = BackpressureCoordinator(bus, linear_topo)
     await coordinator.start()
 
-    throttled = {}
+    throttled: dict[str, float] = {}
 
-    async def capture(cmd: ThrottleCommand):
+    async def capture(cmd: ThrottleCommand) -> None:
         throttled[cmd.target_job_id] = cmd.throttle_factor
 
     await bus.subscribe_throttle("A", capture)
@@ -31,11 +34,10 @@ async def test_signal_triggers_upstream_throttle(linear_topo):
 
     sig = BackpressureSignal("C", BackpressureLevel.HIGH, score=0.80)
     await bus.publish_signal(sig)
-    await asyncio.sleep(0.05)  # let async callbacks settle
+    await asyncio.sleep(0.05)
 
     assert "A" in throttled, "A should be throttled when C has backpressure"
     assert "B" in throttled, "B should be throttled when C has backpressure"
-    # A is further upstream → less throttle than B
     assert throttled["A"] > throttled["B"], "Further upstream = less restriction"
 
     await coordinator.stop()
@@ -43,15 +45,15 @@ async def test_signal_triggers_upstream_throttle(linear_topo):
 
 
 @pytest.mark.asyncio
-async def test_downstream_not_throttled(linear_topo):
-    """Throttle commands should not be sent to C's downstream (there are none in linear)."""
+async def test_downstream_not_throttled(linear_topo: PipelineTopology) -> None:
+    """Throttle commands should not be sent to the source of backpressure."""
     bus = InMemoryBus()
     coordinator = BackpressureCoordinator(bus, linear_topo)
     await coordinator.start()
 
-    wrong_targets = []
+    wrong_targets: list[ThrottleCommand] = []
 
-    async def capture_c(cmd):
+    async def capture_c(cmd: ThrottleCommand) -> None:
         wrong_targets.append(cmd)
 
     await bus.subscribe_throttle("C", capture_c)
@@ -67,7 +69,7 @@ async def test_downstream_not_throttled(linear_topo):
 
 
 @pytest.mark.asyncio
-async def test_unknown_job_signal_ignored():
+async def test_unknown_job_signal_ignored() -> None:
     topo = PipelineTopology.linear("X", "Y")
     bus = InMemoryBus()
     coordinator = BackpressureCoordinator(bus, topo)
@@ -84,7 +86,7 @@ async def test_unknown_job_signal_ignored():
 
 
 @pytest.mark.asyncio
-async def test_active_pressure_tracked(linear_topo):
+async def test_active_pressure_tracked(linear_topo: PipelineTopology) -> None:
     bus = InMemoryBus()
     coordinator = BackpressureCoordinator(bus, linear_topo)
     await coordinator.start()
@@ -95,6 +97,23 @@ async def test_active_pressure_tracked(linear_topo):
 
     assert "C" in coordinator.active_pressure
     assert abs(coordinator.active_pressure["C"] - 0.55) < 0.01
+
+    await coordinator.stop()
+    await bus.close()
+
+
+@pytest.mark.asyncio
+async def test_multiple_signals_accumulate(linear_topo: PipelineTopology) -> None:
+    bus = InMemoryBus()
+    coordinator = BackpressureCoordinator(bus, linear_topo)
+    await coordinator.start()
+
+    for score in (0.3, 0.6, 0.9):
+        sig = BackpressureSignal("C", BackpressureLevel.HIGH, score=score)
+        await bus.publish_signal(sig)
+        await asyncio.sleep(0.02)
+
+    assert "C" in coordinator.active_pressure
 
     await coordinator.stop()
     await bus.close()

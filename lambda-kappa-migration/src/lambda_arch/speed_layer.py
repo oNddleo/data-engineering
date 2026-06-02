@@ -6,8 +6,8 @@ import json
 import logging
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 from src.config import LOCAL_KAFKA_FILE, config
 from src.lambda_arch.models import Event, RealTimeView
@@ -110,7 +110,7 @@ class SpeedLayer:
     def _consume_kafka(self, on_message: Callable[[Event], None] | None) -> None:
         """Consume from Kafka topic, applying each event to the real-time view."""
         try:
-            from kafka import KafkaConsumer  # type: ignore[import]
+            from kafka import KafkaConsumer  # type: ignore[import-not-found]
         except ImportError:
             logger.error("kafka-python not installed; cannot start Kafka consumer")
             return

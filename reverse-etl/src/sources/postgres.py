@@ -1,6 +1,6 @@
 from typing import Any
-import psycopg2
-import psycopg2.extras
+import psycopg2  # type: ignore[import-untyped]
+import psycopg2.extras  # type: ignore[import-untyped]
 from ..settings import settings
 from ..logger import get_logger
 from .base import BaseSource
@@ -19,8 +19,10 @@ class PostgresSource(BaseSource):
             "password": params.get("password", settings.postgres_password),
         }
 
-    def fetch(self, query: str, query_params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
-        logger.debug(f"PostgresSource: executing query")
+    def fetch(
+        self, query: str, query_params: dict[str, Any] | None = None
+    ) -> list[dict[str, Any]]:
+        logger.debug("PostgresSource: executing query")
         with psycopg2.connect(**self._conn_params) as conn:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                 cur.execute(query, query_params or {})

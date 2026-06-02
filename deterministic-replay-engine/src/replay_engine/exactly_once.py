@@ -9,12 +9,11 @@ Maintains a persistent in-memory record of which events have been processed
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any
 
 from .event import Event
-from .vector_clock import VectorClock
 
 
 class ViolationKind(Enum):

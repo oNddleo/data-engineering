@@ -1,0 +1,5 @@
+services:
+  fraudvn:
+    build: .
+    image: fraud-detection-banking-vn:latest
+    command: ["info"]

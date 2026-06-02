@@ -1,8 +1,8 @@
 """Strategy controller with hysteresis.
 
-  alpha:  switch to full when ratio > alpha
-  beta:   switch to delta when ratio < beta
-  alpha > beta to avoid oscillation
+alpha:  switch to full when ratio > alpha
+beta:   switch to delta when ratio < beta
+alpha > beta to avoid oscillation
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ class StrategyController:
     cost_model: LinearCostModel = field(default_factory=LinearCostModel)
     _strategy: str = "delta"
     _history: deque[float] = field(default_factory=lambda: deque(maxlen=20))
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def __post_init__(self) -> None:
         if self.history_size != self._history.maxlen:

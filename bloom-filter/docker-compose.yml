@@ -1,0 +1,5 @@
+services:
+  bloom:
+    build: .
+    image: bloom-filter:latest
+    command: ["info"]

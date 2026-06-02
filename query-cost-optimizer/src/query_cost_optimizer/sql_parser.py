@@ -3,19 +3,20 @@
 from __future__ import annotations
 
 import logging
-from functools import lru_cache
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 try:
     import sqlglot
     import sqlglot.expressions as exp
+
     _SQLGLOT_AVAILABLE = True
 except ImportError:
     _SQLGLOT_AVAILABLE = False
 
 
-def _parse(sql: str):
+def _parse(sql: str) -> Any:
     """Return parsed AST or None."""
     if not _SQLGLOT_AVAILABLE or not sql:
         return None
@@ -92,7 +93,7 @@ def extract_referenced_tables(sql: str) -> list[str]:
 def detect_expensive_patterns(sql: str) -> list[str]:
     """Return a list of expensive-pattern names found in sql."""
     patterns: list[str] = []
-    sql_lower = sql.lower()
+    _sql_lower = sql.lower()  # noqa: F841
 
     if extract_select_star(sql):
         patterns.append("select_star")
@@ -136,7 +137,9 @@ def detect_expensive_patterns(sql: str) -> list[str]:
 # Fallback (no sqlglot)
 # ---------------------------------------------------------------------------
 
+
 def _regex_fallback_where(sql: str) -> list[str]:
     import re
+
     matches = re.findall(r"WHERE\s+(\w+)\s*[=<>!]", sql, re.IGNORECASE)
     return list(set(matches))

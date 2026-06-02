@@ -7,13 +7,21 @@ iterate scope on a different problem shape.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from timely.graph.builder import GraphBuilder
+
+if TYPE_CHECKING:
+    from timely.graph.operator import EmitFn
 from timely.graph.runtime import Runtime
 from timely.timestamp.ts import Timestamp
 
 
 def belief_propagation(
-    n_nodes: int = 4, n_factors: int = 3, tol: float = 1e-3, max_iter: int = 30,
+    n_nodes: int = 4,
+    n_factors: int = 3,
+    tol: float = 1e-3,
+    max_iter: int = 30,
 ) -> tuple[list[float], int]:
     """Naive sum-product iteration until messages stop changing."""
     state = {
@@ -21,16 +29,16 @@ def belief_propagation(
         "iter": 0,
     }
 
-    def loop_body(ts: Timestamp, _value: object, emit) -> None:
-        prev = state["msgs"]
+    def loop_body(ts: Timestamp, _value: object, emit: EmitFn) -> None:
+        prev: list[float] = state["msgs"]  # type: ignore[assignment]
         # Simple averaging dynamic: each msg = average of neighbours' msgs
         new = [(prev[(i - 1) % n_nodes] + prev[(i + 1) % n_nodes]) / 2 for i in range(n_nodes)]
         # Damping to avoid oscillation
         new = [0.5 * prev[i] + 0.5 * new[i] for i in range(n_nodes)]
         state["msgs"] = new
-        state["iter"] += 1
+        state["iter"] = state["iter"] + 1  # type: ignore[operator]
         diff = sum(abs(a - b) for a, b in zip(prev, new, strict=False))
-        if diff < tol or state["iter"] >= max_iter:
+        if diff < tol or state["iter"] >= max_iter:  # type: ignore[operator]
             emit("converged", ts, tuple(new))
         else:
             emit("loop", ts, None)

@@ -1,0 +1,5 @@
+services:
+  n247mon:
+    build: .
+    image: napas-247-transaction-monitor:latest
+    command: ["info"]

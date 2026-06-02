@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,7 +15,7 @@ def create_app(db_path: str = "registry.db") -> FastAPI:
     registry = SchemaRegistry(db_path=db_path)
 
     @asynccontextmanager
-    async def lifespan(app: FastAPI):
+    async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await registry.start()
         app.state.registry = registry
         yield
@@ -39,7 +41,7 @@ def create_app(db_path: str = "registry.db") -> FastAPI:
     app.include_router(router, prefix="/api/v1")
 
     @app.get("/health")
-    async def health():
+    async def health() -> dict[str, Any]:
         return {"status": "ok"}
 
     return app

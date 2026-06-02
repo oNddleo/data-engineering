@@ -6,7 +6,12 @@ Convergence stops the loop and emits to the `converged` sink.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from timely.graph.builder import GraphBuilder
+
+if TYPE_CHECKING:
+    from timely.graph.operator import EmitFn
 from timely.graph.runtime import Runtime
 from timely.timestamp.ts import Timestamp
 
@@ -27,8 +32,8 @@ def pagerank(
         "iter": 0,
     }
 
-    def loop_body(ts: Timestamp, _value: object, emit) -> None:
-        prev = state["ranks"]
+    def loop_body(ts: Timestamp, _value: object, emit: EmitFn) -> None:
+        prev: list[float] = state["ranks"]  # type: ignore[assignment]
         new = [(1 - damping) / n_nodes] * n_nodes
         for u, neigh in edges.items():
             if not neigh:
@@ -37,9 +42,9 @@ def pagerank(
             for v in neigh:
                 new[v] += share
         state["ranks"] = new
-        state["iter"] += 1
+        state["iter"] = state["iter"] + 1  # type: ignore[operator]
         diff = sum(abs(a - b) for a, b in zip(prev, new, strict=False))
-        if diff < tol or state["iter"] >= max_iter:
+        if diff < tol or state["iter"] >= max_iter:  # type: ignore[operator]
             emit("converged", ts, tuple(new))
         else:
             emit("loop", ts, None)

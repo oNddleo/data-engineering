@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import threading
 from dataclasses import dataclass
+from typing import cast
 
 from disagg.core.page import Page, PageId, blank_page
 from disagg.server.coherence import CoherenceDirectory
@@ -35,21 +36,27 @@ class PageServer:
         self._evictor = LRUEvictor(capacity=capacity_pages)
         self.dir = CoherenceDirectory(n_shards=n_shards)
         self.stats = PageServerStats()
-        self._lock = threading.RLock()    # protects self._pages
+        self._lock = threading.RLock()  # protects self._pages
 
     # ---- Transport dispatch ----------------------------------------------
 
     def dispatch(self, op: str, **kwargs: object) -> object:
         if op == "read":
-            return self.read(int(kwargs["client_id"]), kwargs["page_id"])  # type: ignore[arg-type]
+            return self.read(
+                int(cast(str, kwargs["client_id"])),
+                cast(PageId, kwargs["page_id"]),
+            )
         if op == "write":
             return self.write(
-                int(kwargs["client_id"]),
-                kwargs["page_id"],  # type: ignore[arg-type]
-                kwargs["data"],     # type: ignore[arg-type]
+                int(cast(str, kwargs["client_id"])),
+                cast(PageId, kwargs["page_id"]),
+                cast(bytes, kwargs["data"]),
             )
         if op == "release":
-            self.release(int(kwargs["client_id"]), kwargs["page_id"])  # type: ignore[arg-type]
+            self.release(
+                int(cast(str, kwargs["client_id"])),
+                cast(PageId, kwargs["page_id"]),
+            )
             return None
         raise ValueError(f"unknown op: {op}")
 

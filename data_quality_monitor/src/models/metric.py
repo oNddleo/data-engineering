@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -18,6 +20,7 @@ class QualityMetric(BaseModel):
 
 class MetricSnapshot(BaseModel):
     """Aggregated view pushed to the dashboard WebSocket."""
+
     snapshot_at: datetime = Field(default_factory=datetime.utcnow)
     overall_pass_rate: float
     total_batches_last_hour: int

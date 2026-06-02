@@ -48,6 +48,7 @@ YAML/JSON format example:
         params:
           expression: "street + ', ' + city"
 """
+
 from __future__ import annotations
 
 import json
@@ -55,7 +56,7 @@ from typing import Any
 
 import yaml
 
-from src.registry.models import MigrationScript, MigrationStep
+from src.registry.models import MigrationStep
 
 SUPPORTED_OPS = {
     "rename_field",
@@ -102,7 +103,9 @@ class TransformationDSL:
             if not op:
                 raise DSLParseError(f"Step {i} missing 'op'.")
             if op not in SUPPORTED_OPS:
-                raise DSLParseError(f"Step {i}: unknown op '{op}'. Supported: {sorted(SUPPORTED_OPS)}")
+                raise DSLParseError(
+                    f"Step {i}: unknown op '{op}'. Supported: {sorted(SUPPORTED_OPS)}"
+                )
             path = raw.get("path", "$")
             params = raw.get("params", {})
             steps.append(MigrationStep(op=op, path=path, params=params or {}))
@@ -116,7 +119,7 @@ class TransformationDSL:
             if s.params:
                 entry["params"] = s.params
             doc["steps"].append(entry)
-        return yaml.dump(doc, sort_keys=False, allow_unicode=True)
+        return yaml.dump(doc, sort_keys=False, allow_unicode=True)  # type: ignore[no-any-return]
 
     def to_json(self, steps: list[MigrationStep], description: str = "") -> str:
         doc: dict[str, Any] = {"version": 1, "description": description, "steps": []}

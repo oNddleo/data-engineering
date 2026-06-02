@@ -28,12 +28,16 @@ def run_cmd(pipeline_name: str, config_dir: str) -> None:
     pipelines = {p.name: p for p in load_all_pipelines(config_dir)}
     config = pipelines.get(pipeline_name)
     if not config:
-        console.print(f"[red]Pipeline '{pipeline_name}' not found in {config_dir}[/red]")
+        console.print(
+            f"[red]Pipeline '{pipeline_name}' not found in {config_dir}[/red]"
+        )
         sys.exit(1)
 
     result = run_pipeline(config)
     if result.success:
-        console.print(f"[green]✓ {result.pipeline}: {result.rows_extracted} extracted, {result.rows_synced} synced[/green]")
+        console.print(
+            f"[green]✓ {result.pipeline}: {result.rows_extracted} extracted, {result.rows_synced} synced[/green]"
+        )
     else:
         console.print(f"[red]✗ {result.pipeline}: {result.error}[/red]")
         sys.exit(1)
@@ -50,7 +54,9 @@ def run_all_cmd(config_dir: str) -> None:
     for config in enabled:
         result = run_pipeline(config)
         status = "[green]✓[/green]" if result.success else "[red]✗[/red]"
-        console.print(f"  {status} {result.pipeline}: extracted={result.rows_extracted}, synced={result.rows_synced}")
+        console.print(
+            f"  {status} {result.pipeline}: extracted={result.rows_extracted}, synced={result.rows_synced}"
+        )
 
 
 @cli.command("list")
@@ -90,7 +96,7 @@ def schedule_cmd(config_dir: str) -> None:
     scheduler.register_all(pipelines)
     scheduler.start()
 
-    def _shutdown(sig, frame):
+    def _shutdown(sig: int, frame: object) -> None:
         console.print("\n[yellow]Shutting down scheduler...[/yellow]")
         scheduler.stop()
         sys.exit(0)
@@ -111,7 +117,9 @@ def schedule_cmd(config_dir: str) -> None:
 @click.option("--config-dir", default=settings.pipeline_config_dir, show_default=True)
 @click.option("--host", default=settings.api_host, show_default=True)
 @click.option("--port", default=settings.api_port, show_default=True)
-@click.option("--with-scheduler", is_flag=True, default=False, help="Also run the scheduler")
+@click.option(
+    "--with-scheduler", is_flag=True, default=False, help="Also run the scheduler"
+)
 def serve_cmd(config_dir: str, host: str, port: int, with_scheduler: bool) -> None:
     """Start the webhook API server (optionally with the scheduler)."""
     pipelines = load_all_pipelines(config_dir)

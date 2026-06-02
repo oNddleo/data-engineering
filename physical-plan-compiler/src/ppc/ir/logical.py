@@ -116,9 +116,9 @@ class LogicalFilter(LogicalNode):
 class AggFunc:
     """A single aggregate function call: COUNT, SUM, AVG, MIN, MAX."""
 
-    func: str               # "COUNT" | "SUM" | "AVG" | "MIN" | "MAX"
-    arg: Expr | None        # None for COUNT(*)
-    alias: str              # output column name
+    func: str  # "COUNT" | "SUM" | "AVG" | "MIN" | "MAX"
+    arg: Expr | None  # None for COUNT(*)
+    alias: str  # output column name
 
     def __repr__(self) -> str:
         a = "*" if self.arg is None else repr(self.arg)
@@ -133,7 +133,7 @@ class LogicalAggregate(LogicalNode):
     aggregates: tuple[AggFunc, ...]
 
     @cached_property
-    def schema(self) -> Schema:  # type: ignore[override]
+    def schema(self) -> Schema:
         cols: list[Column] = []
         for g in self.group_by:
             cols.append(self.child.schema[g.name])
@@ -194,11 +194,11 @@ class LogicalJoin(LogicalNode):
     kind: ClassVar[str] = "join"
     left: LogicalNode
     right: LogicalNode
-    on: Expr                # join condition; INNER for now
+    on: Expr  # join condition; INNER for now
     join_type: str = "INNER"
 
     @cached_property
-    def schema(self) -> Schema:  # type: ignore[override]
+    def schema(self) -> Schema:
         merged = self.left.schema.union(self.right.schema)
         # Row estimate: cross product * predicate selectivity (default 1 / max NDV)
         left_rows = self.left.schema.rows

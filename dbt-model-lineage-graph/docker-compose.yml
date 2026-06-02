@@ -1,0 +1,5 @@
+services:
+  dbtlin:
+    build: .
+    image: dbt-model-lineage-graph:latest
+    command: ["info"]

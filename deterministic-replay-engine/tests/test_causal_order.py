@@ -1,7 +1,6 @@
-import pytest
 from replay_engine.event import Event
 from replay_engine.vector_clock import VectorClock
-from replay_engine.causal_order import causal_sort, validate_monotone_sequences, CausalOrderError
+from replay_engine.causal_order import causal_sort, validate_monotone_sequences
 
 
 def make_event(event_id, producer, seq, vc_dict, payload=None):

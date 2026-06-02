@@ -9,14 +9,15 @@ _SOURCE_MODULE_MAP = {
 }
 
 
-class _LazyRegistry(dict):
-    def __missing__(self, key):
+class _LazyRegistry(dict[str, type[BaseSource]]):
+    def __missing__(self, key: str) -> type[BaseSource] | None:
         entry = _SOURCE_MODULE_MAP.get(key)
         if entry is None:
             return None
         import importlib
+
         module = importlib.import_module(entry[0])
-        cls = getattr(module, entry[1])
+        cls: type[BaseSource] = getattr(module, entry[1])
         self[key] = cls
         return cls
 

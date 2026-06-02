@@ -1,19 +1,22 @@
 """Integration tests for DeploymentOrchestrator."""
 
+from __future__ import annotations
+
 import time
+from typing import Any
+
 import pytest
-from typing import Any, Dict
 
 from pipeline_deployer import BasePipeline, DeploymentConfig, DeploymentOrchestrator
 from pipeline_deployer.traffic_shifter import ShiftState
-
 
 # ---------------------------------------------------------------------------
 # Stub pipelines
 # ---------------------------------------------------------------------------
 
+
 class EchoPipeline(BasePipeline):
-    def __init__(self, tag: str):
+    def __init__(self, tag: str) -> None:
         self._tag = tag
         self.setup_called = False
         self.teardown_called = False
@@ -28,21 +31,21 @@ class EchoPipeline(BasePipeline):
     def teardown(self) -> None:
         self.teardown_called = True
 
-    def process(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def process(self, record: dict[str, Any]) -> dict[str, Any]:
         return dict(record)
 
 
 class OffByOnePipeline(BasePipeline):
     """Returns val+1 — always diverges from EchoPipeline on numeric records."""
 
-    def __init__(self, tag: str):
+    def __init__(self, tag: str) -> None:
         self._tag = tag
 
     @property
     def version(self) -> str:
         return self._tag
 
-    def process(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def process(self, record: dict[str, Any]) -> dict[str, Any]:
         out = dict(record)
         if "val" in out:
             out["val"] = out["val"] + 1
@@ -83,7 +86,7 @@ LOW_ROLLBACK_CONFIG = DeploymentConfig(
 )
 
 
-def stream(n=50):
+def stream(n: int = 50) -> list[dict[str, Any]]:
     return [{"val": i, "doc_id": f"d{i}"} for i in range(n)]
 
 
@@ -91,8 +94,9 @@ def stream(n=50):
 # Tests
 # ---------------------------------------------------------------------------
 
+
 class TestOrchestratorLifecycle:
-    def test_setup_and_teardown_called(self):
+    def test_setup_and_teardown_called(self) -> None:
         v1 = EchoPipeline("v1")
         v2 = EchoPipeline("v2")
         orch = DeploymentOrchestrator(v1, v2, FAST_CONFIG)
@@ -103,26 +107,26 @@ class TestOrchestratorLifecycle:
         assert v1.teardown_called
         assert v2.teardown_called
 
-    def test_process_before_start_raises(self):
+    def test_process_before_start_raises(self) -> None:
         orch = DeploymentOrchestrator(EchoPipeline("v1"), EchoPipeline("v2"), FAST_CONFIG)
         with pytest.raises(RuntimeError):
             orch.process({"val": 1})
 
-    def test_process_after_complete_raises(self):
+    def test_process_after_complete_raises(self) -> None:
         orch = DeploymentOrchestrator(EchoPipeline("v1"), EchoPipeline("v2"), FAST_CONFIG)
         orch.start()
         orch.complete()
         with pytest.raises(RuntimeError):
             orch.process({"val": 1})
 
-    def test_returns_output_for_every_record(self):
+    def test_returns_output_for_every_record(self) -> None:
         orch = DeploymentOrchestrator(EchoPipeline("v1"), EchoPipeline("v2"), FAST_CONFIG)
         orch.start()
         results = list(orch.process_stream(stream(30)))
         orch.complete()
         assert len(results) == 30
 
-    def test_complete_returns_summary_keys(self):
+    def test_complete_returns_summary_keys(self) -> None:
         orch = DeploymentOrchestrator(EchoPipeline("v1"), EchoPipeline("v2"), FAST_CONFIG)
         orch.start()
         for r in stream(20):
@@ -133,10 +137,8 @@ class TestOrchestratorLifecycle:
 
 
 class TestOrchestratorPromotion:
-    def test_identical_pipelines_promote(self):
-        orch = DeploymentOrchestrator(
-            EchoPipeline("v1"), EchoPipeline("v2"), FAST_CONFIG
-        )
+    def test_identical_pipelines_promote(self) -> None:
+        orch = DeploymentOrchestrator(EchoPipeline("v1"), EchoPipeline("v2"), FAST_CONFIG)
         orch.start()
         for r in stream(50):
             orch.process(r)
@@ -146,10 +148,8 @@ class TestOrchestratorPromotion:
         assert summary["promoted"] is True
         assert summary["state"] == ShiftState.PROMOTED.name
 
-    def test_divergent_pipelines_do_not_promote(self):
-        orch = DeploymentOrchestrator(
-            EchoPipeline("v1"), OffByOnePipeline("v2"), FAST_CONFIG
-        )
+    def test_divergent_pipelines_do_not_promote(self) -> None:
+        orch = DeploymentOrchestrator(EchoPipeline("v1"), OffByOnePipeline("v2"), FAST_CONFIG)
         orch.start()
         for r in stream(50):
             orch.process(r)
@@ -160,7 +160,7 @@ class TestOrchestratorPromotion:
 
 
 class TestOrchestratorRollback:
-    def test_rollback_on_high_divergence(self):
+    def test_rollback_on_high_divergence(self) -> None:
         orch = DeploymentOrchestrator(
             EchoPipeline("v1"), OffByOnePipeline("v2"), LOW_ROLLBACK_CONFIG
         )
@@ -174,10 +174,8 @@ class TestOrchestratorRollback:
         summary = orch.complete()
         assert summary["rolled_back"] is True
 
-    def test_manual_rollback(self):
-        orch = DeploymentOrchestrator(
-            EchoPipeline("v1"), EchoPipeline("v2"), FAST_CONFIG
-        )
+    def test_manual_rollback(self) -> None:
+        orch = DeploymentOrchestrator(EchoPipeline("v1"), EchoPipeline("v2"), FAST_CONFIG)
         orch.start()
         orch.force_shift(0.8)
         orch.rollback()
@@ -186,7 +184,7 @@ class TestOrchestratorRollback:
 
 
 class TestOrchestratorStatus:
-    def test_status_reflects_current_state(self):
+    def test_status_reflects_current_state(self) -> None:
         orch = DeploymentOrchestrator(EchoPipeline("v1"), EchoPipeline("v2"), FAST_CONFIG)
         orch.start()
         s = orch.status()

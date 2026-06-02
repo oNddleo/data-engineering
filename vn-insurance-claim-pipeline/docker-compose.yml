@@ -1,0 +1,5 @@
+services:
+  vnbhyt:
+    build: .
+    image: vn-insurance-claim-pipeline:latest
+    command: ["info"]

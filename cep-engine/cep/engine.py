@@ -26,7 +26,7 @@ engine.push(make_event(EventTypes.LOGIN_FAILURE, entity_id=42))
 from __future__ import annotations
 
 import time
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import numpy as np
 
@@ -84,7 +84,7 @@ class CEPEngine:
             self._callbacks[pattern.name] = []
         return self
 
-    def on_match(self, pattern_name: str) -> Callable:
+    def on_match(self, pattern_name: str) -> Callable[..., Any]:
         """Decorator: register a callback fired on each match."""
         def decorator(fn: MatchCallback) -> MatchCallback:
             self._callbacks.setdefault(pattern_name, []).append(fn)
@@ -125,7 +125,7 @@ class CEPEngine:
 
         return fired
 
-    def push_dict(self, d: dict) -> list[tuple[str, int]]:
+    def push_dict(self, d: dict[str, Any]) -> list[tuple[str, int]]:
         """Convenience wrapper: push a dict-encoded event."""
         ev = make_event(
             type_id=d["type_id"],
@@ -147,7 +147,7 @@ class CEPEngine:
     def patterns(self) -> list[str]:
         return list(self._compiled.keys())
 
-    def entity_state(self, pattern_name: str, entity_id: int) -> dict:
+    def entity_state(self, pattern_name: str, entity_id: int) -> dict[str, Any]:
         """Return the current NFA state for an entity (useful for debugging)."""
         from .compiler import MAX_ENTITIES
         cp = self._compiled[pattern_name]

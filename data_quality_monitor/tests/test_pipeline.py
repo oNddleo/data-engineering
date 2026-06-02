@@ -1,12 +1,13 @@
 """Integration-style tests for MicroBatchProcessor (all I/O mocked)."""
 from __future__ import annotations
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-import pandas as pd
 
+from unittest.mock import AsyncMock, MagicMock
+
+import pandas as pd
+import pytest
 from src.models import (
-    MicroBatch,
     BatchMetadata,
+    MicroBatch,
     ValidationResult,
     ValidationStatus,
     ValidatorBackend,

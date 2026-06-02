@@ -57,8 +57,17 @@ def upsert_products(products: Iterable[Product]) -> int:
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         [
-            (p.product_id, p.url, p.title, p.brand, p.price, p.currency,
-             p.category, p.fetch_time, p.source)
+            (
+                p.product_id,
+                p.url,
+                p.title,
+                p.brand,
+                p.price,
+                p.currency,
+                p.category,
+                p.fetch_time,
+                p.source,
+            )
             for p in products
         ],
     )

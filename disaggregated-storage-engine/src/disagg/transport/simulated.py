@@ -25,16 +25,21 @@ from disagg.transport.api import Transport
 class SimulatedTransport(Transport):
     """In-process transport with configurable latency + jitter."""
 
-    server: Any                              # something with a `dispatch(op, **kwargs)`
-    latency_us: float = 5.0                  # base round-trip
-    jitter_us: float = 0.5                   # ±jitter
-    drop_rate: float = 0.0                   # probability call raises
+    server: Any  # something with a `dispatch(op, **kwargs)`
+    latency_us: float = 5.0  # base round-trip
+    jitter_us: float = 0.5  # ±jitter
+    drop_rate: float = 0.0  # probability call raises
     seed: int = 0
     _rng: random.Random = field(init=False)
     _stats_lock: threading.Lock = field(default_factory=threading.Lock)
-    _stats: dict[str, int] = field(default_factory=lambda: {
-        "n_calls": 0, "bytes_sent": 0, "bytes_received": 0, "dropped": 0,
-    })
+    _stats: dict[str, int] = field(
+        default_factory=lambda: {
+            "n_calls": 0,
+            "bytes_sent": 0,
+            "bytes_received": 0,
+            "dropped": 0,
+        }
+    )
 
     def __post_init__(self) -> None:
         self._rng = random.Random(self.seed)
@@ -54,10 +59,9 @@ class SimulatedTransport(Transport):
         with self._stats_lock:
             self._stats["n_calls"] += 1
             self._stats["bytes_sent"] += sum(
-                len(v) if isinstance(v, bytes) else 8 for v in kwargs.values())
-            self._stats["bytes_received"] += (
-                len(result) if isinstance(result, bytes) else 8
+                len(v) if isinstance(v, bytes) else 8 for v in kwargs.values()
             )
+            self._stats["bytes_received"] += len(result) if isinstance(result, bytes) else 8
         return result
 
     def stats(self) -> dict[str, int]:

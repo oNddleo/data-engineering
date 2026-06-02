@@ -3,11 +3,7 @@
 from __future__ import annotations
 
 import json
-import uuid
-from datetime import datetime
 from pathlib import Path
-
-import pytest
 
 from src.kappa_arch.stream_processor import KappaProcessor
 from src.lambda_arch.batch_layer import BatchProcessor

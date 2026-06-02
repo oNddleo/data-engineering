@@ -7,26 +7,26 @@ from enum import Enum
 
 
 class WorkloadClass(str, Enum):
-    OLAP_HEAVY = "olap_heavy"           # read-dominant, full scans, analytics
-    OLTP_HEAVY = "oltp_heavy"           # write-dominant, point reads/updates
-    MIXED = "mixed"                     # balanced read/write
+    OLAP_HEAVY = "olap_heavy"  # read-dominant, full scans, analytics
+    OLTP_HEAVY = "oltp_heavy"  # write-dominant, point reads/updates
+    MIXED = "mixed"  # balanced read/write
     STREAMING_INGEST = "streaming_ingest"  # continuous small inserts, rare reads
-    BATCH_UPDATE = "batch_update"       # periodic large-batch updates
-    CDC = "cdc"                         # change-data-capture: many small updates + deletes
+    BATCH_UPDATE = "batch_update"  # periodic large-batch updates
+    CDC = "cdc"  # change-data-capture: many small updates + deletes
 
 
 @dataclass(frozen=True)
 class WorkloadProfile:
     name: str
     cls: WorkloadClass
-    insert_weight: float      # fraction of ops that are inserts
+    insert_weight: float  # fraction of ops that are inserts
     update_weight: float
     delete_weight: float
     full_scan_weight: float
     point_read_weight: float
     range_scan_weight: float
-    rows_per_write: int       # avg rows per write operation
-    update_fraction: float    # fraction of table updated per update op
+    rows_per_write: int  # avg rows per write operation
+    update_fraction: float  # fraction of table updated per update op
 
 
 # Canonical workload profiles

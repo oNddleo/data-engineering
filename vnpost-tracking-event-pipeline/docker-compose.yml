@@ -1,0 +1,5 @@
+services:
+  vnpost:
+    build: .
+    image: vnpost-tracking-event-pipeline:latest
+    command: ["info"]

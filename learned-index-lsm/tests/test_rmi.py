@@ -8,7 +8,7 @@ from lsm_learned.indexes.rmi import RMI
 def test_lookup_all_keys(small_uniform_keys):
     rmi = RMI(num_stage2=100)
     rmi.train(small_uniform_keys)
-    missing = 0
+    _missing = 0
     for k in small_uniform_keys[::50]:  # sample every 50th
         assert rmi.lookup(float(k)) is not None, f"key {k} not found"
 

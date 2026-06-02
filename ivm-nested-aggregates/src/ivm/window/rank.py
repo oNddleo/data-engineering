@@ -24,7 +24,7 @@ class RankIVM:
     """
 
     _partitions: dict[object, list[float]] = field(default_factory=dict)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def insert(self, partition: object, t: float) -> None:
         with self._lock:
@@ -48,6 +48,7 @@ class RankIVM:
             # First index where rows[i] == t  (RANK semantics).
             # We treat duplicates: rank = position of first occurrence + 1.
             from bisect import bisect_left
+
             return bisect_left(rows, t) + 1
 
 
@@ -56,7 +57,7 @@ class DenseRankIVM:
     """DENSE_RANK() OVER (PARTITION BY p ORDER BY t)."""
 
     _partitions: dict[object, list[float]] = field(default_factory=dict)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def insert(self, partition: object, t: float) -> None:
         with self._lock:

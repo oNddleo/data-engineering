@@ -84,5 +84,5 @@ def annualized_inflation(category: str | None = None, year: int | None = None) -
         ts = ts.filter(pl.col("period").str.starts_with(str(year)))
     if ts.is_empty():
         return None
-    log_sum = sum((math.log1p(r / 100) for r in ts["monthly_inflation_pct"]))
+    log_sum = sum(math.log1p(r / 100) for r in ts["monthly_inflation_pct"])
     return (math.exp(log_sum) - 1) * 100

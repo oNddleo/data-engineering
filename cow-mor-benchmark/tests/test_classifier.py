@@ -1,6 +1,5 @@
 """Tests for the workload classifier."""
 
-import pytest
 
 from cow_mor_bench.workload.classifier import classify_custom
 from cow_mor_bench.workload.patterns import WorkloadClass

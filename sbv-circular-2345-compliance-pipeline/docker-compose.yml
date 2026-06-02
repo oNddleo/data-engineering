@@ -1,0 +1,5 @@
+services:
+  sbv2345:
+    build: .
+    image: sbv-circular-2345-compliance-pipeline:latest
+    command: ["info"]

@@ -1,7 +1,11 @@
 """Tests for the ingest pipeline — write, read, dual-read during rotation."""
 
 import pytest
-from src.pipeline.ingest import CustomerAlreadyExistsError, CustomerForgottenError, CustomerNotFoundError
+
+from src.pipeline.ingest import (
+    CustomerAlreadyExistsError,
+    CustomerNotFoundError,
+)
 
 
 def test_register_and_ingest(pipeline, sample_row):

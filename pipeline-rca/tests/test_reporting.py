@@ -1,7 +1,7 @@
 """Tests for the incident report generator."""
 
 import json
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from pipeline_rca.attribution.root_cause import RootCauseAttributor
 from pipeline_rca.lineage.tracer import LineageTracer

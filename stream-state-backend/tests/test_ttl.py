@@ -4,12 +4,9 @@ from __future__ import annotations
 
 import time
 
-import pytest
 
-from ssb.manager import StateBackendManager
 from ssb.state.descriptor import TTLConfig
-from ssb.state.serializer import TOMBSTONE, encode_key, encode_value, is_tombstone
-from ssb.ttl.compactor import TTLCompactor
+from ssb.state.serializer import TOMBSTONE, encode_key, is_tombstone
 
 
 class TestTTLExpiry:

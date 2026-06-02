@@ -2,6 +2,7 @@
 Decorator DSL example — the same pipeline as batch_pipeline.yaml,
 declared in pure Python using the @pipeline / @source / @transform / @sink decorators.
 """
+from pipeline_topology import check_equivalence, get_target, optimize, select_target
 from pipeline_topology.dsl.decorator_dsl import (
     extract_spec,
     field,
@@ -11,7 +12,6 @@ from pipeline_topology.dsl.decorator_dsl import (
     transform,
 )
 from pipeline_topology.dsl.types import Schema, SLA
-from pipeline_topology import select_target, optimize, get_target, check_equivalence
 
 
 @pipeline(

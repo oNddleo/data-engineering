@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import logging
 import threading
-import time
 from typing import TYPE_CHECKING
 
-from ..state.serializer import TOMBSTONE, decode_value, is_tombstone, now_ms
+from ..state.serializer import decode_value, is_tombstone, now_ms
 
 if TYPE_CHECKING:
     from ..backend.base import StorageBackend
+    from ..state.descriptor import TTLConfig
 
 logger = logging.getLogger(__name__)
 
@@ -161,7 +161,9 @@ class TTLCompactor:
                             keys_to_delete.append(raw_k)
 
                 if keys_to_delete:
-                    ops = [(cf_name, k, None) for k in keys_to_delete]
+                    ops: list[tuple[str, bytes, bytes | None]] = [
+                        (cf_name, k, None) for k in keys_to_delete
+                    ]
                     self._backend.write_batch(ops)
                     total_deleted += len(keys_to_delete)
                     logger.debug(

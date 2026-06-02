@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
@@ -35,7 +36,7 @@ def categories() -> list[str]:
 def inflation(
     category: str | None = Query(None),
     year: int | None = Query(None),
-) -> dict:
+) -> dict[str, Any]:
     ts = analyze.inflation_timeseries(category)
     if ts.is_empty():
         return {"category": category, "series": [], "annualized_pct": None}
@@ -45,7 +46,7 @@ def inflation(
 
 
 @app.get("/api/cpi")
-def cpi(series_id: str = "CUUR0000SA0") -> list[dict]:
+def cpi(series_id: str = "CUUR0000SA0") -> list[dict[str, Any]]:
     con = connect()
     rows = con.execute(
         "SELECT period, value FROM cpi WHERE series_id = ? ORDER BY period",
@@ -64,7 +65,7 @@ def cpi(series_id: str = "CUUR0000SA0") -> list[dict]:
 
 
 @app.get("/api/products")
-def products(category: str | None = None, limit: int = 50) -> list[dict]:
+def products(category: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
     con = connect()
     where = "WHERE category = ?" if category else ""
     params = [category, limit] if category else [limit]
@@ -78,6 +79,5 @@ def products(category: str | None = None, limit: int = 50) -> list[dict]:
         """,
         params,
     ).fetchall()
-    cols = ["product_id", "title", "brand", "category", "currency",
-            "price", "fetch_time", "source"]
+    cols = ["product_id", "title", "brand", "category", "currency", "price", "fetch_time", "source"]
     return [dict(zip(cols, r, strict=True)) for r in rows]

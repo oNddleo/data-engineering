@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import sys
 from typing import Any
 
 from saga import RetryPolicy, SagaOrchestrator, SagaStep, SagaStore
@@ -46,7 +45,7 @@ class ExtractFromSource(SagaStep):
     async def execute(self, ctx: dict[str, Any]) -> dict[str, Any]:
         source = ctx["source_table"]
         _log(self.name, f"Extracting rows from {source!r}")
-        row_count = 142_857   # simulated
+        row_count = 142_857  # simulated
         extract_path = f"/tmp/extract_{ctx['batch_id']}.parquet"
         _log(self.name, f"Wrote {row_count:,} rows → {extract_path}")
         return {"extract_path": extract_path, "raw_row_count": row_count}
@@ -76,10 +75,13 @@ class TransformAndEnrich(SagaStep):
     async def execute(self, ctx: dict[str, Any]) -> dict[str, Any]:
         in_rows = ctx["raw_row_count"]
         _log(self.name, f"Applying transforms to {in_rows:,} rows")
-        dropped = int(in_rows * 0.002)   # 0.2 % invalid rows dropped
+        dropped = int(in_rows * 0.002)  # 0.2 % invalid rows dropped
         out_rows = in_rows - dropped
         transform_path = f"/tmp/transform_{ctx['batch_id']}.parquet"
-        _log(self.name, f"Dropped {dropped} invalid rows → {out_rows:,} clean rows → {transform_path}")
+        _log(
+            self.name,
+            f"Dropped {dropped} invalid rows → {out_rows:,} clean rows → {transform_path}",
+        )
         return {
             "transform_path": transform_path,
             "clean_row_count": out_rows,
@@ -110,7 +112,7 @@ class WriteToStagingTable(SagaStep):
 # Step 5 – Run Data Quality Checks (read-only)
 # ---------------------------------------------------------------------------
 class RunDataQualityChecks(SagaStep):
-    THRESHOLD = 0.995   # ≥ 99.5 % rows must pass
+    THRESHOLD = 0.995  # ≥ 99.5 % rows must pass
 
     async def execute(self, ctx: dict[str, Any]) -> dict[str, Any]:
         rows = ctx["staging_row_count"]
@@ -157,12 +159,18 @@ class SwapStagingToProduction(SagaStep):
 # ---------------------------------------------------------------------------
 class UpdateMetadataCatalog(SagaStep):
     async def execute(self, ctx: dict[str, Any]) -> dict[str, Any]:
-        _log(self.name, f"Updating catalog entry for {ctx['target_table']!r}: "
-                        f"row_count={ctx['clean_row_count']:,}, batch={ctx['batch_id']!r}")
+        _log(
+            self.name,
+            f"Updating catalog entry for {ctx['target_table']!r}: "
+            f"row_count={ctx['clean_row_count']:,}, batch={ctx['batch_id']!r}",
+        )
         return {"catalog_updated": True, "catalog_version": 2}
 
     async def compensate(self, ctx: dict[str, Any]) -> None:
-        _log(self.name, f"Reverting catalog entry for {ctx['target_table']!r} to previous version")
+        _log(
+            self.name,
+            f"Reverting catalog entry for {ctx['target_table']!r} to previous version",
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -186,16 +194,17 @@ class TriggerDownstreamJobs(SagaStep):
 # Pipeline runner
 # ---------------------------------------------------------------------------
 
+
 def build_steps(fail_at: int | None) -> list[SagaStep]:
     return [
-        ExtractFromSource(),                             # 1
-        ValidateSchema(),                                # 2
-        TransformAndEnrich(),                            # 3
-        WriteToStagingTable(),                           # 4
-        RunDataQualityChecks(),                          # 5
-        SwapStagingToProduction(fail=fail_at == 6),      # 6
-        UpdateMetadataCatalog(),                         # 7
-        TriggerDownstreamJobs(),                         # 8
+        ExtractFromSource(),  # 1
+        ValidateSchema(),  # 2
+        TransformAndEnrich(),  # 3
+        WriteToStagingTable(),  # 4
+        RunDataQualityChecks(),  # 5
+        SwapStagingToProduction(fail=fail_at == 6),  # 6
+        UpdateMetadataCatalog(),  # 7
+        TriggerDownstreamJobs(),  # 8
     ]
 
 
@@ -238,12 +247,16 @@ async def run_etl(
         logger.info("    Dropped     : %s", result.context.get("dropped_rows"))
         logger.info("    DQ ratio    : %.4f", result.context.get("dq_ratio", 0))
     else:
-        logger.warning("❌  ETL batch %s FAILED (status=%s)", batch_id, result.status.value)
+        logger.warning(
+            "❌  ETL batch %s FAILED (status=%s)", batch_id, result.status.value
+        )
         logger.warning("    Failed at step : %s", result.failure_step)
         logger.warning("    Reason         : %s", result.failure_reason)
         if result.compensation_errors:
             for ce in result.compensation_errors:
-                logger.error("    ⚠ Compensation error  %s: %s", ce["step"], ce["error"])
+                logger.error(
+                    "    ⚠ Compensation error  %s: %s", ce["step"], ce["error"]
+                )
         else:
             logger.info("    ↩ All completed steps rolled back successfully")
     logger.info("=" * 60)
@@ -261,8 +274,12 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="ETL Pipeline Saga demo")
-    parser.add_argument("--fail-at", type=int, default=None,
-                        help="Force failure at step N (1–8) to demo rollback")
+    parser.add_argument(
+        "--fail-at",
+        type=int,
+        default=None,
+        help="Force failure at step N (1–8) to demo rollback",
+    )
     args = parser.parse_args()
 
     asyncio.run(

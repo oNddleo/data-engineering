@@ -9,6 +9,7 @@ import sys
 def cmd_bench(args: argparse.Namespace) -> int:
     if args.what == "pagerank":
         from benchmarks.bench_pagerank import main as bench_main
+
         bench_main()
     else:
         print(f"unknown bench: {args.what}", file=sys.stderr)
@@ -18,6 +19,7 @@ def cmd_bench(args: argparse.Namespace) -> int:
 
 def cmd_info(_: argparse.Namespace) -> int:
     from timely import __version__
+
     print(f"timely-dataflow-engine version {__version__}")
     print("Naiad-style (epoch, iteration) timestamps + progress tracking")
     return 0
@@ -25,6 +27,7 @@ def cmd_info(_: argparse.Namespace) -> int:
 
 def cmd_pagerank(args: argparse.Namespace) -> int:
     from timely.examples.pagerank import pagerank
+
     # Simple cycle for demonstration
     edges = {0: [1], 1: [2], 2: [0]}
     ranks, iters = pagerank(edges, n_nodes=3, max_iter=args.max_iter)

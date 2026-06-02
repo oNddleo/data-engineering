@@ -1,0 +1,5 @@
+services:
+  vmzrecon:
+    build: .
+    image: vnpay-momo-zalopay-reconciliation:latest
+    command: ["info"]

@@ -1,9 +1,7 @@
 """Tests for the ITS causal impact analyzer."""
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
-import numpy as np
-import pytest
 
 from pipeline_rca.analysis.causal_impact import ITSAnalyzer, rank_candidates
 from pipeline_rca.models import CausalEstimate, MetricPoint

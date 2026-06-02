@@ -1,0 +1,5 @@
+services:
+  vngrade:
+    build: .
+    image: vn-school-grade-pipeline:latest
+    command: ["info"]

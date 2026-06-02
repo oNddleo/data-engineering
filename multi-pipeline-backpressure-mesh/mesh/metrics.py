@@ -1,10 +1,11 @@
 """Core metric and signal types shared across the mesh."""
+
 from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
+from typing import Any
 
 
 class BackpressureLevel(float, Enum):
@@ -64,13 +65,14 @@ class JobMetrics:
 @dataclass
 class BackpressureSignal:
     """Emitted by a sidecar when its job detects backpressure."""
+
     source_job_id: str
     level: BackpressureLevel
     score: float
     timestamp: float = field(default_factory=time.monotonic)
     message: str = ""
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "source_job_id": self.source_job_id,
             "level": self.level.name,
@@ -80,7 +82,7 @@ class BackpressureSignal:
         }
 
     @classmethod
-    def from_dict(cls, d: dict) -> BackpressureSignal:
+    def from_dict(cls, d: dict[str, Any]) -> BackpressureSignal:
         return cls(
             source_job_id=d["source_job_id"],
             level=BackpressureLevel[d["level"]],
@@ -93,13 +95,14 @@ class BackpressureSignal:
 @dataclass
 class ThrottleCommand:
     """Issued by the coordinator to a job's sidecar."""
+
     target_job_id: str
-    throttle_factor: float       # 0.0 = full stop, 1.0 = no throttle
+    throttle_factor: float  # 0.0 = full stop, 1.0 = no throttle
     reason: str = ""
     timestamp: float = field(default_factory=time.monotonic)
-    originating_signal: Optional[BackpressureSignal] = None
+    originating_signal: BackpressureSignal | None = None
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "target_job_id": self.target_job_id,
             "throttle_factor": self.throttle_factor,
@@ -108,7 +111,7 @@ class ThrottleCommand:
         }
 
     @classmethod
-    def from_dict(cls, d: dict) -> ThrottleCommand:
+    def from_dict(cls, d: dict[str, Any]) -> ThrottleCommand:
         return cls(
             target_job_id=d["target_job_id"],
             throttle_factor=d["throttle_factor"],

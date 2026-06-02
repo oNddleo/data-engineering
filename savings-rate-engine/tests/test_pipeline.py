@@ -1,14 +1,12 @@
 """Integration tests for the pipeline orchestrator."""
 import os
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 os.environ["USE_MOCK_DATA"] = "true"
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
-from savings_engine.pipeline import PipelineRun, BankResult, _run_bank
+from savings_engine.pipeline import _run_bank
 from savings_engine.scrapers.registry import SCRAPER_REGISTRY
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

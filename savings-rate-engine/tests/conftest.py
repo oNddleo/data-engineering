@@ -5,16 +5,17 @@ All tests run against an in-memory SQLite DB so they are fast and isolated.
 USE_MOCK_DATA is forced True so no real HTTP requests are made.
 """
 import os
+
 import pytest
 
 # Force mock data before any engine import
 os.environ.setdefault("USE_MOCK_DATA", "true")
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from savings_engine.models.db_models import Base, Bank
+from savings_engine.models.db_models import Bank, Base
 from savings_engine.storage.repository import RateRepository
 
 

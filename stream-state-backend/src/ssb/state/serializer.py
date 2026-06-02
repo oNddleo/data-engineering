@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import struct
 import time
-from typing import Any
+from typing import Any, cast
 
-import msgpack
+import msgpack  # type: ignore[import-untyped]
 
 # Tombstone marker written on explicit clear() calls.
 TOMBSTONE = b"\x00"
@@ -23,7 +23,7 @@ def now_ms() -> int:
 
 def encode_key(key: Any) -> bytes:
     """Serialize an arbitrary key to bytes using msgpack."""
-    return msgpack.packb(key, use_bin_type=True)
+    return cast(bytes, msgpack.packb(key, use_bin_type=True))
 
 
 def decode_key(raw: bytes) -> Any:
@@ -44,7 +44,7 @@ def encode_value(value: Any, timestamp_ms: int | None = None) -> bytes:
     """
     ts = timestamp_ms if timestamp_ms is not None else now_ms()
     ts_bytes = _TS_STRUCT.pack(ts)
-    payload = msgpack.packb(value, use_bin_type=True)
+    payload = cast(bytes, msgpack.packb(value, use_bin_type=True))
     return ts_bytes + payload
 
 

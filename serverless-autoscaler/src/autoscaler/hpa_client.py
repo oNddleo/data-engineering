@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import Any
 
 from .config import HPAConfig
 from .models import ScalingAction
@@ -28,7 +28,7 @@ class HPAClient:
     #  Public API                                                          #
     # ------------------------------------------------------------------ #
 
-    def get_hpa(self, name: str, namespace: Optional[str] = None) -> dict:
+    def get_hpa(self, name: str, namespace: str | None = None) -> dict[str, Any]:
         ns = namespace or self._cfg.namespace
         autoscaling = self._client.AutoscalingV2Api()
         hpa = autoscaling.read_namespaced_horizontal_pod_autoscaler(name, ns)
@@ -47,8 +47,8 @@ class HPAClient:
         hpa_name: str,
         target_min: int,
         target_max: int,
-        namespace: Optional[str] = None,
-    ) -> Optional[ScalingAction]:
+        namespace: str | None = None,
+    ) -> ScalingAction | None:
         """Raise minReplicas before a job starts to avoid cold starts."""
         return self._patch(
             job_id=job_id,
@@ -66,9 +66,9 @@ class HPAClient:
         hpa_name: str,
         new_min: int,
         new_max: int,
-        namespace: Optional[str] = None,
+        namespace: str | None = None,
         reason: str = "mid_run_adjustment",
-    ) -> Optional[ScalingAction]:
+    ) -> ScalingAction | None:
         """Adjust HPA bounds while a job is running based on live metrics."""
         return self._patch(
             job_id=job_id,
@@ -86,8 +86,8 @@ class HPAClient:
         hpa_name: str,
         default_min: int = 1,
         default_max: int = 10,
-        namespace: Optional[str] = None,
-    ) -> Optional[ScalingAction]:
+        namespace: str | None = None,
+    ) -> ScalingAction | None:
         """Return HPA to baseline after job completion."""
         return self._patch(
             job_id=job_id,
@@ -107,12 +107,12 @@ class HPAClient:
         self,
         job_id: str,
         hpa_name: str,
-        namespace: Optional[str],
+        namespace: str | None,
         new_min: int,
         new_max: int,
         reason: str,
         is_scale_up: bool,
-    ) -> Optional[ScalingAction]:
+    ) -> ScalingAction | None:
         ns = namespace or self._cfg.namespace
         now = datetime.utcnow()
 
@@ -144,9 +144,7 @@ class HPAClient:
                     "maxReplicas": new_max,
                 }
             }
-            autoscaling.patch_namespaced_horizontal_pod_autoscaler(
-                hpa_name, ns, patch_body
-            )
+            autoscaling.patch_namespaced_horizontal_pod_autoscaler(hpa_name, ns, patch_body)
             tracker[hpa_name] = now
             action = ScalingAction(
                 job_id=job_id,
@@ -161,9 +159,12 @@ class HPAClient:
             )
             logger.info(
                 "Patched HPA job=%s hpa=%s min %d→%d max %d→%d reason=%s",
-                job_id, hpa_name,
-                action.min_replicas_before, new_min,
-                action.max_replicas_before, new_max,
+                job_id,
+                hpa_name,
+                action.min_replicas_before,
+                new_min,
+                action.max_replicas_before,
+                new_max,
                 reason,
             )
             return action
@@ -172,15 +173,16 @@ class HPAClient:
             logger.exception("Failed to patch HPA hpa=%s", hpa_name)
             return None
 
-    def _current_min(self, hpa_name: str, namespace: Optional[str]) -> int:
+    def _current_min(self, hpa_name: str, namespace: str | None) -> int:
         try:
-            return self.get_hpa(hpa_name, namespace)["min_replicas"]
+            return int(self.get_hpa(hpa_name, namespace)["min_replicas"])
         except Exception:
             return 1
 
-    def _build_client(self):
+    def _build_client(self) -> Any:
         try:
-            from kubernetes import client, config as k8s_config
+            from kubernetes import client
+            from kubernetes import config as k8s_config
 
             if self._cfg.kubeconfig_path:
                 k8s_config.load_kube_config(config_file=self._cfg.kubeconfig_path)
@@ -196,16 +198,17 @@ class _StubK8sClient:
     """No-op stub used in testing / local dev without a real cluster."""
 
     class _FakeAPI:
-        def read_namespaced_horizontal_pod_autoscaler(self, name, ns):
+        def read_namespaced_horizontal_pod_autoscaler(self, name: str, ns: str) -> Any:
             from types import SimpleNamespace
+
             return SimpleNamespace(
                 metadata=SimpleNamespace(name=name, namespace=ns),
                 spec=SimpleNamespace(min_replicas=1, max_replicas=10),
                 status=SimpleNamespace(current_replicas=1, desired_replicas=1),
             )
 
-        def patch_namespaced_horizontal_pod_autoscaler(self, name, ns, body):
+        def patch_namespaced_horizontal_pod_autoscaler(self, name: str, ns: str, body: Any) -> None:
             logger.debug("STUB patch HPA %s/%s %s", ns, name, body)
 
-    def AutoscalingV2Api(self):
+    def AutoscalingV2Api(self) -> _FakeAPI:
         return self._FakeAPI()

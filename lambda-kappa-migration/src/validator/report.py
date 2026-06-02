@@ -86,9 +86,9 @@ class ValidationReport:
     def print_rich(self) -> None:
         """Print a formatted table to the terminal using the rich library."""
         try:
+            from rich import box
             from rich.console import Console
             from rich.table import Table
-            from rich import box
 
             console = Console()
             table = Table(
@@ -143,7 +143,9 @@ class ValidationReport:
         for c in self.comparisons:
             status = "OK" if c.passed else "FAIL"
             delta = f" delta={c.delta_pct:.4f}%" if c.delta_pct is not None else ""
-            print(f"  [{status}] {c.key} / {c.field}: lambda={c.lambda_value} kappa={c.kappa_value}{delta}")
+            print(
+                f"  [{status}] {c.key} / {c.field}: lambda={c.lambda_value} kappa={c.kappa_value}{delta}"
+            )
         overall = "PASSED" if self.passed else "FAILED"
         print(
             f"\n{overall}: {self.match_count} exact | "

@@ -1,15 +1,13 @@
-FROM python:3.12-slim
-
-RUN apt-get update && apt-get install -y \
-    iproute2 \
-    iptables \
-    && rm -rf /var/lib/apt/lists/*
-
+FROM python:3.12-slim AS builder
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml README.md ./
+COPY src/ src/
+RUN pip install --no-cache-dir -e .
 
-COPY . .
-
-EXPOSE 8001
-ENTRYPOINT ["python", "server.py"]
+FROM python:3.12-slim
+WORKDIR /app
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin/raftmeta /usr/local/bin/raftmeta
+COPY src/ src/
+ENTRYPOINT ["raftmeta"]
+CMD ["--help"]

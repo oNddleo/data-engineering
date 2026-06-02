@@ -1,4 +1,5 @@
 """PostgreSQL engine: translates predicates to SQL WHERE clause fragments."""
+
 from __future__ import annotations
 
 import datetime

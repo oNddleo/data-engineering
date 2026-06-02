@@ -1,9 +1,7 @@
 """Integration tests for the StreamProcessor."""
-import pytest
 from src import (
     StreamProcessor, Event,
-    FixedLagWatermark, DynamicPerKeyWatermark,
-    TumblingWindow, SlidingWindow, SessionWindow,
+    FixedLagWatermark, TumblingWindow, SlidingWindow, SessionWindow,
     DropPolicy, RestatePolicy, SideOutputPolicy,
 )
 

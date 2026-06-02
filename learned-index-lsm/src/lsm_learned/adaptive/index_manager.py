@@ -9,9 +9,8 @@ the current key distribution and switches back.
 
 from __future__ import annotations
 
-import time
 from enum import Enum, auto
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 
@@ -67,7 +66,7 @@ class AdaptiveIndexManager:
     # Build / retrain
     # ------------------------------------------------------------------
 
-    def build(self, sorted_keys: np.ndarray) -> None:
+    def build(self, sorted_keys: np.ndarray[Any, np.dtype[Any]]) -> None:
         """Initial build — trains the RMI and populates the B-tree."""
         self._rmi.train(sorted_keys)
         self._btree.build(sorted_keys.tolist())
@@ -79,7 +78,7 @@ class AdaptiveIndexManager:
         self._mode = IndexMode.LEARNED
         self._detector = ADWINDetector(delta=self._detector._delta)
 
-    def _retrain(self, sorted_keys: np.ndarray) -> None:
+    def _retrain(self, sorted_keys: np.ndarray[Any, np.dtype[Any]]) -> None:
         self._rmi.train(sorted_keys)
         self._mode = IndexMode.LEARNED
         self._fallback_query_count = 0
@@ -90,7 +89,9 @@ class AdaptiveIndexManager:
     # Query
     # ------------------------------------------------------------------
 
-    def lookup(self, key: int, sorted_keys: Optional[np.ndarray] = None) -> Optional[int]:
+    def lookup(
+        self, key: int, sorted_keys: Optional[np.ndarray[Any, np.dtype[Any]]] = None
+    ) -> Optional[int]:
         """
         Return the array index of *key* (or None if absent).
 
@@ -108,12 +109,15 @@ class AdaptiveIndexManager:
         else:
             self._fallback_query_count += 1
             result = self._btree.lookup(key)
-            if sorted_keys is not None and self._fallback_query_count >= self._fallback_window:
+            if (
+                sorted_keys is not None
+                and self._fallback_query_count >= self._fallback_window
+            ):
                 self._maybe_retrain(sorted_keys)
             return result
 
     def _learned_lookup(
-        self, key: int, sorted_keys: Optional[np.ndarray]
+        self, key: int, sorted_keys: Optional[np.ndarray[Any, np.dtype[Any]]]
     ) -> Optional[int]:
         self._total_rmi_queries += 1
         idx = self._rmi.lookup(float(key))
@@ -132,7 +136,7 @@ class AdaptiveIndexManager:
 
         return idx
 
-    def _maybe_retrain(self, sorted_keys: np.ndarray) -> None:
+    def _maybe_retrain(self, sorted_keys: np.ndarray[Any, np.dtype[Any]]) -> None:
         if not self._error_history:
             return
         recent = self._error_history[-self._fallback_window :]
@@ -157,7 +161,7 @@ class AdaptiveIndexManager:
             return 0.0
         return self._total_rmi_queries / self._total_queries
 
-    def summary(self) -> dict:
+    def summary(self) -> dict[str, object]:
         return {
             "mode": self._mode.name,
             "total_queries": self._total_queries,
@@ -165,5 +169,7 @@ class AdaptiveIndexManager:
             "fallback_queries": self._total_queries - self._total_rmi_queries,
             "drift_events": len(self._drift_events),
             "rmi_usage_rate": round(self.rmi_usage_rate, 4),
-            "mean_error": round(float(np.mean(self._error_history)) if self._error_history else 0, 2),
+            "mean_error": round(
+                float(np.mean(self._error_history)) if self._error_history else 0, 2
+            ),
         }

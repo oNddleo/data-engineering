@@ -9,9 +9,12 @@ GorillaDelta  – Delta-of-delta compression for monotone integer columns
                (timestamps, sequence numbers).
                (Gorilla VLDB 2015, §4.1, timestamp stream)
 """
+
 from __future__ import annotations
 
 import struct
+
+from typing import Any
 
 import numpy as np
 
@@ -23,24 +26,29 @@ from .base import Codec, EncodedColumn
 # GorillaFloat
 # ---------------------------------------------------------------------------
 
+
 class GorillaFloatCodec(Codec):
     name = "gorilla_float"
 
-    def supports_dtype(self, dtype: np.dtype) -> bool:
+    def supports_dtype(self, dtype: np.dtype[Any]) -> bool:
         return dtype.kind == "f"
 
-    def encode(self, data: np.ndarray) -> EncodedColumn:
+    def encode(self, data: np.ndarray[Any, np.dtype[Any]]) -> EncodedColumn:
         values = data.astype(np.float64)
         n = len(values)
         bw = BitWriter()
         bw.write_bits(n, 32)
 
         if n == 0:
-            return EncodedColumn(codec_name=self.name, data=bw.finish(),
-                                 original_dtype=str(data.dtype), original_len=n)
+            return EncodedColumn(
+                codec_name=self.name,
+                data=bw.finish(),
+                original_dtype=str(data.dtype),
+                original_len=n,
+            )
 
         def f2i(f: float) -> int:
-            return struct.unpack("<Q", struct.pack("<d", f))[0]
+            return int(struct.unpack("<Q", struct.pack("<d", f))[0])
 
         prev = f2i(float(values[0]))
         bw.write_bits(prev, 64)
@@ -69,9 +77,7 @@ class GorillaFloatCodec(Codec):
 
                 # Reuse previous block when current XOR fits entirely within it
                 reuse = (
-                    prev_lz >= 0
-                    and lz >= prev_lz
-                    and tz >= (64 - prev_lz - prev_mb)
+                    prev_lz >= 0 and lz >= prev_lz and tz >= (64 - prev_lz - prev_mb)
                 )
                 if reuse:
                     bw.write_bit(0)
@@ -80,8 +86,10 @@ class GorillaFloatCodec(Codec):
                     bw.write_bits(relevant, prev_mb)
                 else:
                     bw.write_bit(1)
-                    bw.write_bits(lz, 6)        # 6 bits: leading zeros 0-63
-                    bw.write_bits(mb - 1, 6)    # 6 bits: meaningful bits-1 (range 0-63, represents 1-64)
+                    bw.write_bits(lz, 6)  # 6 bits: leading zeros 0-63
+                    bw.write_bits(
+                        mb - 1, 6
+                    )  # 6 bits: meaningful bits-1 (range 0-63, represents 1-64)
                     bw.write_bits(xor >> tz, mb)
                     prev_lz = lz
                     prev_mb = mb
@@ -95,14 +103,16 @@ class GorillaFloatCodec(Codec):
             original_len=n,
         )
 
-    def decode(self, encoded: EncodedColumn) -> np.ndarray:
+    def decode(self, encoded: EncodedColumn) -> np.ndarray[Any, np.dtype[Any]]:
         br = BitReader(encoded.data)
         n = br.read_bits(32)
         if n == 0:
             return np.array([], dtype=encoded.original_dtype)
 
         def i2f(b: int) -> float:
-            return struct.unpack("<d", struct.pack("<Q", b & 0xFFFF_FFFF_FFFF_FFFF))[0]
+            return float(
+                struct.unpack("<d", struct.pack("<Q", b & 0xFFFF_FFFF_FFFF_FFFF))[0]
+            )
 
         result = np.empty(n, dtype=np.float64)
         prev = br.read_bits(64)
@@ -118,7 +128,7 @@ class GorillaFloatCodec(Codec):
                     lz, mb = prev_lz, prev_mb
                 else:
                     lz = br.read_bits(6)
-                    mb = br.read_bits(6) + 1    # stored as mb-1
+                    mb = br.read_bits(6) + 1  # stored as mb-1
                     prev_lz, prev_mb = lz, mb
 
                 tz = 64 - lz - mb
@@ -135,21 +145,31 @@ class GorillaFloatCodec(Codec):
 # GorillaDelta (delta-of-delta for integers / timestamps)
 # ---------------------------------------------------------------------------
 
+
 def _write_dod(bw: BitWriter, dod: int) -> None:
     """Variable-length encoding of delta-of-delta."""
     if dod == 0:
         bw.write_bit(0)
     elif -63 <= dod <= 64:
-        bw.write_bit(1); bw.write_bit(0)
-        bw.write_bits(dod + 63, 7)   # offset 63 → range [0,127]
+        bw.write_bit(1)
+        bw.write_bit(0)
+        bw.write_bits(dod + 63, 7)  # offset 63 → range [0,127]
     elif -255 <= dod <= 256:
-        bw.write_bit(1); bw.write_bit(1); bw.write_bit(0)
+        bw.write_bit(1)
+        bw.write_bit(1)
+        bw.write_bit(0)
         bw.write_bits(dod + 255, 9)  # offset 255 → range [0,511]
     elif -2047 <= dod <= 2048:
-        bw.write_bit(1); bw.write_bit(1); bw.write_bit(1); bw.write_bit(0)
+        bw.write_bit(1)
+        bw.write_bit(1)
+        bw.write_bit(1)
+        bw.write_bit(0)
         bw.write_bits(dod + 2047, 12)
     else:
-        bw.write_bit(1); bw.write_bit(1); bw.write_bit(1); bw.write_bit(1)
+        bw.write_bit(1)
+        bw.write_bit(1)
+        bw.write_bit(1)
+        bw.write_bit(1)
         bw.write_bits(dod & 0xFFFF_FFFF_FFFF_FFFF, 64)
 
 
@@ -174,28 +194,37 @@ def _read_dod(br: BitReader) -> int:
 
 class GorillaDeltaCodec(Codec):
     """Delta-of-delta encoding for monotone integer columns (e.g. timestamps)."""
+
     name = "gorilla_delta"
 
-    def supports_dtype(self, dtype: np.dtype) -> bool:
+    def supports_dtype(self, dtype: np.dtype[Any]) -> bool:
         return dtype.kind in ("i", "u")
 
-    def encode(self, data: np.ndarray) -> EncodedColumn:
+    def encode(self, data: np.ndarray[Any, np.dtype[Any]]) -> EncodedColumn:
         values = data.astype(np.int64)
         n = len(values)
         bw = BitWriter()
         bw.write_bits(n, 32)
 
         if n == 0:
-            return EncodedColumn(codec_name=self.name, data=bw.finish(),
-                                 original_dtype=str(data.dtype), original_len=n)
+            return EncodedColumn(
+                codec_name=self.name,
+                data=bw.finish(),
+                original_dtype=str(data.dtype),
+                original_len=n,
+            )
 
         # Store first value as-is (64 bits)
         v0 = int(values[0])
         bw.write_bits(v0 & 0xFFFF_FFFF_FFFF_FFFF, 64)
 
         if n == 1:
-            return EncodedColumn(codec_name=self.name, data=bw.finish(),
-                                 original_dtype=str(data.dtype), original_len=n)
+            return EncodedColumn(
+                codec_name=self.name,
+                data=bw.finish(),
+                original_dtype=str(data.dtype),
+                original_len=n,
+            )
 
         # Store first delta as-is (64 bits)
         prev_delta = int(values[1]) - v0
@@ -214,7 +243,7 @@ class GorillaDeltaCodec(Codec):
             original_len=n,
         )
 
-    def decode(self, encoded: EncodedColumn) -> np.ndarray:
+    def decode(self, encoded: EncodedColumn) -> np.ndarray[Any, np.dtype[Any]]:
         br = BitReader(encoded.data)
         n = br.read_bits(32)
         if n == 0:

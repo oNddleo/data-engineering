@@ -21,8 +21,8 @@ class Op(IntEnum):
 class Message:
     op: Op
     key: bytes
-    value: Any = None         # None for DEL
-    seq: int = 0              # monotone seq, set by the tree at injection
+    value: Any = None  # None for DEL
+    seq: int = 0  # monotone seq, set by the tree at injection
 
     def __repr__(self) -> str:
         if self.op == Op.PUT:

@@ -8,17 +8,16 @@ This layout lets us efficiently list all records for a customer during
 key rotation or RTBF without a full bucket scan.
 """
 
-import json
 import threading
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator, Optional
 
 from ..config import get_config
 from ..encryption.engine import EncryptedRecord
 
 
 class RecordStore:
-    def __init__(self):
+    def __init__(self) -> None:
         cfg = get_config()
         self._mode = cfg.storage_mode
         if self._mode == "local":
@@ -27,6 +26,7 @@ class RecordStore:
             self._lock = threading.Lock()
         else:
             import boto3
+
             kwargs = dict(region_name=cfg.aws_region)
             if cfg.s3_endpoint_url:
                 kwargs["endpoint_url"] = cfg.s3_endpoint_url
@@ -57,7 +57,7 @@ class RecordStore:
     # Read
     # ------------------------------------------------------------------
 
-    def get_record(self, customer_id: str, record_id: str) -> Optional[EncryptedRecord]:
+    def get_record(self, customer_id: str, record_id: str) -> EncryptedRecord | None:
         key = self._record_key(customer_id, record_id)
         try:
             body = self._read_raw(key)

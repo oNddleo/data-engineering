@@ -4,11 +4,11 @@ Pipeline orchestrator.
 Runs every registered scraper, normalizes results, persists snapshots, and
 logs a structured run-summary.  Designed to be called by the scheduler or CLI.
 """
+
 import logging
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 from savings_engine.models.schemas import NormalizedRate
 from savings_engine.normalizer import normalize
@@ -25,13 +25,13 @@ class BankResult:
     success: bool
     rates_saved: int
     duration_s: float
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @dataclass
 class PipelineRun:
     started_at: datetime = field(default_factory=datetime.utcnow)
-    finished_at: Optional[datetime] = None
+    finished_at: datetime | None = None
     results: list[BankResult] = field(default_factory=list)
 
     @property
@@ -53,7 +53,7 @@ class PipelineRun:
         return 0.0
 
 
-def run_pipeline(bank_codes: Optional[list[str]] = None) -> PipelineRun:
+def run_pipeline(bank_codes: list[str] | None = None) -> PipelineRun:
     """
     Execute the full scrape → normalize → persist pipeline.
 
@@ -87,8 +87,9 @@ def _run_bank(bank_code: str) -> BankResult:
         elapsed = time.perf_counter() - t0
         logger.error("%-6s  FAILED  %.2fs  %s", bank_code, elapsed, exc)
         _persist_error(bank_code, str(exc))
-        return BankResult(bank_code=bank_code, success=False, rates_saved=0,
-                          duration_s=elapsed, error=str(exc))
+        return BankResult(
+            bank_code=bank_code, success=False, rates_saved=0, duration_s=elapsed, error=str(exc)
+        )
 
     normalized: list[NormalizedRate] = normalize(raw)
     elapsed = time.perf_counter() - t0
@@ -97,13 +98,15 @@ def _run_bank(bank_code: str) -> BankResult:
         msg = "Normalizer produced 0 rates"
         logger.warning("%-6s  EMPTY   %.2fs", bank_code, elapsed)
         _persist_error(bank_code, msg)
-        return BankResult(bank_code=bank_code, success=False, rates_saved=0,
-                          duration_s=elapsed, error=msg)
+        return BankResult(
+            bank_code=bank_code, success=False, rates_saved=0, duration_s=elapsed, error=msg
+        )
 
     _persist_rates(bank_code, normalized)
     logger.info("%-6s  OK      %.2fs  %d rates", bank_code, elapsed, len(normalized))
-    return BankResult(bank_code=bank_code, success=True,
-                      rates_saved=len(normalized), duration_s=elapsed)
+    return BankResult(
+        bank_code=bank_code, success=True, rates_saved=len(normalized), duration_s=elapsed
+    )
 
 
 def _persist_rates(bank_code: str, rates: list[NormalizedRate]) -> None:
@@ -121,10 +124,18 @@ def _persist_error(bank_code: str, error: str) -> None:
 def _log_summary(run: PipelineRun) -> None:
     logger.info(
         "Pipeline done — %d/%d banks OK, %d rates saved, %.1fs total",
-        run.successful_banks, run.total_banks, run.total_rates, run.duration_s,
+        run.successful_banks,
+        run.total_banks,
+        run.total_rates,
+        run.duration_s,
     )
     for r in run.results:
         status = "✓" if r.success else "✗"
-        logger.info("  %s %-6s  %d rates  %.2fs%s",
-                    status, r.bank_code, r.rates_saved, r.duration_s,
-                    f"  [{r.error}]" if r.error else "")
+        logger.info(
+            "  %s %-6s  %d rates  %.2fs%s",
+            status,
+            r.bank_code,
+            r.rates_saved,
+            r.duration_s,
+            f"  [{r.error}]" if r.error else "",
+        )

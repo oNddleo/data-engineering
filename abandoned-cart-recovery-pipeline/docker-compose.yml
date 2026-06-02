@@ -1,0 +1,5 @@
+services:
+  cartrec:
+    build: .
+    image: abandoned-cart-recovery-pipeline:latest
+    command: ["info"]

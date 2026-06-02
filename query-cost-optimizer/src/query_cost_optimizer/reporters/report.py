@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import math
-from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
@@ -12,10 +11,8 @@ from rich import box
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from rich.text import Text
-from rich import print as rprint
 
-from ..models import AnalysisReport, Recommendation, ExpensivePattern, Severity
+from ..models import AnalysisReport, Severity
 
 console = Console()
 
@@ -109,7 +106,9 @@ class ConsoleReporter:
                     )
                 )
         else:
-            console.print("[green]No structural recommendations — tables look well-optimised.[/green]")
+            console.print(
+                "[green]No structural recommendations — tables look well-optimised.[/green]"
+            )
 
         console.print()
 
@@ -130,7 +129,8 @@ class ConsoleReporter:
                 if pat.example_queries:
                     console.print(
                         Panel(
-                            pat.example_queries[0][:300] + ("…" if len(pat.example_queries[0]) > 300 else ""),
+                            pat.example_queries[0][:300]
+                            + ("…" if len(pat.example_queries[0]) > 300 else ""),
                             title="Example query",
                             border_style="dim",
                             padding=(0, 1),
@@ -150,7 +150,7 @@ class JsonReporter:
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        def _default(obj):
+        def _default(obj: object) -> object:
             if isinstance(obj, datetime):
                 return obj.isoformat()
             if hasattr(obj, "value"):

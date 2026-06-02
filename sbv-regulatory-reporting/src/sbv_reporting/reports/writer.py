@@ -1,8 +1,10 @@
 """Write SBV report DataFrames to Excel (xlsx) and CSV with proper formatting."""
+
 from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -10,10 +12,10 @@ from sbv_reporting.utils.config import get_config
 
 
 REPORT_META = {
-    "BCGD":     {"title": "BÁO CÁO GIAO DỊCH NGÀY",              "sheet": "BCGD"},
+    "BCGD": {"title": "BÁO CÁO GIAO DỊCH NGÀY", "sheet": "BCGD"},
     "B01-TCTD": {"title": "BÁO CÁO SỐ DƯ VÀ KHỐI LƯỢNG GIAO DỊCH", "sheet": "B01-TCTD"},
-    "BCGDLN":   {"title": "BÁO CÁO GIAO DỊCH GIÁ TRỊ LỚN",       "sheet": "BCGDLN"},
-    "BCGDNS":   {"title": "BÁO CÁO GIAO DỊCH ĐÁNG NGỜ",           "sheet": "BCGDNS"},
+    "BCGDLN": {"title": "BÁO CÁO GIAO DỊCH GIÁ TRỊ LỚN", "sheet": "BCGDLN"},
+    "BCGDNS": {"title": "BÁO CÁO GIAO DỊCH ĐÁNG NGỜ", "sheet": "BCGDNS"},
 }
 
 
@@ -43,20 +45,28 @@ class ReportWriter:
                 sheet = meta["sheet"]
 
                 # Header block (rows 1-5)
-                header_df = pd.DataFrame({
-                    "": [
-                        f"TỔ CHỨC TÍN DỤNG: {inst['institution_name']}",
-                        f"MÃ ĐỊNH CHẾ: {inst['institution_code']}  |  SWIFT: {inst.get('swift_code', '')}",
-                        meta["title"],
-                        f"Ngày báo cáo: {date_str}  |  Run ID: {run_id}",
-                        "",
-                    ]
-                })
-                header_df.to_excel(writer, sheet_name=sheet, index=False, header=False, startrow=0)
+                header_df = pd.DataFrame(
+                    {
+                        "": [
+                            f"TỔ CHỨC TÍN DỤNG: {inst['institution_name']}",
+                            f"MÃ ĐỊNH CHẾ: {inst['institution_code']}  |  SWIFT: {inst.get('swift_code', '')}",
+                            meta["title"],
+                            f"Ngày báo cáo: {date_str}  |  Run ID: {run_id}",
+                            "",
+                        ]
+                    }
+                )
+                header_df.to_excel(
+                    writer, sheet_name=sheet, index=False, header=False, startrow=0
+                )
 
                 if df.empty:
-                    empty_note = pd.DataFrame({"GHI CHÚ": ["Không có dữ liệu trong kỳ báo cáo"]})
-                    empty_note.to_excel(writer, sheet_name=sheet, index=False, startrow=6)
+                    empty_note = pd.DataFrame(
+                        {"GHI CHÚ": ["Không có dữ liệu trong kỳ báo cáo"]}
+                    )
+                    empty_note.to_excel(
+                        writer, sheet_name=sheet, index=False, startrow=6
+                    )
                 else:
                     df.to_excel(writer, sheet_name=sheet, index=False, startrow=6)
                     self._style_sheet(writer.sheets[sheet], df)
@@ -83,14 +93,16 @@ class ReportWriter:
 
     # ------------------------------------------------------------------
     @staticmethod
-    def _style_sheet(ws, df: pd.DataFrame) -> None:
+    def _style_sheet(ws: Any, df: pd.DataFrame) -> None:
         """Apply basic column widths to the worksheet."""
         try:
             from openpyxl.styles import Font, PatternFill, Alignment
             from openpyxl.utils import get_column_letter
 
             header_row = 7  # 1-indexed; data starts row 7
-            header_fill = PatternFill(start_color="1F4E79", end_color="1F4E79", fill_type="solid")
+            header_fill = PatternFill(
+                start_color="1F4E79", end_color="1F4E79", fill_type="solid"
+            )
             header_font = Font(bold=True, color="FFFFFF", size=10)
 
             for col_idx, col_name in enumerate(df.columns, start=1):

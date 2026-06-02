@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "exactlyonce"
+version = "0.1.0"
+description = "Production-grade exactly-once pipeline primitives (stdlib-only)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = []
+
+[project.scripts]
+exactlyonce = "exactlyonce.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/exactlyonce"]
+
+[tool.ruff]
+line-length = 99
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "TCH", "ANN"]
+ignore = ["ANN101", "ANN102", "ANN401"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN", "S101"]
+
+[tool.mypy]
+strict = true
+explicit_package_bases = true
+no_site_packages = true
+
+[[tool.mypy.overrides]]
+module = ["structlog.*", "confluent_kafka.*", "redis.*", "pydantic.*", "pydantic_settings.*", "psycopg2.*", "tenacity.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_exactlyonce.py"]

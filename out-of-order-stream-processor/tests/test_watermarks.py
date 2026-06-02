@@ -1,5 +1,4 @@
 """Tests for watermark strategies."""
-import pytest
 from src.event import Event
 from src.watermarks import FixedLagWatermark, DynamicPerKeyWatermark, PercentileWatermark
 

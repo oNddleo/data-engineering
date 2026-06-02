@@ -1,4 +1,5 @@
 """Cost statistics: histograms, column stats, table stats, and registry."""
+
 from __future__ import annotations
 
 import threading

@@ -1,0 +1,5 @@
+services:
+  vnaddr:
+    build: .
+    image: vn-address-parser:latest
+    command: ["info"]

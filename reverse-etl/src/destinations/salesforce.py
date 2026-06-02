@@ -18,7 +18,8 @@ class SalesforceDestination(BaseDestination):
     """
 
     def __init__(self, params: dict[str, Any]) -> None:
-        from simple_salesforce import Salesforce  # lazy import — optional dependency
+        from simple_salesforce import Salesforce  # type: ignore[import-not-found]  # lazy import — optional dependency
+
         super().__init__(params)
         self._object_name = params["object_name"]
         self._operation = params.get("operation", "upsert")
@@ -27,7 +28,9 @@ class SalesforceDestination(BaseDestination):
         self._sf = Salesforce(
             username=params.get("username", settings.salesforce_username),
             password=params.get("password", settings.salesforce_password),
-            security_token=params.get("security_token", settings.salesforce_security_token),
+            security_token=params.get(
+                "security_token", settings.salesforce_security_token
+            ),
             domain=params.get("domain", settings.salesforce_domain),
         )
 
@@ -54,7 +57,11 @@ class SalesforceDestination(BaseDestination):
 
             batch_ok = sum(1 for r in results if r.get("success", False))
             synced += batch_ok
-            logger.debug(f"SalesforceDestination: batch {i//self._batch_size + 1} → {batch_ok}/{len(batch)} ok")
+            logger.debug(
+                f"SalesforceDestination: batch {i//self._batch_size + 1} → {batch_ok}/{len(batch)} ok"
+            )
 
-        logger.info(f"SalesforceDestination: synced {synced}/{len(records)} records to {self._object_name}")
+        logger.info(
+            f"SalesforceDestination: synced {synced}/{len(records)} records to {self._object_name}"
+        )
         return synced

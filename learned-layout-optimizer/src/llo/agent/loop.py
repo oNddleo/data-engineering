@@ -13,7 +13,7 @@ The agent ties the four subsystems together:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from llo.replay.pages import reward as replay_reward
 from llo.workload.drift import DriftDetector
@@ -46,7 +46,7 @@ class StepLog:
 class LayoutAgent:
     """Closed-loop agent acting on a single in-memory table."""
 
-    data: NDArray[np.integer]
+    data: NDArray[np.integer[Any]]
     columns: list[str]
     policy: _Policy
     profile: WorkloadProfile

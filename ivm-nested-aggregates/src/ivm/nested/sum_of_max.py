@@ -20,7 +20,7 @@ class SumOfMax:
     _max: PerKeyMax = field(default_factory=PerKeyMax)
     _outer_sum: float = 0.0
     _per_key_max_known: dict[Any, float] = field(default_factory=dict)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def insert(self, key: Any, value: float) -> float:
         with self._lock:
@@ -30,7 +30,7 @@ class SumOfMax:
             if old_max == float("-inf"):
                 self._outer_sum += new_max
             elif new_max != old_max:
-                self._outer_sum += (new_max - old_max)
+                self._outer_sum += new_max - old_max
             self._per_key_max_known[key] = new_max
             return self._outer_sum
 
@@ -44,7 +44,7 @@ class SumOfMax:
                 self._outer_sum -= old_max
                 self._per_key_max_known.pop(key, None)
             elif new_max != old_max:
-                self._outer_sum += (new_max - old_max)
+                self._outer_sum += new_max - old_max
                 self._per_key_max_known[key] = new_max
             return self._outer_sum
 

@@ -1,9 +1,10 @@
 """Engine samplers and stats builder for calibrating the cost model."""
+
 from __future__ import annotations
 
 import random
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from dqp.cost.statistics import ColumnStats, Histogram, StatsRegistry, TableStats
@@ -74,7 +75,7 @@ class ParquetSampler(SamplerBase):
         n_sample = max(1, int(n_rows * fraction))
         indices = random.sample(range(n_rows), min(n_sample, n_rows))
         sampled = table.take(indices)
-        return sampled.to_pylist()
+        return sampled.to_pylist()  # type: ignore[no-any-return]
 
 
 class PostgresSampler(SamplerBase):
@@ -98,9 +99,7 @@ class PostgresSampler(SamplerBase):
         conn = psycopg2.connect(self._conn_string)
         try:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                cur.execute(
-                    f'SELECT * FROM "{table_name}" TABLESAMPLE BERNOULLI (%s)', (pct,)
-                )
+                cur.execute(f'SELECT * FROM "{table_name}" TABLESAMPLE BERNOULLI (%s)', (pct,))
                 rows = [dict(row) for row in cur.fetchall()]
         finally:
             conn.close()

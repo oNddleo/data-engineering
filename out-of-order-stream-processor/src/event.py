@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 import time
 
 
@@ -8,8 +8,8 @@ import time
 class Event:
     """A single event in the stream."""
 
-    event_time: float          # epoch seconds (when the event actually occurred)
-    key: str                   # partition / grouping key
+    event_time: float  # epoch seconds (when the event actually occurred)
+    key: str  # partition / grouping key
     value: Any = field(compare=False)
     processing_time: float = field(default_factory=time.time, compare=False)
     sequence_id: int = field(default=0, compare=False)

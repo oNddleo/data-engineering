@@ -8,17 +8,15 @@ exponential moving average to adjust future predictions.
 from __future__ import annotations
 
 import json
-import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from .models import CandidateView, MaterializedView, Warehouse
-
 
 # ---------------------------------------------------------------------------
 # Warehouse pricing constants (USD, as of 2025 — update in config)
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class PricingConfig:
@@ -43,11 +41,12 @@ DEFAULT_PRICING = PricingConfig()
 # Calibration store
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class _ViewCalibration:
     view_id: str
-    alpha: float = 0.1          # EMA smoothing factor
-    ratio: float = 1.0          # current calibration ratio (actual/predicted)
+    alpha: float = 0.1  # EMA smoothing factor
+    ratio: float = 1.0  # current calibration ratio (actual/predicted)
     observations: int = 0
 
 
@@ -56,7 +55,7 @@ class CalibrationStore:
     Persists calibration ratios to a JSON file so they survive restarts.
     """
 
-    def __init__(self, path: Optional[Path] = None) -> None:
+    def __init__(self, path: Path | None = None) -> None:
         self._path = path or Path(".mv_calibration.json")
         self._data: dict[str, _ViewCalibration] = {}
         self._load()
@@ -95,23 +94,18 @@ class CalibrationStore:
         if self._path.exists():
             try:
                 raw = json.loads(self._path.read_text())
-                self._data = {
-                    k: _ViewCalibration(**v) for k, v in raw.items()
-                }
+                self._data = {k: _ViewCalibration(**v) for k, v in raw.items()}
             except Exception:
                 pass
 
     def _save(self) -> None:
-        self._path.write_text(
-            json.dumps(
-                {k: v.__dict__ for k, v in self._data.items()}, indent=2
-            )
-        )
+        self._path.write_text(json.dumps({k: v.__dict__ for k, v in self._data.items()}, indent=2))
 
 
 # ---------------------------------------------------------------------------
 # CostModel
 # ---------------------------------------------------------------------------
+
 
 class CostModel:
     """
@@ -122,8 +116,8 @@ class CostModel:
 
     def __init__(
         self,
-        pricing: Optional[PricingConfig] = None,
-        calibration_store: Optional[CalibrationStore] = None,
+        pricing: PricingConfig | None = None,
+        calibration_store: CalibrationStore | None = None,
         scan_reduction_factor: float = 0.70,
     ) -> None:
         self.pricing = pricing or DEFAULT_PRICING
@@ -139,26 +133,18 @@ class CostModel:
         self,
         candidate: CandidateView,
         warehouse: Warehouse,
-        queries_per_month: Optional[int] = None,
+        queries_per_month: int | None = None,
     ) -> float:
         """Monthly benefit in USD (raw, before calibration)."""
         q_count = queries_per_month or len(candidate.benefiting_query_ids)
 
         if warehouse == Warehouse.BIGQUERY:
             # Rough bytes saved per query hit: storage size × reduction factor
-            bytes_saved_per_query = (
-                candidate.estimated_storage_bytes * self.scan_reduction_factor
-            )
-            monthly_benefit = (
-                q_count
-                * bytes_saved_per_query
-                * self.pricing.bq_scan_price_per_byte
-            )
+            bytes_saved_per_query = candidate.estimated_storage_bytes * self.scan_reduction_factor
+            monthly_benefit = q_count * bytes_saved_per_query * self.pricing.bq_scan_price_per_byte
         else:  # Snowflake
             # Estimate seconds of compute saved: 1 s per 100 MB of storage
-            seconds_per_query = (
-                candidate.estimated_storage_bytes / (100 * 1024 * 1024)
-            )
+            seconds_per_query = candidate.estimated_storage_bytes / (100 * 1024 * 1024)
             compute_saved = (
                 q_count
                 * seconds_per_query
@@ -171,19 +157,13 @@ class CostModel:
         ratio = self.calibration.get_ratio(candidate.view_id)
         return monthly_benefit * ratio
 
-    def estimate_storage_cost(
-        self, candidate: CandidateView, warehouse: Warehouse
-    ) -> float:
+    def estimate_storage_cost(self, candidate: CandidateView, warehouse: Warehouse) -> float:
         """Monthly storage cost in USD."""
         if warehouse == Warehouse.BIGQUERY:
             return (
-                candidate.estimated_storage_bytes
-                * self.pricing.bq_storage_price_per_byte_per_month
+                candidate.estimated_storage_bytes * self.pricing.bq_storage_price_per_byte_per_month
             )
-        return (
-            candidate.estimated_storage_bytes
-            * self.pricing.sf_storage_price_per_byte_per_month
-        )
+        return candidate.estimated_storage_bytes * self.pricing.sf_storage_price_per_byte_per_month
 
     def estimate_maintenance_cost(
         self,
@@ -234,9 +214,7 @@ class CostModel:
         """Return candidates with updated estimated_benefit_usd."""
         for c in candidates:
             c.estimated_benefit_usd = self.estimate_benefit(c, warehouse)
-            c.estimated_maintenance_cost_usd = self.estimate_maintenance_cost(
-                c, warehouse
-            )
+            c.estimated_maintenance_cost_usd = self.estimate_maintenance_cost(c, warehouse)
             c.estimated_storage_bytes = max(
                 c.estimated_storage_bytes,
                 int(self.estimate_storage_cost(c, warehouse) / (0.02 / 1e9)),

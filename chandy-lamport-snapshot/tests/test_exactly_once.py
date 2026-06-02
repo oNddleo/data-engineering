@@ -26,18 +26,17 @@ The proof relies on three properties working together:
    a race between recovery and a lingering in-flight message) are silently
    dropped before any state mutation occurs.
 """
+
 from __future__ import annotations
 
 import time
 from collections import Counter
-from typing import List
 
-import pytest
 
 from chandy_lamport import Pipeline
 
 
-N = 10   # source messages per source
+N = 10  # source messages per source
 
 
 def run_to_completion(n_failures: int = 0) -> Counter:
@@ -73,9 +72,9 @@ class TestExactlyOnceNoFailure:
         """
         counts = run_to_completion(n_failures=0)
         for s in range(1, N + 1):
-            assert counts[s] == 2, (
-                f"No-failure run: seq {s} appeared {counts[s]} times (expected 2)"
-            )
+            assert (
+                counts[s] == 2
+            ), f"No-failure run: seq {s} appeared {counts[s]} times (expected 2)"
 
     def test_no_extra_seqs(self):
         counts = run_to_completion(n_failures=0)
@@ -86,18 +85,18 @@ class TestExactlyOnceNoFailure:
 class TestExactlyOnceWithOneFailure:
     def test_each_seq_appears_twice_after_one_recovery(self):
         counts = run_to_completion(n_failures=1)
-        missing   = [s for s in range(1, N + 1) if counts[s] == 0]
+        missing = [s for s in range(1, N + 1) if counts[s] == 0]
         duplicate = [s for s in range(1, N + 1) if counts[s] > 2]
-        assert not missing,   f"Missing seqs after 1 recovery: {missing}"
+        assert not missing, f"Missing seqs after 1 recovery: {missing}"
         assert not duplicate, f"Duplicate seqs after 1 recovery: {duplicate}"
 
 
 class TestExactlyOnceWithTwoFailures:
     def test_each_seq_appears_twice_after_two_recoveries(self):
         counts = run_to_completion(n_failures=2)
-        missing   = [s for s in range(1, N + 1) if counts[s] == 0]
+        missing = [s for s in range(1, N + 1) if counts[s] == 0]
         duplicate = [s for s in range(1, N + 1) if counts[s] > 2]
-        assert not missing,   f"Missing seqs after 2 recoveries: {missing}"
+        assert not missing, f"Missing seqs after 2 recoveries: {missing}"
         assert not duplicate, f"Duplicate seqs after 2 recoveries: {duplicate}"
 
 
@@ -112,7 +111,7 @@ class TestIdempotencyGuard:
 
         agg = AggregatorNode("agg")
         agg.setup()
-        ch_in  = Channel("src", "agg")
+        ch_in = Channel("src", "agg")
         ch_out = Channel("agg", "snk")
         agg.add_in_channel(ch_in)
         agg.add_out_channel(ch_out)
@@ -121,15 +120,15 @@ class TestIdempotencyGuard:
         # Send the same message twice
         msg = DataMessage(content=10, origin_seq=1)
         ch_in.send(msg)
-        ch_in.send(msg)   # duplicate
+        ch_in.send(msg)  # duplicate
 
         time.sleep(0.15)
         agg.stop()
 
         state = agg.get_state()
-        assert state["count"] == 1, (
-            f"Duplicate should be dropped: count={state['count']}"
-        )
+        assert (
+            state["count"] == 1
+        ), f"Duplicate should be dropped: count={state['count']}"
         assert state["sum"] == 10
 
     def test_restored_node_processes_replayed_msg_once(self):
@@ -141,7 +140,7 @@ class TestIdempotencyGuard:
 
         agg = AggregatorNode("agg")
         agg.setup()
-        ch_in  = Channel("src", "agg")
+        ch_in = Channel("src", "agg")
         ch_out = Channel("agg", "snk")
         agg.add_in_channel(ch_in)
         agg.add_out_channel(ch_out)
@@ -162,14 +161,14 @@ class TestIdempotencyGuard:
         # WILL be processed (this is correct: we're replaying from a checkpoint
         # before this message was included in state).
         agg.start()
-        ch_in.send(msg)   # replay from channel state
+        ch_in.send(msg)  # replay from channel state
         time.sleep(0.1)
         agg.stop()
 
         post_recovery_state = agg.get_state()
-        assert post_recovery_state["sum"] == 5, (
-            "After recovery replay, sum should be 5 (msg processed once)"
-        )
+        assert (
+            post_recovery_state["sum"] == 5
+        ), "After recovery replay, sum should be 5 (msg processed once)"
 
         # Now send the SAME msg again (stale duplicate)
         agg.start()
@@ -178,9 +177,9 @@ class TestIdempotencyGuard:
         agg.stop()
 
         final_state = agg.get_state()
-        assert final_state["sum"] == 5, (
-            f"Stale duplicate should be dropped, sum={final_state['sum']}"
-        )
+        assert (
+            final_state["sum"] == 5
+        ), f"Stale duplicate should be dropped, sum={final_state['sum']}"
 
 
 class TestAggregatorSum:

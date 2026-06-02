@@ -39,7 +39,9 @@ class OperatorDescriptor:
         )
 
     def __hash__(self) -> int:
-        return hash((self.operator_id, tuple(sorted(self.state_names)), self.parallelism))
+        return hash(
+            (self.operator_id, tuple(sorted(self.state_names)), self.parallelism)
+        )
 
     def has_changed(self, other: "OperatorDescriptor") -> bool:
         """Return True if *other* is a modified version of *self*."""
@@ -89,7 +91,7 @@ class TopologyDescriptor:
         )
         return added, removed, changed
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a JSON-compatible dict."""
         return {
             "version": self.version,
@@ -105,7 +107,7 @@ class TopologyDescriptor:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "TopologyDescriptor":
+    def from_dict(cls, data: dict[str, Any]) -> "TopologyDescriptor":
         """Deserialize from a dict produced by :meth:`to_dict`."""
         operators = {
             oid: OperatorDescriptor(

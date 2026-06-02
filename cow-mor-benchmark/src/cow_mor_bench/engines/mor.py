@@ -13,16 +13,15 @@ import os
 import time
 import uuid
 from pathlib import Path
+from typing import Any
 
 import duckdb
-import numpy as np
 import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
 from cow_mor_bench.data.generator import primary_key_for
 from cow_mor_bench.data.schemas import (
-    DELTA_LOG_SCHEMA,
     DataFile,
     DeltaFile,
     TableMetadata,
@@ -33,7 +32,7 @@ from cow_mor_bench.engines.base import ReadResult, StorageEngine, TableStats, Wr
 _TARGET_FILE_ROWS = 100_000
 
 
-def _json_default(obj):
+def _json_default(obj: object) -> int | str:
     if isinstance(obj, datetime.datetime):
         # Store as epoch microseconds so PyArrow can reconstruct timestamp("us")
         epoch = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
@@ -42,7 +41,9 @@ def _json_default(obj):
     if isinstance(obj, datetime.date):
         return obj.isoformat()
     raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-_DELTA_FLUSH_ROWS = 5_000     # max rows per delta file before a new one is started
+
+
+_DELTA_FLUSH_ROWS = 5_000  # max rows per delta file before a new one is started
 
 
 class MergeOnReadEngine(StorageEngine):
@@ -76,33 +77,39 @@ class MergeOnReadEngine(StorageEngine):
             snapshot_id="",
         )
 
-    def _write_delta(self, op: str, rows: pa.Table | None, pk_values: list[int] | None) -> DeltaFile:
+    def _write_delta(
+        self, op: str, rows: pa.Table | None, pk_values: list[int] | None
+    ) -> DeltaFile:
         now_us = int(time.time() * 1_000_000)
         path = str(self._delta_dir / f"delta_{now_us}_{self._file_id()}.parquet")
 
         if op == "delete" and pk_values:
-            entries = pa.table({
-                "_op": pa.array(["delete"] * len(pk_values), type=pa.string()),
-                "_commit_ts": pa.array([now_us] * len(pk_values), type=pa.int64()),
-                "_row_id": pa.array(pk_values, type=pa.int64()),
-                "_file_path": pa.array([""] * len(pk_values), type=pa.string()),
-                "_payload": pa.array([""] * len(pk_values), type=pa.string()),
-            })
+            entries = pa.table(
+                {
+                    "_op": pa.array(["delete"] * len(pk_values), type=pa.string()),
+                    "_commit_ts": pa.array([now_us] * len(pk_values), type=pa.int64()),
+                    "_row_id": pa.array(pk_values, type=pa.int64()),
+                    "_file_path": pa.array([""] * len(pk_values), type=pa.string()),
+                    "_payload": pa.array([""] * len(pk_values), type=pa.string()),
+                }
+            )
         else:
             assert rows is not None
             payloads = [json.dumps(r, default=_json_default) for r in rows.to_pylist()]
             pk_list = rows.column(self._pk).to_pylist()
-            entries = pa.table({
-                "_op": pa.array([op] * len(rows), type=pa.string()),
-                "_commit_ts": pa.array([now_us] * len(rows), type=pa.int64()),
-                "_row_id": pa.array(pk_list, type=pa.int64()),
-                "_file_path": pa.array([""] * len(rows), type=pa.string()),
-                "_payload": pa.array(payloads, type=pa.string()),
-            })
+            entries = pa.table(
+                {
+                    "_op": pa.array([op] * len(rows), type=pa.string()),
+                    "_commit_ts": pa.array([now_us] * len(rows), type=pa.int64()),
+                    "_row_id": pa.array(pk_list, type=pa.int64()),
+                    "_file_path": pa.array([""] * len(rows), type=pa.string()),
+                    "_payload": pa.array(payloads, type=pa.string()),
+                }
+            )
 
         pq.write_table(entries, path, compression="snappy")
         size = os.path.getsize(path)
-        op_counts = {op: len(pk_values) if op == "delete" else len(rows)}
+        op_counts = {op: len(pk_values or []) if op == "delete" else len(rows or [])}
         return DeltaFile(
             path=path,
             row_count=len(entries),
@@ -121,7 +128,9 @@ class MergeOnReadEngine(StorageEngine):
             return [], []
         return snap.data_files, snap.delta_files
 
-    def _commit(self, data_files: list[DataFile], delta_files: list[DeltaFile], summary: dict) -> None:
+    def _commit(
+        self, data_files: list[DataFile], delta_files: list[DeltaFile], summary: dict[str, Any]
+    ) -> None:
         meta = self._load_metadata()
         meta.new_snapshot(data_files=data_files, delta_files=delta_files, summary=summary)
 
@@ -136,7 +145,9 @@ class MergeOnReadEngine(StorageEngine):
             return merged
 
         # Read all delta entries sorted by commit time
-        delta_parts = [pq.read_table(df.path) for df in sorted(delta_files, key=lambda d: d.commit_ts)]
+        delta_parts = [
+            pq.read_table(df.path) for df in sorted(delta_files, key=lambda d: d.commit_ts)
+        ]
         delta_all = pa.concat_tables(delta_parts)
 
         rows = {r[self._pk]: r for r in merged.to_pylist()}
@@ -152,7 +163,9 @@ class MergeOnReadEngine(StorageEngine):
                 rows[row_id] = payload
 
         if not rows:
-            return pa.table({col: pa.array([], type=schema.field(col).type) for col in schema.names})
+            return pa.table(
+                {col: pa.array([], type=schema.field(col).type) for col in schema.names}
+            )
 
         return pa.Table.from_pylist(list(rows.values()), schema=schema)
 
@@ -256,7 +269,9 @@ class MergeOnReadEngine(StorageEngine):
         if not data_files and not delta_files:
             return ReadResult(0, 0, 0, 0, time.perf_counter() - t0, "full_scan")
 
-        bytes_scanned = sum(f.size_bytes for f in data_files) + sum(d.size_bytes for d in delta_files)
+        bytes_scanned = sum(f.size_bytes for f in data_files) + sum(
+            d.size_bytes for d in delta_files
+        )
         base_tables = [pq.read_table(f.path) for f in data_files]
         merged = self._merge_read(base_tables, delta_files)
 
@@ -282,7 +297,9 @@ class MergeOnReadEngine(StorageEngine):
         data_files, delta_files = self._current_state()
 
         candidates = [f for f in data_files if f.min_pk <= pk_value <= f.max_pk]
-        bytes_scanned = sum(f.size_bytes for f in candidates) + sum(d.size_bytes for d in delta_files)
+        bytes_scanned = sum(f.size_bytes for f in candidates) + sum(
+            d.size_bytes for d in delta_files
+        )
         base_tables = [pq.read_table(f.path) for f in candidates]
         merged = self._merge_read(base_tables, delta_files)
 
@@ -308,7 +325,9 @@ class MergeOnReadEngine(StorageEngine):
         data_files, delta_files = self._current_state()
 
         candidates = [f for f in data_files if f.max_pk >= pk_min and f.min_pk <= pk_max]
-        bytes_scanned = sum(f.size_bytes for f in candidates) + sum(d.size_bytes for d in delta_files)
+        bytes_scanned = sum(f.size_bytes for f in candidates) + sum(
+            d.size_bytes for d in delta_files
+        )
         base_tables = [pq.read_table(f.path) for f in candidates]
         merged = self._merge_read(base_tables, delta_files)
 

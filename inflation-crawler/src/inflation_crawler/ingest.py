@@ -11,10 +11,10 @@ a single record out of a ~1GB WARC file.
 
 from __future__ import annotations
 
+import gzip
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-import urllib.request
-import gzip
 
 import duckdb
 
@@ -83,7 +83,7 @@ def query_index(
     source_urls = _get_parquet_urls(crawl)
     if not source_urls:
         raise RuntimeError(f"Could not find index Parquet files for crawl {crawl}")
-    
+
     source_sql_list = ", ".join(f"'{u}'" for u in source_urls)
 
     filters = ["url_host_name LIKE ?", "subset = 'warc'"]
@@ -120,8 +120,18 @@ def save_index_rows(rows: list[IndexRow], out_path: Path) -> Path:
     )
     con.executemany(
         "INSERT INTO rows VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [(r.url, r.url_host_name, r.warc_filename, r.warc_record_offset,
-          r.warc_record_length, r.fetch_time, r.content_mime_type) for r in rows],
+        [
+            (
+                r.url,
+                r.url_host_name,
+                r.warc_filename,
+                r.warc_record_offset,
+                r.warc_record_length,
+                r.fetch_time,
+                r.content_mime_type,
+            )
+            for r in rows
+        ],
     )
     con.execute(f"COPY rows TO '{out_path}' (FORMAT PARQUET)")
     log.info("index.saved", rows=len(rows), path=str(out_path))

@@ -30,3 +30,20 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v"
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+
+[[tool.mypy.overrides]]
+module = [
+    "pyarrow",
+    "pyarrow.*",
+    "numpy",
+    "numpy.*",
+    "duckdb",
+    "duckdb.*",
+    "tabulate",
+    "tabulate.*",
+]
+ignore_missing_imports = true

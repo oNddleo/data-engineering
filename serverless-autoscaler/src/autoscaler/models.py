@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 
 class JobType(str, Enum):
@@ -24,7 +23,7 @@ class JobDefinition:
     job_id: str
     name: str
     job_type: JobType
-    hpa_target: str          # name of the HPA object in k8s
+    hpa_target: str  # name of the HPA object in k8s
     cron_expression: str
     namespace: str = "default"
     tags: dict[str, str] = field(default_factory=dict)
@@ -35,18 +34,18 @@ class JobRun:
     run_id: str
     job_id: str
     scheduled_at: datetime
-    started_at: Optional[datetime]
-    finished_at: Optional[datetime]
+    started_at: datetime | None
+    finished_at: datetime | None
     status: JobStatus
-    peak_cpu_millicores: Optional[float] = None
-    peak_memory_mib: Optional[float] = None
-    avg_workers: Optional[float] = None
-    peak_workers: Optional[int] = None
-    duration_seconds: Optional[float] = None
+    peak_cpu_millicores: float | None = None
+    peak_memory_mib: float | None = None
+    avg_workers: float | None = None
+    peak_workers: int | None = None
+    duration_seconds: float | None = None
     cold_start_avoided: bool = False
 
     @property
-    def wall_seconds(self) -> Optional[float]:
+    def wall_seconds(self) -> float | None:
         if self.started_at and self.finished_at:
             return (self.finished_at - self.started_at).total_seconds()
         return None
@@ -63,7 +62,7 @@ class ResourceForecast:
     confidence_lower: int
     confidence_upper: int
     history_points_used: int
-    model_aic: Optional[float] = None
+    model_aic: float | None = None
 
 
 @dataclass

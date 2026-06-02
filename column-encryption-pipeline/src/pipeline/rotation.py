@@ -19,8 +19,8 @@ in data size.
 
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Optional
 
 from tqdm import tqdm
 
@@ -56,7 +56,7 @@ class RotationPipeline:
         registry: KeyRegistry | None = None,
         store: RecordStore | None = None,
         progress: bool = True,
-    ):
+    ) -> None:
         cfg = get_config()
         self._kms = kms_client or KMSClient()
         self._engine = engine or EncryptionEngine(self._kms)
@@ -68,7 +68,7 @@ class RotationPipeline:
     def rotate_customer_key(
         self,
         customer_id: str,
-        on_progress: Optional[Callable[[int, int], None]] = None,
+        on_progress: Callable[[int, int], None] | None = None,
         disable_old_key: bool = True,
     ) -> RotationResult:
         """
@@ -86,14 +86,20 @@ class RotationPipeline:
             raise ValueError(f"Rotation already in progress for {customer_id}")
 
         # 1. Create new CMK
-        resp = self._kms.create_key(f"CMK v{customer.current_version + 1} for customer {customer_id}")
+        resp = self._kms.create_key(
+            f"CMK v{customer.current_version + 1} for customer {customer_id}"
+        )
         new_cmk_id = resp["KeyMetadata"]["KeyId"]
 
         # 2. Open dual-read window
         old_ver, new_ver = self._registry.begin_rotation(customer_id, new_cmk_id)
         logger.info(
             "Rotation started for %s: v%d (%s) → v%d (%s)",
-            customer_id, old_ver.version, old_ver.cmk_id, new_ver.version, new_ver.cmk_id,
+            customer_id,
+            old_ver.version,
+            old_ver.cmk_id,
+            new_ver.version,
+            new_ver.cmk_id,
         )
 
         # 3 & 4. Migrate all records
@@ -103,11 +109,17 @@ class RotationPipeline:
         failed = 0
         errors: list[str] = []
 
-        iterator = tqdm(record_ids, desc=f"Rotating {customer_id}", unit="rec") if self._progress else record_ids
+        iterator = (
+            tqdm(record_ids, desc=f"Rotating {customer_id}", unit="rec")
+            if self._progress
+            else record_ids
+        )
 
         for i, record_id in enumerate(iterator):
             try:
-                self._migrate_record(customer_id, record_id, old_ver.cmk_id, new_cmk_id, new_ver.version)
+                self._migrate_record(
+                    customer_id, record_id, old_ver.cmk_id, new_cmk_id, new_ver.version
+                )
                 migrated += 1
             except Exception as exc:
                 failed += 1
@@ -120,7 +132,9 @@ class RotationPipeline:
 
         # 5 & 6. Close dual-read window
         self._registry.complete_rotation(customer_id, old_ver.version)
-        logger.info("Rotation complete for %s. Migrated=%d Failed=%d", customer_id, migrated, failed)
+        logger.info(
+            "Rotation complete for %s. Migrated=%d Failed=%d", customer_id, migrated, failed
+        )
 
         # 7. Optionally disable old CMK
         if disable_old_key and failed == 0:

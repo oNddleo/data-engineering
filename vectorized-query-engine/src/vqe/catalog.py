@@ -1,8 +1,9 @@
 """In-memory table catalog backed by Apache Arrow Tables."""
+
 from __future__ import annotations
 
 import pyarrow as pa
-from typing import Dict, Optional
+from typing import Dict
 
 
 class Table:
@@ -16,7 +17,7 @@ class Table:
 
     @property
     def num_rows(self) -> int:
-        return self.data.num_rows
+        return int(self.data.num_rows)
 
     def __repr__(self) -> str:
         return f"Table({self.name!r}, rows={self.num_rows}, schema={self.schema})"

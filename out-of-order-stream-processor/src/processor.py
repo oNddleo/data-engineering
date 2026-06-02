@@ -1,7 +1,7 @@
 from __future__ import annotations
 import time
 from collections import defaultdict
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from .event import Event, LateEvent, WindowResult
 from .watermarks.base import Watermark
@@ -91,11 +91,9 @@ class StreamProcessor:
             if self.watermark.is_late(event) and event.event_time < win.end:
                 # Event is late for this window
                 existing = list(self._buffer.get(buf_key, []))
-                r, l = self.late_policy.handle(
-                    event, win, existing, new_watermark
-                )
+                r, late = self.late_policy.handle(event, win, existing, new_watermark)
                 results.extend(r)
-                lates.extend(l)
+                lates.extend(late)
             else:
                 self._buffer[buf_key].append(event)
 
@@ -106,9 +104,9 @@ class StreamProcessor:
         self._emitted_results.extend(results)
         self._late_events.extend(lates)
 
-        for r in results:
+        for result in results:
             if self.result_callback:
-                self.result_callback(r)
+                self.result_callback(result)
         for le in lates:
             if self.late_callback:
                 self.late_callback(le)
@@ -154,17 +152,11 @@ class StreamProcessor:
     def buffered_window_count(self) -> int:
         return sum(1 for events in self._buffer.values() if events)
 
-    def stats(self) -> dict:
+    def stats(self) -> dict[str, Any]:
         total_late = len(self._late_events)
-        dropped = sum(
-            1 for le in self._late_events if le.policy_applied == "drop"
-        )
-        restated = sum(
-            1 for le in self._late_events if le.policy_applied == "restate"
-        )
-        side = sum(
-            1 for le in self._late_events if le.policy_applied == "side_output"
-        )
+        dropped = sum(1 for le in self._late_events if le.policy_applied == "drop")
+        restated = sum(1 for le in self._late_events if le.policy_applied == "restate")
+        side = sum(1 for le in self._late_events if le.policy_applied == "side_output")
         return {
             "processed": self._processed_count,
             "emitted_windows": len(self._emitted_results),
@@ -192,8 +184,11 @@ class StreamProcessor:
         self._session_windows[event.key] = merged
 
         # Return only the merged window(s) that contain this event
-        return [w for w in merged if w.contains(event.event_time) or
-                w.start <= event.event_time <= w.end]
+        return [
+            w
+            for w in merged
+            if w.contains(event.event_time) or w.start <= event.event_time <= w.end
+        ]
 
     def _close_windows(self, watermark: float) -> list[WindowResult]:
         results = []

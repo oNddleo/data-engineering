@@ -9,9 +9,10 @@ Invariants:
   - merge(a, b) >= a and merge(a, b) >= b (monotone join)
   - merge is commutative, associative, idempotent
 """
+
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Dict
+from typing import Any, Dict
 
 
 @dataclass
@@ -19,7 +20,7 @@ class GCounter:
     node_id: str
     counters: Dict[str, int] = field(default_factory=dict)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.counters.setdefault(self.node_id, 0)
 
     def increment(self, amount: int = 1) -> None:
@@ -44,11 +45,11 @@ class GCounter:
     def clone(self) -> "GCounter":
         return GCounter(node_id=self.node_id, counters=dict(self.counters))
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {"node_id": self.node_id, "counters": dict(self.counters)}
 
     @classmethod
-    def from_dict(cls, data: dict) -> "GCounter":
+    def from_dict(cls, data: dict[str, Any]) -> "GCounter":
         return cls(node_id=data["node_id"], counters=dict(data["counters"]))
 
     def __le__(self, other: "GCounter") -> bool:

@@ -23,7 +23,7 @@ PlannerResult            (named tuple with metadata)
 from __future__ import annotations
 
 import time
-from typing import List, NamedTuple, Optional
+from typing import Any, List, NamedTuple, Optional
 
 import numpy as np
 
@@ -43,7 +43,7 @@ def is_acyclic(query: JoinQuery) -> bool:
     with all OTHER edges is a subset of some single other edge.  Remove ears
     iteratively; if all edges are removed the hypergraph is acyclic.
     """
-    edges: List[set] = [set(r.variables) for r in query.relations]
+    edges: List[set[str]] = [set(r.variables) for r in query.relations]
 
     changed = True
     while changed and edges:
@@ -51,7 +51,7 @@ def is_acyclic(query: JoinQuery) -> bool:
         for i in range(len(edges)):
             edge = edges[i]
             # Variables of this edge that appear in at least one other edge.
-            shared: set = set()
+            shared: set[str] = set()
             for j, other in enumerate(edges):
                 if j != i:
                     shared |= edge & other
@@ -114,7 +114,7 @@ class PlannerResult(NamedTuple):
     var_order: List[str]
     n_results: int
     elapsed_s: float
-    data: np.ndarray
+    data: np.ndarray[Any, np.dtype[Any]]
 
 
 # ------------------------------------------------------------------ #

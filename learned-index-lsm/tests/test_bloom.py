@@ -1,5 +1,4 @@
 """Tests for the Bloom filter."""
-import pytest
 from lsm_learned.indexes.bloom import BloomFilter
 
 

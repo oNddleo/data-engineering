@@ -1,4 +1,3 @@
-import pytest
 from src.transforms.mapper import FieldMapper
 from src.models import FieldMapping
 

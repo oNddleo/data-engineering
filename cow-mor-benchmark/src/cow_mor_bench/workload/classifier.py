@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from cow_mor_bench.workload.patterns import WorkloadClass, WorkloadProfile
+from cow_mor_bench.workload.patterns import WorkloadClass
 from cow_mor_bench.workload.generator import WorkloadTrace, OperationRecord
 
 
@@ -133,7 +133,7 @@ def classify_custom(
     Derives insert/update/delete split from write_ratio and update_fraction:
     high update_fraction → update-heavy; otherwise insert-heavy (streaming).
     """
-    from cow_mor_bench.workload.generator import WorkloadTrace, OperationRecord
+    from cow_mor_bench.workload.generator import WorkloadTrace
 
     n = 100
     trace = WorkloadTrace(profile_name="custom", engine_strategy="n/a", schema_name="n/a")
@@ -154,29 +154,68 @@ def classify_custom(
         insert_frac, update_frac, delete_frac = 0.10, 0.75, 0.15
 
     for _ in range(int(write_count * update_frac)):
-        trace.operations.append(OperationRecord(
-            op="update", duration_s=0.01, rows=avg_batch_rows, bytes_io=1024, files=1,
-        ))
+        trace.operations.append(
+            OperationRecord(
+                op="update",
+                duration_s=0.01,
+                rows=avg_batch_rows,
+                bytes_io=1024,
+                files=1,
+            )
+        )
     for _ in range(int(write_count * insert_frac)):
-        trace.operations.append(OperationRecord(
-            op="insert", duration_s=0.005, rows=avg_batch_rows, bytes_io=512, files=1,
-        ))
+        trace.operations.append(
+            OperationRecord(
+                op="insert",
+                duration_s=0.005,
+                rows=avg_batch_rows,
+                bytes_io=512,
+                files=1,
+            )
+        )
     for _ in range(max(1, int(write_count * delete_frac))):
-        trace.operations.append(OperationRecord(
-            op="delete", duration_s=0.005, rows=0, bytes_io=256, files=1,
-        ))
+        trace.operations.append(
+            OperationRecord(
+                op="delete",
+                duration_s=0.005,
+                rows=0,
+                bytes_io=256,
+                files=1,
+            )
+        )
     for _ in range(full_scan_count):
-        trace.operations.append(OperationRecord(
-            op="full_scan", duration_s=0.5, rows=10000, bytes_io=5_000_000, files=5, delta_files=3,
-        ))
+        trace.operations.append(
+            OperationRecord(
+                op="full_scan",
+                duration_s=0.5,
+                rows=10000,
+                bytes_io=5_000_000,
+                files=5,
+                delta_files=3,
+            )
+        )
     for _ in range(point_count):
-        trace.operations.append(OperationRecord(
-            op="point_lookup", duration_s=0.01, rows=1, bytes_io=10_000, files=1, delta_files=1,
-        ))
+        trace.operations.append(
+            OperationRecord(
+                op="point_lookup",
+                duration_s=0.01,
+                rows=1,
+                bytes_io=10_000,
+                files=1,
+                delta_files=1,
+            )
+        )
     for _ in range(range_count):
-        trace.operations.append(OperationRecord(
-            op="range_scan", duration_s=0.1, rows=500, bytes_io=50_000, files=2, delta_files=2,
-        ))
+        trace.operations.append(
+            OperationRecord(
+                op="range_scan",
+                duration_s=0.1,
+                rows=500,
+                bytes_io=50_000,
+                files=2,
+                delta_files=2,
+            )
+        )
 
     trace.summarise()
     return classify_trace(trace)

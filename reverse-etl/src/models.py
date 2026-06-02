@@ -23,8 +23,8 @@ class DestinationConfig(BaseModel):
 
 class ScheduleConfig(BaseModel):
     type: Literal["cron", "interval"] = "cron"
-    cron: str | None = None          # e.g. "0 9 * * 1-5"
-    seconds: int | None = None       # for interval type
+    cron: str | None = None  # e.g. "0 9 * * 1-5"
+    seconds: int | None = None  # for interval type
 
 
 class TriggerConfig(BaseModel):

@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dqmonitor"
+version = "0.1.0"
+description = "Production-grade data quality monitoring — stdlib only"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = []
+
+[project.scripts]
+dqmonitor = "dqmonitor.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+dqmonitor = ["py.typed"]
+
+[tool.ruff]
+line-length = 99
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "TCH", "ANN"]
+ignore = ["ANN101", "ANN102", "ANN401"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN", "S101"]
+# Non-distributed application code — annotation rules relaxed
+"src/blocking/**" = ["ANN", "TCH"]
+"src/dashboard/**" = ["ANN", "TCH"]
+"src/metrics/**" = ["ANN", "TCH"]
+"src/models/**" = ["ANN", "TCH"]
+"src/pipeline/**" = ["ANN", "TCH"]
+"src/storage/**" = ["ANN", "TCH"]
+"src/stream/**" = ["ANN", "TCH"]
+"src/validators/**" = ["ANN", "TCH"]
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+explicit_package_bases = true
+no_site_packages = true
+# Only check the distributed dqmonitor package; application scripts in src/
+# use relative imports that assume a parent package and are not distributed.
+exclude = [
+    "src/config\\.py",
+    "src/blocking/",
+    "src/dashboard/",
+    "src/metrics/",
+    "src/models/",
+    "src/pipeline/",
+    "src/storage/",
+    "src/stream/",
+    "src/validators/",
+]
+
+[[tool.mypy.overrides]]
+module = ["structlog.*", "confluent_kafka.*", "redis.*", "pandas.*", "great_expectations.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_dqmonitor.py"]
+addopts = "-q"

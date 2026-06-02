@@ -2,8 +2,9 @@
 Configuration dataclasses for the zero-downtime pipeline upgrade system.
 """
 
-from dataclasses import dataclass, field
-from typing import Optional
+from __future__ import annotations
+
+from dataclasses import dataclass
 
 
 @dataclass
@@ -41,14 +42,14 @@ class DeploymentConfig:
     comparison_window_size: int = 1000
     enable_auto_promotion: bool = True
     enable_auto_rollback: bool = True
-    shadow_log_path: Optional[str] = None
+    shadow_log_path: str | None = None
 
     def validate(self) -> None:
         assert 0.0 <= self.divergence_threshold <= 1.0, "divergence_threshold must be in [0, 1]"
         assert 0.0 <= self.rollback_threshold <= 1.0, "rollback_threshold must be in [0, 1]"
-        assert self.divergence_threshold <= self.rollback_threshold, (
-            "rollback_threshold must be >= divergence_threshold"
-        )
+        assert (
+            self.divergence_threshold <= self.rollback_threshold
+        ), "rollback_threshold must be >= divergence_threshold"
         assert 0.0 <= self.initial_v2_percentage <= 1.0, "initial_v2_percentage must be in [0, 1]"
         assert 0.0 < self.traffic_shift_step <= 1.0, "traffic_shift_step must be in (0, 1]"
         assert self.traffic_shift_interval_sec > 0, "traffic_shift_interval_sec must be positive"

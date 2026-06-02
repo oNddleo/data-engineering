@@ -8,12 +8,12 @@ from typing import Any, Optional
 try:
     import redis.asyncio as aioredis
 except ImportError:
-    aioredis = None  # type: ignore
+    aioredis = None
 
 try:
     import asyncpg
 except ImportError:
-    asyncpg = None  # type: ignore
+    asyncpg = None
 
 from tiered_storage.schemas import DataRecord, Tier, TierMetrics
 from tiered_storage.tiers.base import BaseTier
@@ -222,7 +222,7 @@ class HotTier(BaseTier):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _record_to_dict(r: DataRecord) -> dict:
+    def _record_to_dict(r: DataRecord) -> dict[str, Any]:
         return {
             "key": r.key,
             "value": r.value,
@@ -235,7 +235,7 @@ class HotTier(BaseTier):
         }
 
     @staticmethod
-    def _dict_to_record(d: dict) -> DataRecord:
+    def _dict_to_record(d: dict[str, Any]) -> DataRecord:
         return DataRecord(
             key=d["key"],
             value=d["value"],

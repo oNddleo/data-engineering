@@ -6,8 +6,9 @@ import asyncio
 import json
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import click
 import structlog
@@ -57,6 +58,7 @@ def _setup_logging(verbose: bool) -> None:
 # Main group
 # ─────────────────────────────────────────────
 
+
 @click.group()
 @click.version_option()
 def main() -> None:
@@ -67,53 +69,93 @@ def main() -> None:
 # `replay run` — execute a replay job
 # ─────────────────────────────────────────────
 
+
 @main.command("run")
-@click.option("--config", "-c", "config_file", type=click.Path(exists=True),
-              help="Path to YAML/JSON replay config file.")
-@click.option("--topics", "-t", multiple=True, required=False,
-              help="Topic(s) to replay. Repeatable: -t orders -t payments")
-@click.option("--bucket", "-b", envvar="REPLAY_S3_BUCKET",
-              help="S3 bucket containing the archive.")
-@click.option("--prefix", default="", show_default=True,
-              help="S3 key prefix (folder) within the bucket.")
-@click.option("--start", "start_ts",
-              help="Window start (ISO-8601). E.g. 2024-03-01T00:00:00Z")
-@click.option("--end", "end_ts",
-              help="Window end (ISO-8601). Defaults to now.")
-@click.option("--days", type=int,
-              help="Shorthand: replay the last N days (max 30). Overrides --start/--end.")
-@click.option("--target", "target_type",
-              type=click.Choice(["kafka", "http", "file", "stdout"], case_sensitive=False),
-              default="stdout", show_default=True,
-              help="Downstream target.")
-@click.option("--kafka-brokers", envvar="REPLAY_KAFKA_BROKERS",
-              help="Kafka bootstrap servers (for --target kafka).")
-@click.option("--http-url", envvar="REPLAY_HTTP_URL",
-              help="Webhook URL (for --target http).")
-@click.option("--output-file", type=click.Path(),
-              help="Output file path (for --target file).")
-@click.option("--rate-limit", type=float, default=None,
-              help="Max events per second (default: unlimited).")
-@click.option("--dry-run", is_flag=True,
-              help="Parse and count events but do NOT send them.")
-@click.option("--resume/--no-resume", default=True, show_default=True,
-              help="Resume from checkpoint if one exists.")
-@click.option("--job-id", default=None,
-              help="Explicit job ID (auto-generated if omitted).")
-@click.option("--format", "archive_fmt",
-              type=click.Choice(["jsonl", "avro", "parquet"], case_sensitive=False),
-              default="jsonl", show_default=True,
-              help="Archive file format.")
-@click.option("--region", default="us-east-1", show_default=True,
-              help="AWS region.")
-@click.option("--endpoint-url", default=None, envvar="AWS_ENDPOINT_URL",
-              help="Custom S3 endpoint (MinIO / LocalStack).")
+@click.option(
+    "--config",
+    "-c",
+    "config_file",
+    type=click.Path(exists=True),
+    help="Path to YAML/JSON replay config file.",
+)
+@click.option(
+    "--topics",
+    "-t",
+    multiple=True,
+    required=False,
+    help="Topic(s) to replay. Repeatable: -t orders -t payments",
+)
+@click.option("--bucket", "-b", envvar="REPLAY_S3_BUCKET", help="S3 bucket containing the archive.")
+@click.option(
+    "--prefix", default="", show_default=True, help="S3 key prefix (folder) within the bucket."
+)
+@click.option("--start", "start_ts", help="Window start (ISO-8601). E.g. 2024-03-01T00:00:00Z")
+@click.option("--end", "end_ts", help="Window end (ISO-8601). Defaults to now.")
+@click.option(
+    "--days", type=int, help="Shorthand: replay the last N days (max 30). Overrides --start/--end."
+)
+@click.option(
+    "--target",
+    "target_type",
+    type=click.Choice(["kafka", "http", "file", "stdout"], case_sensitive=False),
+    default="stdout",
+    show_default=True,
+    help="Downstream target.",
+)
+@click.option(
+    "--kafka-brokers",
+    envvar="REPLAY_KAFKA_BROKERS",
+    help="Kafka bootstrap servers (for --target kafka).",
+)
+@click.option("--http-url", envvar="REPLAY_HTTP_URL", help="Webhook URL (for --target http).")
+@click.option("--output-file", type=click.Path(), help="Output file path (for --target file).")
+@click.option(
+    "--rate-limit", type=float, default=None, help="Max events per second (default: unlimited)."
+)
+@click.option("--dry-run", is_flag=True, help="Parse and count events but do NOT send them.")
+@click.option(
+    "--resume/--no-resume",
+    default=True,
+    show_default=True,
+    help="Resume from checkpoint if one exists.",
+)
+@click.option("--job-id", default=None, help="Explicit job ID (auto-generated if omitted).")
+@click.option(
+    "--format",
+    "archive_fmt",
+    type=click.Choice(["jsonl", "avro", "parquet"], case_sensitive=False),
+    default="jsonl",
+    show_default=True,
+    help="Archive file format.",
+)
+@click.option("--region", default="us-east-1", show_default=True, help="AWS region.")
+@click.option(
+    "--endpoint-url",
+    default=None,
+    envvar="AWS_ENDPOINT_URL",
+    help="Custom S3 endpoint (MinIO / LocalStack).",
+)
 @click.option("--verbose", "-v", is_flag=True)
 def run_cmd(
-    config_file, topics, bucket, prefix, start_ts, end_ts, days,
-    target_type, kafka_brokers, http_url, output_file,
-    rate_limit, dry_run, resume, job_id, archive_fmt,
-    region, endpoint_url, verbose,
+    config_file: str | None,
+    topics: tuple[str, ...],
+    bucket: str | None,
+    prefix: str,
+    start_ts: str | None,
+    end_ts: str | None,
+    days: int | None,
+    target_type: str,
+    kafka_brokers: str | None,
+    http_url: str | None,
+    output_file: str | None,
+    rate_limit: float | None,
+    dry_run: bool,
+    resume: bool,
+    job_id: str | None,
+    archive_fmt: str,
+    region: str,
+    endpoint_url: str | None,
+    verbose: bool,
 ) -> None:
     """Execute a replay job."""
     _setup_logging(verbose)
@@ -147,6 +189,7 @@ def run_cmd(
 
     if not resume:
         from replay.engine.checkpoint import CheckpointStore
+
         CheckpointStore(cfg.checkpoint_dir, cfg.job_id).reset()
 
     _print_job_banner(cfg)
@@ -158,6 +201,7 @@ def run_cmd(
 # `replay manifest` — list files without running
 # ─────────────────────────────────────────────
 
+
 @main.command("manifest")
 @click.option("--topics", "-t", multiple=True, required=True)
 @click.option("--bucket", "-b", required=True, envvar="REPLAY_S3_BUCKET")
@@ -167,9 +211,18 @@ def run_cmd(
 @click.option("--end", "end_ts")
 @click.option("--region", default="us-east-1")
 @click.option("--endpoint-url", default=None, envvar="AWS_ENDPOINT_URL")
-@click.option("--output", "-o", type=click.Path(),
-              help="Write manifest JSON to this file.")
-def manifest_cmd(topics, bucket, prefix, days, start_ts, end_ts, region, endpoint_url, output):
+@click.option("--output", "-o", type=click.Path(), help="Write manifest JSON to this file.")
+def manifest_cmd(
+    topics: tuple[str, ...],
+    bucket: str,
+    prefix: str,
+    days: int | None,
+    start_ts: str | None,
+    end_ts: str | None,
+    region: str,
+    endpoint_url: str | None,
+    output: str | None,
+) -> None:
     """List all S3 archive files matching the window and write a manifest."""
     from replay.archive.manifest import build_manifest
 
@@ -181,7 +234,7 @@ def manifest_cmd(topics, bucket, prefix, days, start_ts, end_ts, region, endpoin
         endpoint_url=endpoint_url,
     )
 
-    async def _run():
+    async def _run() -> None:
         entries = await build_manifest(list(topics), window, archive_cfg, output_path=output)
         table = Table(title="Replay Manifest", show_lines=True)
         table.add_column("Topic", style="cyan")
@@ -198,12 +251,14 @@ def manifest_cmd(topics, bucket, prefix, days, start_ts, end_ts, region, endpoin
 # `replay status` — inspect a checkpoint
 # ─────────────────────────────────────────────
 
+
 @main.command("status")
 @click.argument("job_id")
 @click.option("--checkpoint-dir", default="/tmp/replay-checkpoints", show_default=True)
-def status_cmd(job_id, checkpoint_dir):
+def status_cmd(job_id: str, checkpoint_dir: str) -> None:
     """Show checkpoint status for a job."""
     from pathlib import Path
+
     path = Path(checkpoint_dir) / f"{job_id}.json"
     if not path.exists():
         console.print(f"[red]No checkpoint found for job '{job_id}'[/red]")
@@ -216,16 +271,17 @@ def status_cmd(job_id, checkpoint_dir):
 # Helper functions
 # ─────────────────────────────────────────────
 
-def _build_window(days, start_ts, end_ts) -> TimeWindow:
+
+def _build_window(days: int | None, start_ts: str | None, end_ts: str | None) -> TimeWindow:
     if days:
         return window_from_days_ago(days)
     if start_ts:
-        end = end_ts or datetime.now(tz=timezone.utc).isoformat()
+        end = end_ts or datetime.now(tz=UTC).isoformat()
         return parse_window(start_ts, end)
     raise click.UsageError("Provide either --days or --start (and optionally --end).")
 
 
-def _build_config_from_flags(**kw) -> ReplayConfig:
+def _build_config_from_flags(**kw: Any) -> ReplayConfig:
     archive = S3ArchiveConfig(
         bucket=kw["bucket"],
         prefix=kw["prefix"],
@@ -268,11 +324,9 @@ def _build_config_from_flags(**kw) -> ReplayConfig:
 
 def _load_config_file(path: str) -> ReplayConfig:
     import yaml  # optional dep; only needed for YAML config files
+
     raw = Path(path).read_text()
-    if path.endswith((".yaml", ".yml")):
-        data = yaml.safe_load(raw)
-    else:
-        data = json.loads(raw)
+    data = yaml.safe_load(raw) if path.endswith((".yaml", ".yml")) else json.loads(raw)
 
     # Coerce window dict to TimeWindow
     if "window" in data and isinstance(data["window"], dict):
@@ -282,7 +336,7 @@ def _load_config_file(path: str) -> ReplayConfig:
 
 
 def _make_job_id() -> str:
-    return f"replay-{datetime.now(tz=timezone.utc).strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
+    return f"replay-{datetime.now(tz=UTC).strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
 
 
 def _print_job_banner(cfg: ReplayConfig) -> None:
@@ -296,7 +350,10 @@ def _print_job_banner(cfg: ReplayConfig) -> None:
     table.add_row("Duration", f"{cfg.window.duration_hours:.1f} h")
     table.add_row("Target", cfg.target_type.value.upper())
     table.add_row("Archive", f"s3://{cfg.archive.bucket}/{cfg.archive.prefix or ''}*")
-    table.add_row("Rate limit", f"{cfg.rate_limit_per_second} evt/s" if cfg.rate_limit_per_second else "unlimited")
+    table.add_row(
+        "Rate limit",
+        f"{cfg.rate_limit_per_second} evt/s" if cfg.rate_limit_per_second else "unlimited",
+    )
     table.add_row("Dry run", "YES ⚠️" if cfg.dry_run else "no")
     console.print(Panel(table, title="[bold]Replay Job[/bold]", border_style="blue"))
 
@@ -353,7 +410,7 @@ async def _run_with_progress(cfg: ReplayConfig) -> None:
     _print_summary(result)
 
 
-def _print_summary(p) -> None:
+def _print_summary(p: Any) -> None:
     colour = "green" if p.status == ReplayStatus.COMPLETED else "red"
     elapsed = ""
     if p.started_at and p.completed_at:

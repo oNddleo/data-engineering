@@ -4,12 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Mapping
 
 
 class Relation(Enum):
-    BEFORE = auto()    # self happened-before other
-    AFTER = auto()     # other happened-before self
+    BEFORE = auto()  # self happened-before other
+    AFTER = auto()  # other happened-before self
     CONCURRENT = auto()
     EQUAL = auto()
 
@@ -47,8 +46,12 @@ class VectorClock:
     # ------------------------------------------------------------------
     def compare(self, other: VectorClock) -> Relation:
         all_keys = set(self.clocks) | set(other.clocks)
-        self_leq = all(self.clocks.get(k, 0) <= other.clocks.get(k, 0) for k in all_keys)
-        other_leq = all(other.clocks.get(k, 0) <= self.clocks.get(k, 0) for k in all_keys)
+        self_leq = all(
+            self.clocks.get(k, 0) <= other.clocks.get(k, 0) for k in all_keys
+        )
+        other_leq = all(
+            other.clocks.get(k, 0) <= self.clocks.get(k, 0) for k in all_keys
+        )
 
         if self_leq and other_leq:
             return Relation.EQUAL

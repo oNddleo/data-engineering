@@ -7,8 +7,6 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-import pytest
-
 from src.lambda_arch.batch_layer import BatchProcessor
 from src.lambda_arch.models import Event
 

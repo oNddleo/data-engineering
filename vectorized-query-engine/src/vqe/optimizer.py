@@ -1,10 +1,10 @@
 """Query optimizer: predicate pushdown, projection pushdown, constant folding."""
+
 from __future__ import annotations
 
 from typing import List, Optional, Set
 
 from .expressions import (
-    AggExpr,
     BinaryExpr,
     ColumnRef,
     Expr,
@@ -27,6 +27,7 @@ from .logical_plan import (
 # ---------------------------------------------------------------------------
 # Rule: constant folding (evaluate constant binary expressions at plan time)
 # ---------------------------------------------------------------------------
+
 
 def fold_constants(expr: Expr) -> Expr:
     if isinstance(expr, BinaryExpr):
@@ -71,6 +72,7 @@ def fold_constants(expr: Expr) -> Expr:
 # Push Filter nodes as far toward the leaves as possible.
 # ---------------------------------------------------------------------------
 
+
 def _pushdown_filter(plan: LogicalPlan, predicates: List[Expr]) -> LogicalPlan:
     if isinstance(plan, Scan):
         plan.pushed_predicates.extend(predicates)
@@ -84,7 +86,9 @@ def _pushdown_filter(plan: LogicalPlan, predicates: List[Expr]) -> LogicalPlan:
 
     if isinstance(plan, Project):
         # Can push predicates that only reference columns available below the projection
-        below_cols = set(plan.child.schema_names()) if plan.child.schema_names() else None
+        below_cols = (
+            set(plan.child.schema_names()) if plan.child.schema_names() else None
+        )
         pushable = []
         remaining = []
         for p in predicates:
@@ -98,6 +102,7 @@ def _pushdown_filter(plan: LogicalPlan, predicates: List[Expr]) -> LogicalPlan:
         plan.child = new_child
         if remaining:
             merged = conjuncts_to_expr(remaining)
+            assert merged is not None
             return Filter(plan, merged)
         return plan
 
@@ -117,12 +122,15 @@ def _pushdown_filter(plan: LogicalPlan, predicates: List[Expr]) -> LogicalPlan:
             plan.child = _pushdown_filter(plan.child, pushable)
         if remaining:
             merged = conjuncts_to_expr(remaining)
+            assert merged is not None
             return Filter(plan, merged)
         return plan
 
     if isinstance(plan, Join):
         left_cols = set(plan.left.schema_names()) if plan.left.schema_names() else None
-        right_cols = set(plan.right.schema_names()) if plan.right.schema_names() else None
+        right_cols = (
+            set(plan.right.schema_names()) if plan.right.schema_names() else None
+        )
         push_left = []
         push_right = []
         remaining = []
@@ -138,6 +146,7 @@ def _pushdown_filter(plan: LogicalPlan, predicates: List[Expr]) -> LogicalPlan:
         plan.right = _pushdown_filter(plan.right, push_right)
         if remaining:
             merged = conjuncts_to_expr(remaining)
+            assert merged is not None
             return Filter(plan, merged)
         return plan
 
@@ -148,6 +157,7 @@ def _pushdown_filter(plan: LogicalPlan, predicates: List[Expr]) -> LogicalPlan:
     # Default: cannot push, wrap in Filter
     if predicates:
         merged = conjuncts_to_expr(predicates)
+        assert merged is not None
         return Filter(plan, merged)
     return plan
 
@@ -157,7 +167,10 @@ def _pushdown_filter(plan: LogicalPlan, predicates: List[Expr]) -> LogicalPlan:
 # Track which columns are actually needed and prune Scan columns.
 # ---------------------------------------------------------------------------
 
-def _collect_needed_cols(plan: LogicalPlan, needed: Optional[Set[str]] = None) -> LogicalPlan:
+
+def _collect_needed_cols(
+    plan: LogicalPlan, needed: Optional[Set[str]] = None
+) -> LogicalPlan:
     """Bottom-up pass; annotates Scan nodes with the minimal column set."""
     if isinstance(plan, Scan):
         if needed is not None:
@@ -216,6 +229,7 @@ def _collect_needed_cols(plan: LogicalPlan, needed: Optional[Set[str]] = None) -
 # ---------------------------------------------------------------------------
 # Top-level optimizer
 # ---------------------------------------------------------------------------
+
 
 class Optimizer:
     def optimize(self, plan: LogicalPlan) -> LogicalPlan:

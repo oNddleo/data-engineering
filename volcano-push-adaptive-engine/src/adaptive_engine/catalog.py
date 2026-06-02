@@ -1,4 +1,5 @@
 """In-memory table catalog with statistics for cost estimation."""
+
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, TYPE_CHECKING
@@ -37,23 +38,31 @@ class ColumnStats:
             span = self.max_val - self.min_val
             if span == 0:
                 return 1.0
-            return max(0.0, min(1.0, (hi - lo) / span))
+            return float(max(0.0, min(1.0, (hi - lo) / span)))
         except (TypeError, ZeroDivisionError):
             return 0.5
 
     def selectivity_for_op(self, op: str, value: Any) -> float:
         """Return selectivity for a comparison predicate (col op value)."""
         if self.histogram is not None:
-            return self.histogram.for_op(op, value)
+            return float(self.histogram.for_op(op, value))
         match op:
             case "=":
                 return self.selectivity_eq(value)
             case "!=" | "<>":
                 return 1.0 - self.selectivity_eq(value)
             case "<" | "<=":
-                return self.selectivity_range(self.min_val, value) if self.min_val is not None else 0.3
+                return (
+                    self.selectivity_range(self.min_val, value)
+                    if self.min_val is not None
+                    else 0.3
+                )
             case ">" | ">=":
-                return self.selectivity_range(value, self.max_val) if self.max_val is not None else 0.3
+                return (
+                    self.selectivity_range(value, self.max_val)
+                    if self.max_val is not None
+                    else 0.3
+                )
             case _:
                 return 0.5
 
@@ -99,7 +108,9 @@ class Catalog:
         build_histograms=False or column_stats are supplied explicitly.
         """
         n = estimated_rows if estimated_rows is not None else len(data)
-        cols = column_stats or _derive_stats(data, build_histograms=build_histograms, n_buckets=n_buckets)
+        cols = column_stats or _derive_stats(
+            data, build_histograms=build_histograms, n_buckets=n_buckets
+        )
         stats = TableStats(name=name, row_count=n, columns=cols, data=data)
         self.register(stats)
         return stats
@@ -129,6 +140,7 @@ class Catalog:
 # Helpers
 # ------------------------------------------------------------------
 
+
 def _derive_stats(
     data: list[Row],
     build_histograms: bool = True,
@@ -148,7 +160,13 @@ def _derive_stats(
             continue
 
         sample = non_null[0]
-        dtype = "int" if isinstance(sample, int) else "float" if isinstance(sample, float) else "str"
+        dtype = (
+            "int"
+            if isinstance(sample, int)
+            else "float"
+            if isinstance(sample, float)
+            else "str"
+        )
 
         try:
             min_v, max_v = min(non_null), max(non_null)

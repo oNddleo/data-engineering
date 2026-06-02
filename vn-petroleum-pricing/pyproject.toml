@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vn-petroleum-pricing"
+version = "0.1.0"
+description = "Vietnam petroleum retail price calculator: base price, SCT, VAT, environmental tax"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+vnpetro = "vnpetro.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vnpetro"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+strict = true
+python_version = "3.10"
+
+[tool.ruff]
+src = ["src"]
+line-length = 99
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF", "TCH"]
+ignore = ["RUF002", "RUF003"]

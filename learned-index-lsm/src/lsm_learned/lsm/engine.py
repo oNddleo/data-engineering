@@ -17,10 +17,10 @@ benchmark surface clean and focused on index comparison.
 from __future__ import annotations
 
 import itertools
-import os
 import tempfile
+import types
 from pathlib import Path
-from typing import Iterator, Literal
+from typing import Literal
 
 from .memtable import MemTable
 from .sstable import SSTable, SSTableBuilder
@@ -50,6 +50,7 @@ class LSMEngine:
         memtable_capacity: int = 100_000,
         index_strategy: IndexStrategy = "rmi",
     ) -> None:
+        self._tmpdir: tempfile.TemporaryDirectory[str] | None
         if data_dir is None:
             self._tmpdir = tempfile.TemporaryDirectory()
             self._dir = Path(self._tmpdir.name)
@@ -143,6 +144,7 @@ class LSMEngine:
                 k, v = tbl._read_record(i)  # noqa: SLF001
                 if k not in merged:
                     from .sstable import _TOMBSTONE_VALUE
+
                     merged[k] = None if v == _TOMBSTONE_VALUE else v
 
         seq = next(self._seq)
@@ -150,7 +152,7 @@ class LSMEngine:
         items = sorted(merged.items())
         use_rmi = self._strategy in ("rmi", "adaptive")
         builder = SSTableBuilder(path)
-        tbl = builder.build(items)  # type: ignore[arg-type]
+        tbl = builder.build(items)
         tbl.close()
         tbl = SSTable.open(path, use_rmi=use_rmi)
 
@@ -188,7 +190,7 @@ class LSMEngine:
     def l1_count(self) -> int:
         return len(self._l1)
 
-    def stats(self) -> dict:
+    def stats(self) -> dict[str, object]:
         total_entries = sum(t.num_entries for t in self._l0 + self._l1)
         return {
             "memtable_entries": len(self._memtable),
@@ -209,5 +211,10 @@ class LSMEngine:
     def __enter__(self) -> "LSMEngine":
         return self
 
-    def __exit__(self, *_) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: types.TracebackType | None,
+    ) -> None:
         self.close()

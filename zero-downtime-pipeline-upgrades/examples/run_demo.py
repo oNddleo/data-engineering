@@ -15,18 +15,17 @@ What to watch for
 """
 
 import logging
+import os
 import random
 import sys
 import time
-import os
 
 # Make sure the repo root is on the path when running directly
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from pipeline_deployer import DeploymentConfig, DeploymentOrchestrator
-
 from examples.word_count_v1 import WordCountV1
 from examples.word_count_v2 import WordCountV2
+from pipeline_deployer import DeploymentConfig, DeploymentOrchestrator
 
 logging.basicConfig(
     level=logging.INFO,
@@ -49,7 +48,7 @@ PUNCTUATED_SENTENCES = [
     "It's a bird — no, it's a plane!",
     "We sell: apples, oranges, and bananas.",
     "The 2024-01-15 release fixed 3 bugs (see changelog).",
-    "\"To be, or not to be\" — that is the question.",
+    '"To be, or not to be" — that is the question.',
 ]
 
 
@@ -70,11 +69,11 @@ def main():
     print("=" * 65 + "\n")
 
     config = DeploymentConfig(
-        divergence_threshold=0.15,       # allow up to 15 % divergence rate
-        rollback_threshold=0.60,         # rollback only if > 60 % diverge
-        traffic_shift_step=0.20,         # 20 % steps
+        divergence_threshold=0.15,  # allow up to 15 % divergence rate
+        rollback_threshold=0.60,  # rollback only if > 60 % diverge
+        traffic_shift_step=0.20,  # 20 % steps
         traffic_shift_interval_sec=3.0,  # shift every 3 s (demo speed)
-        min_samples_for_promotion=100,   # need 100 shadow samples first
+        min_samples_for_promotion=100,  # need 100 shadow samples first
         comparison_window_size=200,
         enable_auto_promotion=True,
         enable_auto_rollback=True,

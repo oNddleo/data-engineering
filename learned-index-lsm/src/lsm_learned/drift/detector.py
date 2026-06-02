@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import math
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
@@ -33,7 +33,7 @@ class DriftSignal:
 
     detector: str
     step: int
-    statistic: float          # detector-specific test statistic
+    statistic: float  # detector-specific test statistic
     threshold: float
     message: str = ""
 
@@ -96,7 +96,7 @@ class ADWINDetector:
             if counts[cnt] >= 2:
                 # Find and merge the two oldest buckets with this count
                 first = second = None
-                tmp = deque()
+                tmp: deque[tuple[int, float]] = deque()
                 for item in new_buckets:
                     if item[0] == cnt and first is None:
                         first = item
@@ -116,7 +116,7 @@ class ADWINDetector:
         shows a statistically significant mean difference.
         """
         n = self._total_count
-        mean = self._total_sum / n
+        _mean = self._total_sum / n  # noqa: F841
 
         # Accumulate from oldest end
         n0 = 0
@@ -130,8 +130,7 @@ class ADWINDetector:
             m0 = s0 / n0
             m1 = (self._total_sum - s0) / n1
             epsilon = math.sqrt(
-                (1.0 / (2 * n0) + 1.0 / (2 * n1))
-                * math.log(4 * n / self._delta)
+                (1.0 / (2 * n0) + 1.0 / (2 * n1)) * math.log(4 * n / self._delta)
             )
             diff = abs(m0 - m1)
             if diff > epsilon:

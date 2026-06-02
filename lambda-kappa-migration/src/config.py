@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
-
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -67,7 +65,7 @@ class AppConfig(BaseSettings):
     model_config = {"populate_by_name": True, "env_nested_delimiter": "__"}
 
     @classmethod
-    def from_env(cls) -> "AppConfig":
+    def from_env(cls) -> AppConfig:
         """Load config from environment, falling back to defaults."""
         return cls()
 

@@ -1,25 +1,25 @@
 """Tests for the batch processor and offline store integration."""
-import tempfile
-from pathlib import Path
 
 import pandas as pd
 import pytest
-
 from feature_store.batch_processor import BatchProcessor
 from feature_store.offline_store import OfflineStore
 
 
 def make_raw_df(n: int = 100) -> pd.DataFrame:
     import numpy as np
+
     rng = np.random.default_rng(42)
-    return pd.DataFrame({
-        "user_id": [f"user_{i:04d}" for i in range(n)],
-        "amount": rng.lognormal(5.5, 1.0, n),
-        "category": rng.choice(["groceries", "dining", "travel", "retail"], n).tolist(),
-        "timestamp": ["2024-06-15T12:00:00+00:00"] * n,
-        "user_age": rng.integers(20, 70, n).tolist(),
-        "account_created_at": ["2022-01-01T00:00:00+00:00"] * n,
-    })
+    return pd.DataFrame(
+        {
+            "user_id": [f"user_{i:04d}" for i in range(n)],
+            "amount": rng.lognormal(5.5, 1.0, n),
+            "category": rng.choice(["groceries", "dining", "travel", "retail"], n).tolist(),
+            "timestamp": ["2024-06-15T12:00:00+00:00"] * n,
+            "user_age": rng.integers(20, 70, n).tolist(),
+            "account_created_at": ["2022-01-01T00:00:00+00:00"] * n,
+        }
+    )
 
 
 @pytest.fixture

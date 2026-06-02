@@ -4,15 +4,14 @@ Payment Service — writes to ledger + outbox in a single Postgres transaction.
 This is the entry-point for every payment.  The two inserts are atomic:
 either both land or neither does, so the outbox always mirrors the ledger.
 """
+
 from __future__ import annotations
 
 import json
-from datetime import datetime
 
 import structlog
-
 from src.db import transaction
-from src.models import OutboxEntry, PaymentEvent, TransactionState, TransactionStep
+from src.models import PaymentEvent, TransactionState
 
 log = structlog.get_logger(__name__)
 
@@ -27,8 +26,12 @@ class PaymentService:
         All three rows share the same idempotency_key, so the whole
         operation is idempotent — re-submitting the same key is a no-op.
         """
-        log.info("payment.creating", payment_id=event.payment_id,
-                 idempotency_key=event.idempotency_key, amount=str(event.amount))
+        log.info(
+            "payment.creating",
+            payment_id=event.payment_id,
+            idempotency_key=event.idempotency_key,
+            amount=str(event.amount),
+        )
 
         payload = json.loads(event.model_dump_json())
 
@@ -44,22 +47,27 @@ class PaymentService:
                 RETURNING payment_id
                 """,
                 (
-                    event.payment_id, event.idempotency_key,
-                    event.sender_account, event.receiver_account,
-                    event.amount, event.currency, event.description,
+                    event.payment_id,
+                    event.idempotency_key,
+                    event.sender_account,
+                    event.receiver_account,
+                    event.amount,
+                    event.currency,
+                    event.description,
                 ),
             )
             row = cur.fetchone()
             if row is None:
                 # Idempotent re-submission: return existing coordinator state
-                log.info("payment.duplicate_idempotency_key",
-                         idempotency_key=event.idempotency_key)
+                log.info(
+                    "payment.duplicate_idempotency_key", idempotency_key=event.idempotency_key
+                )
                 cur.execute(
                     "SELECT * FROM transaction_states WHERE idempotency_key = %s",
                     (event.idempotency_key,),
                 )
                 state_row = cur.fetchone()
-                return TransactionState(**dict(state_row))  # type: ignore[arg-type]
+                return TransactionState(**dict(state_row))
 
             # ── 2. Outbox ──────────────────────────────────────────────
             cur.execute(
@@ -83,7 +91,8 @@ class PaymentService:
             )
             state_row = cur.fetchone()
 
-        state = TransactionState(**dict(state_row))  # type: ignore[arg-type]
-        log.info("payment.created", payment_id=event.payment_id,
-                 transaction_id=state.transaction_id)
+        state = TransactionState(**dict(state_row))
+        log.info(
+            "payment.created", payment_id=event.payment_id, transaction_id=state.transaction_id
+        )
         return state

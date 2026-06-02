@@ -10,15 +10,15 @@ try:
     import boto3
     from botocore.exceptions import ClientError
 except ImportError:
-    boto3 = None  # type: ignore
-    ClientError = Exception  # type: ignore
+    boto3 = None
+    ClientError = Exception
 
 try:
     import pyarrow as pa
     import pyarrow.parquet as pq
 except ImportError:
-    pa = None  # type: ignore
-    pq = None  # type: ignore
+    pa = None
+    pq = None
 
 from tiered_storage.schemas import DataRecord, Tier, TierMetrics
 from tiered_storage.tiers.base import BaseTier
@@ -47,7 +47,7 @@ class WarmTier(BaseTier):
         self._prefix = prefix.rstrip("/")
         self._region = region
         self._s3: Any = None
-        self._s3_kwargs: dict = {
+        self._s3_kwargs: dict[str, Any] = {
             "region_name": region,
         }
         if aws_access_key_id:
@@ -56,7 +56,7 @@ class WarmTier(BaseTier):
         if endpoint_url:
             self._s3_kwargs["endpoint_url"] = endpoint_url
 
-        self._manifest: dict[str, dict] = {}  # key → {size_bytes, created_at, last_accessed_at, access_count}
+        self._manifest: dict[str, dict[str, Any]] = {}  # key → {size_bytes, created_at, last_accessed_at, access_count}
 
     def connect(self) -> None:
         if boto3:

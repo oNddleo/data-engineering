@@ -4,15 +4,18 @@ Two heads share the PlanTreeEncoder backbone:
   1. CardinalityHead — per-node log-cardinality prediction (used for adaptive re-planning)
   2. CostHead       — scalar query latency prediction (used by the Bao bandit)
 """
+
 from __future__ import annotations
+
 import torch
 import torch.nn as nn
 from torch import Tensor
-from .tree_lstm import PlanTreeEncoder
+
 from ..plan.encoder import EncodedTree
+from .tree_lstm import PlanTreeEncoder
 
 
-class CardinalityHead(nn.Module):
+class CardinalityHead(nn.Module):  # type: ignore[misc]
     def __init__(self, hidden_size: int) -> None:
         super().__init__()
         self.mlp = nn.Sequential(
@@ -26,7 +29,7 @@ class CardinalityHead(nn.Module):
         return self.mlp(node_embs).squeeze(-1)
 
 
-class CostHead(nn.Module):
+class CostHead(nn.Module):  # type: ignore[misc]
     """Predict scalar query cost from root embedding + optional hint vector."""
 
     def __init__(self, hidden_size: int, num_hints: int = 15) -> None:
@@ -47,12 +50,12 @@ class CostHead(nn.Module):
         if not isinstance(hint_id, Tensor):
             hint_id = torch.tensor(hint_id, device=root_emb.device)
         hint_id = hint_id.long().to(root_emb.device)
-        hint_emb = self.hint_proj(hint_id)              # [H//4]
+        hint_emb = self.hint_proj(hint_id)  # [H//4]
         combined = torch.cat([root_emb, hint_emb], dim=-1)
         return self.mlp(combined).squeeze(-1)
 
 
-class QueryOptimizer(nn.Module):
+class QueryOptimizer(nn.Module):  # type: ignore[misc]
     """End-to-end model combining tree encoding + both prediction heads."""
 
     def __init__(
@@ -74,13 +77,13 @@ class QueryOptimizer(nn.Module):
         log_cards = self.cardinality_head(node_embs)
         log_cost = self.cost_head(root_emb, hint_id)
         return {
-            "log_cardinalities": log_cards,   # [N]
-            "log_cost": log_cost,             # scalar
-            "node_embeddings": node_embs,     # [N, H]
-            "root_embedding": root_emb,       # [H]
+            "log_cardinalities": log_cards,  # [N]
+            "log_cost": log_cost,  # scalar
+            "node_embeddings": node_embs,  # [N, H]
+            "root_embedding": root_emb,  # [H]
         }
 
-    @torch.no_grad()
+    @torch.no_grad()  # type: ignore[misc]
     def predict_cardinalities(
         self, tree: EncodedTree, device: torch.device | None = None
     ) -> Tensor:
@@ -92,7 +95,7 @@ class QueryOptimizer(nn.Module):
         out = self(tree)
         return torch.exp(out["log_cardinalities"])
 
-    @torch.no_grad()
+    @torch.no_grad()  # type: ignore[misc]
     def predict_cost(
         self,
         tree: EncodedTree,

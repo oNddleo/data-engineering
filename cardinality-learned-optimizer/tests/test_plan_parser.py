@@ -1,16 +1,15 @@
 """Tests for plan parsing and cardinality error detection."""
 import json
 from pathlib import Path
+
 import pytest
 
-from cle.plan.parser import (
-    parse_explain_json,
-    extract_cardinality_errors,
-    has_critical_error,
-    get_worst_node,
-)
 from cle.plan.node import PlanNode
-
+from cle.plan.parser import (
+    get_worst_node,
+    has_critical_error,
+    parse_explain_json,
+)
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sample_plan.json"
 

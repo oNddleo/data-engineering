@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import asyncio
 from contextlib import asynccontextmanager
 from typing import Annotated
@@ -9,11 +10,11 @@ from fastapi import FastAPI, HTTPException, Query, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import make_asgi_app
 
-from ..config import settings
-from ..storage.repository import ValidationRepository
 from ..blocking.job_controller import JobController
+from ..config import settings
 from ..metrics.collector import MetricsCollector
-from .websocket import websocket_endpoint, redis_subscription_loop
+from ..storage.repository import ValidationRepository
+from .websocket import redis_subscription_loop, websocket_endpoint
 
 log = structlog.get_logger(__name__)
 
@@ -30,6 +31,7 @@ _collector: MetricsCollector | None = None
 # App factory
 # ---------------------------------------------------------------------------
 
+
 def create_app(
     repository: ValidationRepository,
     redis_client: aioredis.Redis,
@@ -45,9 +47,7 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         # Start the Redis → WebSocket fan-out background task
-        task = asyncio.create_task(
-            redis_subscription_loop(redis_client), name="ws_fan_out"
-        )
+        task = asyncio.create_task(redis_subscription_loop(redis_client), name="ws_fan_out")
         log.info("dashboard_started")
         yield
         task.cancel()
@@ -93,6 +93,7 @@ def create_app(
         if not raw:
             return {"message": "No snapshot available yet"}
         import json
+
         return json.loads(raw)
 
     @app.get("/api/v1/results")
@@ -108,6 +109,7 @@ def create_app(
         if not raw:
             raise HTTPException(status_code=404, detail="Result not found")
         import json
+
         return json.loads(raw)
 
     @app.get("/api/v1/blocks")

@@ -1,12 +1,12 @@
 """Tests for the FastAPI dashboard endpoints."""
 from __future__ import annotations
-import json
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from httpx import AsyncClient, ASGITransport
 
+import json
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+from httpx import ASGITransport, AsyncClient
 from src.dashboard.api import create_app
-from src.models import ValidationStatus
 
 
 @pytest.fixture

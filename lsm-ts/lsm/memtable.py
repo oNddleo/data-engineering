@@ -7,6 +7,8 @@ A "tombstone" (None value) marks deleted keys.
 """
 from __future__ import annotations
 
+from typing import Iterator
+
 from sortedcontainers import SortedDict
 
 from .types import TSKey, TSValue
@@ -81,9 +83,9 @@ class Memtable:
     def __len__(self) -> int:
         return len(self._data)
 
-    def items(self):
+    def items(self) -> Iterator[tuple[bytes, bytes | None]]:
         """Yield (encoded_key, encoded_value_or_None) in sorted order."""
-        return self._data.items()
+        return self._data.items()  # type: ignore[no-any-return]
 
     def clear(self) -> None:
         self._data.clear()

@@ -1,7 +1,6 @@
 """Tests for the predicate IR module."""
 from __future__ import annotations
 
-import pytest
 
 from dqp.predicate import (
     AndPredicate,

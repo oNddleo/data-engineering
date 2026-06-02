@@ -60,7 +60,7 @@ class RestApiConnector(BaseConnector):
     ) -> int:
         if table in self._mock_data:
             return len(self._mock_data[table])
-        return 10_000   # REST APIs are assumed small / paginated
+        return 10_000  # REST APIs are assumed small / paginated
 
     # ------------------------------------------------------------------ #
 
@@ -89,7 +89,7 @@ class RestApiConnector(BaseConnector):
         url = base_url.rstrip("/") + "/" + endpoint.lstrip("/")
         query: dict[str, Any] = {**pushed_params, limit_param: page_size}
 
-        all_rows: list[dict] = []
+        all_rows: list[dict[str, Any]] = []
         page = 1
         with httpx.Client(headers=headers, timeout=30) as client:
             while True:
@@ -104,11 +104,12 @@ class RestApiConnector(BaseConnector):
                 if limit and len(all_rows) >= limit:
                     break
                 if len(rows) < page_size:
-                    break   # last page
+                    break  # last page
                 page += 1
 
         df = pd.DataFrame(all_rows)
         from .postgres import _apply_predicates
+
         df = _apply_predicates(df, residual)
         if columns:
             available = [c for c in columns if c in df.columns]
@@ -175,7 +176,7 @@ class RestApiConnector(BaseConnector):
         return pushed, residual
 
     @staticmethod
-    def _extract_result(data: Any, result_path: str) -> list[dict]:
+    def _extract_result(data: Any, result_path: str) -> list[dict[str, Any]]:
         """Navigate a dot-path like 'data.items' into the response JSON."""
         if not result_path:
             if isinstance(data, list):

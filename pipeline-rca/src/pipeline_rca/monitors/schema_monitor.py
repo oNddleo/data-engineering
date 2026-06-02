@@ -125,9 +125,7 @@ class SchemaStore:
             details=details,
         )
 
-    def get_recent_changes(
-        self, tables: list[str], since: datetime
-    ) -> list[SchemaChange]:
+    def get_recent_changes(self, tables: list[str], since: datetime) -> list[SchemaChange]:
         """Return all schema + pipeline changes for *tables* since *since*."""
         placeholders = ",".join("?" * len(tables))
         changes: list[SchemaChange] = []
@@ -175,6 +173,7 @@ class SchemaStore:
 # ------------------------------------------------------------------
 # Internal helpers
 # ------------------------------------------------------------------
+
 
 def _diff_columns(
     table: str,

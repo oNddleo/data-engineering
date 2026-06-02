@@ -23,7 +23,7 @@ class TrieIterator:
 
     __slots__ = ("data", "n_rows", "n_cols", "_depth", "_stack")
 
-    def __init__(self, data: np.ndarray) -> None:
+    def __init__(self, data: np.ndarray[Any, np.dtype[Any]]) -> None:
         """
         Args:
             data: 2-D int64 array of shape (n_tuples, n_cols), sorted
@@ -31,7 +31,7 @@ class TrieIterator:
         """
         if data.ndim == 1:
             data = data.reshape(-1, 1)
-        self.data: np.ndarray = data
+        self.data: np.ndarray[Any, np.dtype[Any]] = data
         self.n_rows, self.n_cols = data.shape
         self._depth: int = -1  # -1 = not yet opened
         # Each entry: (range_start, range_end, key_pos)

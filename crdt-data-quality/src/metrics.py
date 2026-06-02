@@ -9,6 +9,7 @@ Each worker tracks:
   - distinct_values   : HyperLogLogCRDT — approx count of distinct values
   - value_histogram   : Dict[str, GCounter] — per-bucket value distribution
 """
+
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
@@ -43,7 +44,7 @@ class WorkerMetrics:
     distinct_values: HyperLogLogCRDT = field(init=False)
     value_histogram: Dict[str, GCounter] = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.null_count = GCounter(node_id=self.node_id)
         self.valid_count = GCounter(node_id=self.node_id)
         self.anomaly_count = PNCounter(node_id=self.node_id)
@@ -95,7 +96,7 @@ class WorkerMetrics:
         for b in HISTOGRAM_BUCKETS:
             self.value_histogram[b].merge_into(other.value_histogram[b])
 
-    def summary(self) -> dict:
+    def summary(self) -> dict[str, Any]:
         total = self.null_count.value() + self.valid_count.value()
         null_rate = self.null_count.value() / total if total else 0.0
         return {
@@ -109,5 +110,7 @@ class WorkerMetrics:
             "anomaly_types": sorted(self.anomaly_types.elements()),
             "distinct_values_approx": self.distinct_values.count(),
             "distinct_values_error": f"±{self.distinct_values.error_rate():.2%}",
-            "value_histogram": {b: self.value_histogram[b].value() for b in HISTOGRAM_BUCKETS},
+            "value_histogram": {
+                b: self.value_histogram[b].value() for b in HISTOGRAM_BUCKETS
+            },
         }

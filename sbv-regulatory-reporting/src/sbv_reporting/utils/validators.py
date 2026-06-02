@@ -1,18 +1,36 @@
 """Input validation helpers for SBV pipeline."""
+
 from __future__ import annotations
 
-import re
-from typing import Any
 
 import pandas as pd
 
 REQUIRED_COLUMNS = {
-    "transaction_id", "transaction_date", "transaction_time",
-    "transaction_type", "debit_account", "credit_account",
-    "currency", "amount", "vnd_equivalent", "branch_code", "status",
+    "transaction_id",
+    "transaction_date",
+    "transaction_time",
+    "transaction_type",
+    "debit_account",
+    "credit_account",
+    "currency",
+    "amount",
+    "vnd_equivalent",
+    "branch_code",
+    "status",
 }
 
-VALID_CURRENCIES = {"VND", "USD", "EUR", "JPY", "GBP", "AUD", "CNY", "SGD", "HKD", "CHF"}
+VALID_CURRENCIES = {
+    "VND",
+    "USD",
+    "EUR",
+    "JPY",
+    "GBP",
+    "AUD",
+    "CNY",
+    "SGD",
+    "HKD",
+    "CHF",
+}
 VALID_STATUSES = {"SUCCESS", "FAILED", "PENDING", "REVERSED"}
 
 
@@ -38,11 +56,15 @@ def validate_dataframe(df: pd.DataFrame) -> list[str]:
 
     bad_currency = ~df["currency"].isin(VALID_CURRENCIES)
     if bad_currency.any():
-        warnings.append(f"Unknown currency codes: {df.loc[bad_currency, 'currency'].unique().tolist()}")
+        warnings.append(
+            f"Unknown currency codes: {df.loc[bad_currency, 'currency'].unique().tolist()}"
+        )
 
     bad_status = ~df["status"].isin(VALID_STATUSES)
     if bad_status.any():
-        warnings.append(f"Unknown status values: {df.loc[bad_status, 'status'].unique().tolist()}")
+        warnings.append(
+            f"Unknown status values: {df.loc[bad_status, 'status'].unique().tolist()}"
+        )
 
     null_critical = df[list(REQUIRED_COLUMNS)].isnull().any()
     if null_critical.any():

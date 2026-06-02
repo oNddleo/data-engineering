@@ -37,8 +37,7 @@ def cmd_info(_: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="disaggctl",
-                                     description="Disaggregated storage engine")
+    parser = argparse.ArgumentParser(prog="disaggctl", description="Disaggregated storage engine")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_bench = sub.add_parser("bench", help="Run benchmarks")

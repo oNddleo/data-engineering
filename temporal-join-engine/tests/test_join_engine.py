@@ -1,6 +1,5 @@
 """Tests for the core AS OF join engine (on-time events only)."""
-import pytest
-from temporal_join import AsOfJoinEngine, Event, JoinResult, STREAM_LEFT, STREAM_RIGHT
+from temporal_join import AsOfJoinEngine, Event, STREAM_LEFT, STREAM_RIGHT
 
 
 def left(key: str, t: int, **payload) -> Event:

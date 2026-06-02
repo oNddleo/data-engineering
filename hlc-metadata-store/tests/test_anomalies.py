@@ -7,7 +7,6 @@ Each test runs the same causal scenario twice:
 """
 from __future__ import annotations
 
-import pytest
 
 from hlc_store.anomaly import find_causal_inversions
 from hlc_store.region import Region
@@ -24,8 +23,8 @@ def _run_three_region_chain(use_hlc: bool, drifts: tuple[int, int, int]):
     ap = Region("ap-south", drift_ms=d_ap, use_hlc=use_hlc)
 
     e1 = us.write("config", "v1")
-    e2 = us.replicate_to(eu, "config", caused_by_event=e1)
-    e3 = eu.replicate_to(ap, "config", caused_by_event=e2)
+    e2 = us.replicate_to(eu, "config", caused_by_event=e1)  # noqa: F841
+    _ = eu.replicate_to(ap, "config", caused_by_event=e2)
 
     return us.events() + eu.events() + ap.events()
 
@@ -62,13 +61,13 @@ class TestCausalInversionElimination:
         eu = Region("eu-west", drift_ms=0, use_hlc=True)
 
         e1 = us.write("schema", "v1")
-        e2 = us.replicate_to(eu, "schema", caused_by_event=e1)
+        e2 = us.replicate_to(eu, "schema", caused_by_event=e1)  # noqa: F841
 
         # Simulate NTP correcting eu-west backward by 300ms
         eu.drift_ms = -300
 
         e3 = eu.write("schema", "v2", caused_by_event=None)
-        e4 = eu.replicate_to(us, "schema", caused_by_event=e3)
+        _e4 = eu.replicate_to(us, "schema", caused_by_event=e3)
 
         all_events = us.events() + eu.events()
         inversions = find_causal_inversions(all_events)

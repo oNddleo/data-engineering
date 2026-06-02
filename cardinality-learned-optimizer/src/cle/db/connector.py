@@ -1,12 +1,15 @@
 """PostgreSQL connection management."""
+
 from __future__ import annotations
+
 import contextlib
 import logging
 from typing import Any, Generator
 
 import psycopg2
 import psycopg2.extras
-from psycopg2.extensions import connection as PGConnection, cursor as PGCursor
+from psycopg2.extensions import connection as PGConnection
+from psycopg2.extensions import cursor as PGCursor
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +42,7 @@ class DBConfig:
     @classmethod
     def from_env(cls) -> "DBConfig":
         import os
+
         return cls(
             host=os.getenv("PG_HOST", "localhost"),
             port=int(os.getenv("PG_PORT", "5432")),
@@ -73,18 +77,19 @@ class ConnectionPool:
             self._conn = None
 
     @contextlib.contextmanager
-    def cursor(self, factory=None) -> Generator[PGCursor, None, None]:
+    def cursor(self, factory: Any = None) -> Generator[PGCursor, None, None]:
         cur = self.conn.cursor(cursor_factory=factory)
         try:
             yield cur
         finally:
             cur.close()
 
-    def execute(self, sql: str, params: tuple = ()) -> list[Any]:
+    def execute(self, sql: str, params: tuple[Any, ...] = ()) -> list[Any]:
         with self.cursor() as cur:
             cur.execute(sql, params)
             try:
-                return cur.fetchall()
+                rows: list[Any] = cur.fetchall()
+                return rows
             except psycopg2.ProgrammingError:
                 return []
 

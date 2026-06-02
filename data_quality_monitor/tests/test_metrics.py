@@ -1,12 +1,10 @@
 """Tests for the MetricsCollector rolling window."""
 from __future__ import annotations
-import time
-import pytest
-from datetime import datetime, timedelta
-from unittest.mock import patch
 
-from src.models import ValidationResult, ValidationStatus, ValidatorBackend
+from datetime import datetime, timedelta
+
 from src.metrics.collector import MetricsCollector
+from src.models import ValidationResult, ValidationStatus, ValidatorBackend
 
 
 def _result(status: ValidationStatus, table: str = "orders", pass_rate: float | None = None) -> ValidationResult:
@@ -76,7 +74,6 @@ class TestMetricsCollector:
         c = MetricsCollector()
         old_time = datetime.utcnow() - timedelta(hours=2)
         # Manually insert an old entry
-        from src.models import ValidationResult
         r = _result(ValidationStatus.FAILED)
         c._window["orders"].append((old_time, r))
         # Record a fresh pass

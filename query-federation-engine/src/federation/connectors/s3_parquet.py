@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -45,7 +44,7 @@ class S3ParquetConnector(BaseConnector):
     ) -> int:
         if table in self._mock_data:
             return len(self._mock_data[table])
-        return 500_000   # Parquet tables tend to be large
+        return 500_000  # Parquet tables tend to be large
 
     # ------------------------------------------------------------------ #
 
@@ -110,7 +109,7 @@ class S3ParquetConnector(BaseConnector):
         )
 
     @staticmethod
-    def _build_filesystem(params: dict[str, Any]):
+    def _build_filesystem(params: dict[str, Any]) -> Any:
         path = params.get("path", "")
         if path.startswith("s3://") or params.get("bucket"):
             import pyarrow.fs as pafs
@@ -125,20 +124,19 @@ class S3ParquetConnector(BaseConnector):
                     region=region,
                 )
             return pafs.S3FileSystem(region=region)
-        return None   # local filesystem
+        return None  # local filesystem
 
 
 # --------------------------------------------------------------------------- #
 # PyArrow filter expression builder                                            #
 # --------------------------------------------------------------------------- #
 
-def _predicates_to_arrow(predicates: list[exp.Expression]):
+
+def _predicates_to_arrow(predicates: list[exp.Expression]) -> Any:
     """Convert sqlglot predicates to a PyArrow compute expression."""
     if not predicates:
         return None
     try:
-        import pyarrow.compute as pc
-
         parts = [_expr_to_arrow(p) for p in predicates]
         parts = [p for p in parts if p is not None]
         if not parts:
@@ -151,13 +149,16 @@ def _predicates_to_arrow(predicates: list[exp.Expression]):
         return None
 
 
-def _expr_to_arrow(expr: exp.Expression):
+def _expr_to_arrow(expr: exp.Expression) -> Any:
     try:
         import pyarrow.compute as pc
         import pyarrow as pa
 
-        def field(e): return pc.field(e.name)
-        def lit(e): return _lit(e)
+        def field(e: exp.Expression) -> Any:
+            return pc.field(e.name)
+
+        def lit(e: exp.Expression) -> Any:
+            return _lit(e)
 
         match expr:
             case exp.EQ(this=c, expression=v) if isinstance(c, exp.Column):
@@ -175,11 +176,11 @@ def _expr_to_arrow(expr: exp.Expression):
             case exp.In(this=c, expressions=vals) if isinstance(c, exp.Column):
                 return pc.is_in(field(c), pa.array([lit(v) for v in vals]))
             case exp.And(this=left, expression=right):
-                l, r = _expr_to_arrow(left), _expr_to_arrow(right)
-                return (l & r) if l is not None and r is not None else (l or r)
+                lv, r = _expr_to_arrow(left), _expr_to_arrow(right)
+                return (lv & r) if lv is not None and r is not None else (lv or r)
             case exp.Or(this=left, expression=right):
-                l, r = _expr_to_arrow(left), _expr_to_arrow(right)
-                return (l | r) if l is not None and r is not None else (l or r)
+                lv, r = _expr_to_arrow(left), _expr_to_arrow(right)
+                return (lv | r) if lv is not None and r is not None else (lv or r)
     except Exception:
         pass
     return None

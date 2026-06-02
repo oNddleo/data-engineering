@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 _SQLLINEAGE_AVAILABLE = False
 try:
     import sqllineage  # noqa: F401
+
     _SQLLINEAGE_AVAILABLE = True
 except ImportError:
     pass
@@ -28,8 +29,8 @@ except ImportError:
 
 @dataclass
 class LineageNode:
-    name: str                               # fully qualified: "schema.table" or "schema.table.column"
-    kind: str = "table"                     # "table" | "column"
+    name: str  # fully qualified: "schema.table" or "schema.table.column"
+    kind: str = "table"  # "table" | "column"
     upstream: list["LineageNode"] = field(default_factory=list)
 
 
@@ -74,9 +75,7 @@ class LineageTracer:
     def graph(self) -> LineageGraph:
         return self._graph
 
-    def register_metric(
-        self, metric_name: str, upstream_tables: list[str]
-    ) -> None:
+    def register_metric(self, metric_name: str, upstream_tables: list[str]) -> None:
         self._graph.metric_to_tables[metric_name] = list(upstream_tables)
         logger.debug("Registered lineage for metric %s → %s", metric_name, upstream_tables)
 
@@ -132,14 +131,14 @@ def _extract_tables_from_sql(sql: str) -> list[str]:
     for m in matches:
         clean = m.strip('`"[]{}')
         # Skip obvious non-tables: subquery aliases, CTEs with no dot
-        if clean and not clean.upper() in ("SELECT", "WHERE", "GROUP", "ORDER"):
+        if clean and clean.upper() not in ("SELECT", "WHERE", "GROUP", "ORDER"):
             seen[clean] = None
     return list(seen)
 
 
 def _sqllineage_tables(sql: str) -> list[str]:
     """Use sqllineage for more accurate extraction when available."""
-    from sqllineage.runner import LineageRunner  # type: ignore[import]
+    from sqllineage.runner import LineageRunner
 
     runner = LineageRunner(sql)
     return [str(t) for t in runner.source_tables()]

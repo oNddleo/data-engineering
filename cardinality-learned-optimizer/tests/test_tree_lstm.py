@@ -2,13 +2,14 @@
 import json
 import math
 from pathlib import Path
+
 import pytest
 import torch
 
-from cle.plan.parser import parse_explain_json
-from cle.plan.encoder import Vocabulary, encode_tree, FEATURE_DIM
+from cle.model.gnn import QueryOptimizer
 from cle.model.tree_lstm import ChildSumTreeLSTM, PlanTreeEncoder
-from cle.model.gnn import QueryOptimizer, CardinalityHead, CostHead
+from cle.plan.encoder import FEATURE_DIM, Vocabulary, encode_tree
+from cle.plan.parser import parse_explain_json
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sample_plan.json"
 
@@ -89,7 +90,7 @@ def test_gradient_flow(encoded_tree):
 
 
 def test_model_trains(encoded_tree):
-    from cle.model.trainer import Trainer, TrainConfig
+    from cle.model.trainer import TrainConfig, Trainer
     cfg = TrainConfig(hidden_size=32, batch_size=4)
     trainer = Trainer(cfg)
     # Add several copies of the same sample

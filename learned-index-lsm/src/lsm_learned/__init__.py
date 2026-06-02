@@ -1,4 +1,5 @@
 """Learned index structures for LSM-tree storage engines."""
+
 from importlib.metadata import version, PackageNotFoundError
 
 try:

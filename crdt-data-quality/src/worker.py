@@ -2,11 +2,12 @@
 Pipeline worker: processes a data partition and accumulates quality metrics.
 Workers are completely independent — no shared state, no coordinator.
 """
+
 from __future__ import annotations
 import random
 import time
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from .metrics import WorkerMetrics
 
@@ -30,7 +31,7 @@ class PipelineWorker:
     rows_processed: int = field(init=False, default=0)
     processing_time_ms: float = field(init=False, default=0.0)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.metrics = WorkerMetrics(node_id=self.worker_id, column=self.column)
 
     def process_partition(self, rows: List[Optional[float]]) -> None:

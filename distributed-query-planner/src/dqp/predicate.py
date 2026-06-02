@@ -1,11 +1,11 @@
 """Core predicate intermediate representation for federated query planning."""
+
 from __future__ import annotations
 
-import re
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from abc import ABC
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Iterator, List, Optional, Set
+from typing import Any, List, Optional, Set
 
 
 # ---------------------------------------------------------------------------
@@ -207,8 +207,9 @@ def conjuncts(pred: Predicate) -> List[Predicate]:
 
 def columns_referenced(pred: Predicate) -> Set[ColumnRef]:
     """Return the set of all ColumnRefs mentioned in a predicate tree."""
-    if isinstance(pred, (ComparisonPredicate, InPredicate, BetweenPredicate,
-                         LikePredicate, IsNullPredicate)):
+    if isinstance(
+        pred, (ComparisonPredicate, InPredicate, BetweenPredicate, LikePredicate, IsNullPredicate)
+    ):
         return {pred.column}
     elif isinstance(pred, (AndPredicate, OrPredicate)):
         result: Set[ColumnRef] = set()
@@ -231,7 +232,11 @@ def negate(pred: Predicate) -> Predicate:
     """
     if isinstance(pred, NotPredicate):
         # Double negation elimination
-        return negate(negate(pred.predicate)) if isinstance(pred.predicate, NotPredicate) else pred.predicate
+        return (
+            negate(negate(pred.predicate))
+            if isinstance(pred.predicate, NotPredicate)
+            else pred.predicate
+        )
 
     if isinstance(pred, AndPredicate):
         # De Morgan: NOT (A AND B) = (NOT A) OR (NOT B)

@@ -7,7 +7,9 @@ class BaseSource(ABC):
         self.params = params
 
     @abstractmethod
-    def fetch(self, query: str, query_params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    def fetch(
+        self, query: str, query_params: dict[str, Any] | None = None
+    ) -> list[dict[str, Any]]:
         """Execute query and return list of row dicts."""
 
     def __repr__(self) -> str:

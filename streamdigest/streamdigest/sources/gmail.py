@@ -13,14 +13,14 @@ from streamdigest.config import settings
 IMAP_HOST = "imap.gmail.com"
 
 
-@dlt.source(name="gmail")
+@dlt.source(name="gmail")  # type: ignore[misc]
 def gmail_source(
     host: str = dlt.config.value,
     email: str = dlt.secrets.value,
     app_password: str = dlt.secrets.value,
     folder: str = "INBOX",
     batch_size: int = 50,
-):
+) -> Any:
     """dlt source emitting a `messages` resource from a Gmail IMAP mailbox."""
     _host = host or settings.gmail_host or IMAP_HOST
     _email = email or settings.gmail_email
@@ -31,25 +31,26 @@ def gmail_source(
             "GMAIL_EMAIL and GMAIL_APP_PASSWORD are required — set them in .env"
         )
 
-    @dlt.resource(
+    @dlt.resource(  # type: ignore[misc]
         name="messages",
         primary_key="id",
         write_disposition="merge",
     )
     def messages(
-        last_uid: dlt.sources.incremental[int] = dlt.sources.incremental(
-            "uid", initial_value=1
-        ),
+        last_uid: dlt.sources.incremental[int] | None = None,
     ) -> Iterator[dict[str, Any]]:
+        _last_uid: dlt.sources.incremental[int] = last_uid or dlt.sources.incremental(
+            "uid", initial_value=1
+        )
         try:
-            from imap_tools import MailBox, AND  # type: ignore[import]
+            from imap_tools import MailBox, AND  # noqa: F401  # type: ignore[import-untyped, import-not-found]
         except ImportError as exc:
             raise ImportError(
                 "imap-tools is required for the Gmail source. "
                 "Install it with: pip install imap-tools"
             ) from exc
 
-        since_uid = last_uid.last_value or 1
+        since_uid = _last_uid.last_value or 1
 
         with MailBox(_host).login(_email, _password, initial_folder=folder) as mb:
             criteria = AND(uid=f"{since_uid}:*")

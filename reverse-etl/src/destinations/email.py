@@ -43,8 +43,8 @@ class EmailDestination(BaseDestination):
         )
 
     def send(self, records: list[dict[str, Any]]) -> int:
-        from sendgrid import SendGridAPIClient  # lazy import — optional dependency
-        from sendgrid.helpers.mail import Mail
+        from sendgrid import SendGridAPIClient  # type: ignore[import-not-found]  # lazy import — optional dependency
+        from sendgrid.helpers.mail import Mail  # type: ignore[import-not-found]
 
         rows_html = self._records_to_html(records)
         html_body = self._body_template.format(rows_html=rows_html, count=len(records))

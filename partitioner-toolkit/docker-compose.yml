@@ -1,0 +1,5 @@
+services:
+  partitioner:
+    build: .
+    image: partitioner-toolkit:latest
+    command: ["info"]

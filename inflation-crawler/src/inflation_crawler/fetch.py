@@ -36,9 +36,7 @@ class FetchedRecord:
     html: str
 
 
-async def _fetch_range(
-    client: httpx.AsyncClient, row: IndexRow
-) -> bytes:
+async def _fetch_range(client: httpx.AsyncClient, row: IndexRow) -> bytes:
     url = f"{settings.cc_s3_endpoint}/{row.warc_filename}"
     start = row.warc_record_offset
     end = start + row.warc_record_length - 1
@@ -86,6 +84,7 @@ async def fetch_records(rows: list[IndexRow]) -> AsyncIterator[FetchedRecord]:
     )
 
     async with httpx.AsyncClient(limits=limits, http2=True) as client:
+
         async def _one(row: IndexRow) -> FetchedRecord | None:
             async with sem:
                 try:

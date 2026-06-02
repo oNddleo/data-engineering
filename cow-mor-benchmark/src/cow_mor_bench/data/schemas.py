@@ -25,45 +25,53 @@ class OperationType(str, Enum):
 
 
 # Standard benchmark table schema
-ORDERS_SCHEMA = pa.schema([
-    pa.field("order_id", pa.int64()),
-    pa.field("customer_id", pa.int64()),
-    pa.field("product_id", pa.int64()),
-    pa.field("quantity", pa.int32()),
-    pa.field("unit_price", pa.float64()),
-    pa.field("total_amount", pa.float64()),
-    pa.field("status", pa.string()),
-    pa.field("region", pa.string()),
-    pa.field("created_at", pa.timestamp("us")),
-    pa.field("updated_at", pa.timestamp("us")),
-])
+ORDERS_SCHEMA = pa.schema(
+    [
+        pa.field("order_id", pa.int64()),
+        pa.field("customer_id", pa.int64()),
+        pa.field("product_id", pa.int64()),
+        pa.field("quantity", pa.int32()),
+        pa.field("unit_price", pa.float64()),
+        pa.field("total_amount", pa.float64()),
+        pa.field("status", pa.string()),
+        pa.field("region", pa.string()),
+        pa.field("created_at", pa.timestamp("us")),
+        pa.field("updated_at", pa.timestamp("us")),
+    ]
+)
 
-EVENTS_SCHEMA = pa.schema([
-    pa.field("event_id", pa.int64()),
-    pa.field("user_id", pa.int64()),
-    pa.field("session_id", pa.string()),
-    pa.field("event_type", pa.string()),
-    pa.field("page", pa.string()),
-    pa.field("duration_ms", pa.int64()),
-    pa.field("timestamp", pa.timestamp("us")),
-])
+EVENTS_SCHEMA = pa.schema(
+    [
+        pa.field("event_id", pa.int64()),
+        pa.field("user_id", pa.int64()),
+        pa.field("session_id", pa.string()),
+        pa.field("event_type", pa.string()),
+        pa.field("page", pa.string()),
+        pa.field("duration_ms", pa.int64()),
+        pa.field("timestamp", pa.timestamp("us")),
+    ]
+)
 
-INVENTORY_SCHEMA = pa.schema([
-    pa.field("product_id", pa.int64()),
-    pa.field("warehouse_id", pa.int32()),
-    pa.field("stock_qty", pa.int64()),
-    pa.field("reserved_qty", pa.int64()),
-    pa.field("reorder_point", pa.int64()),
-    pa.field("last_updated", pa.timestamp("us")),
-])
+INVENTORY_SCHEMA = pa.schema(
+    [
+        pa.field("product_id", pa.int64()),
+        pa.field("warehouse_id", pa.int32()),
+        pa.field("stock_qty", pa.int64()),
+        pa.field("reserved_qty", pa.int64()),
+        pa.field("reorder_point", pa.int64()),
+        pa.field("last_updated", pa.timestamp("us")),
+    ]
+)
 
-DELTA_LOG_SCHEMA = pa.schema([
-    pa.field("_op", pa.string()),          # insert / update / delete
-    pa.field("_commit_ts", pa.int64()),    # epoch microseconds
-    pa.field("_row_id", pa.int64()),       # target row primary key
-    pa.field("_file_path", pa.string()),   # source data file (for deletes/updates)
-    pa.field("_payload", pa.string()),     # JSON-encoded row data (for inserts/updates)
-])
+DELTA_LOG_SCHEMA = pa.schema(
+    [
+        pa.field("_op", pa.string()),  # insert / update / delete
+        pa.field("_commit_ts", pa.int64()),  # epoch microseconds
+        pa.field("_row_id", pa.int64()),  # target row primary key
+        pa.field("_file_path", pa.string()),  # source data file (for deletes/updates)
+        pa.field("_payload", pa.string()),  # JSON-encoded row data (for inserts/updates)
+    ]
+)
 
 
 @dataclass
@@ -94,7 +102,7 @@ class Snapshot:
     delta_files: list[DeltaFile] = field(default_factory=list)
     summary: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "snapshot_id": self.snapshot_id,
             "parent_id": self.parent_id,
@@ -162,8 +170,9 @@ class TableMetadata:
                 return snap
         return None
 
-    def new_snapshot(self, data_files: list[DataFile], delta_files: list[DeltaFile],
-                     summary: dict) -> Snapshot:
+    def new_snapshot(
+        self, data_files: list[DataFile], delta_files: list[DeltaFile], summary: dict[str, Any]
+    ) -> Snapshot:
         snap = Snapshot(
             snapshot_id=str(uuid.uuid4()),
             parent_id=self.current_snapshot_id,

@@ -5,9 +5,9 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections.abc import Iterator
 from enum import Enum
 from pathlib import Path
-from typing import Iterator
 
 from src.config import HISTORICAL_DIR, LOCAL_KAFKA_FILE, config
 from src.lambda_arch.models import Event
@@ -97,7 +97,7 @@ class ReplayManager:
     def _publish_kafka(self, events: list[Event], topic: str) -> None:
         """Publish events to a Kafka topic, preserving original timestamps."""
         try:
-            from kafka import KafkaProducer  # type: ignore[import]
+            from kafka import KafkaProducer  # type: ignore[import-not-found]
         except ImportError:
             logger.error("kafka-python not installed; cannot publish to Kafka")
             return

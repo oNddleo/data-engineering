@@ -7,8 +7,6 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-import pytest
-
 from src.lambda_arch.models import Event
 from src.migration.backfill import BackfillJob
 
@@ -44,7 +42,6 @@ class TestBackfillJob:
 
     def test_run_writes_to_local_file(self, tmp_path: Path) -> None:
         """run() in local mode must write events to the local JSONL file."""
-        from src.config import LOCAL_KAFKA_FILE
 
         events = _make_events(20)
         hist_dir = _write_events(tmp_path, events)
@@ -64,7 +61,7 @@ class TestBackfillJob:
             assert stats["events_published"] == 20
 
             # Verify lines in the JSONL file
-            lines = [l for l in test_kafka_file.read_text().splitlines() if l.strip()]
+            lines = [ln for ln in test_kafka_file.read_text().splitlines() if ln.strip()]
             assert len(lines) == 20
         finally:
             cfg_module.LOCAL_KAFKA_FILE = original
@@ -72,7 +69,6 @@ class TestBackfillJob:
 
     def test_run_preserves_event_ids(self, tmp_path: Path) -> None:
         """Backfill must preserve original event_ids in the output."""
-        from src.config import LOCAL_KAFKA_FILE
         import src.config as cfg_module
         import src.kappa_arch.replay_manager as rm_module
 

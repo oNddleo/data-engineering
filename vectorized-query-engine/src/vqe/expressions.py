@@ -1,8 +1,9 @@
 """Expression tree: nodes that evaluate to an Arrow array over a RecordBatch."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, List, Optional
 
 import pyarrow as pa
@@ -11,12 +12,10 @@ import pyarrow.compute as pc
 
 class Expr(ABC):
     @abstractmethod
-    def eval(self, batch: pa.RecordBatch) -> pa.Array:
-        ...
+    def eval(self, batch: pa.RecordBatch) -> pa.Array: ...
 
     @abstractmethod
-    def columns_used(self) -> set[str]:
-        ...
+    def columns_used(self) -> set[str]: ...
 
     def __repr__(self) -> str:
         return self.__class__.__name__
@@ -25,6 +24,7 @@ class Expr(ABC):
 # ---------------------------------------------------------------------------
 # Leaf nodes
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class ColumnRef(Expr):
@@ -114,7 +114,7 @@ class BinaryExpr(Expr):
 
 @dataclass
 class UnaryExpr(Expr):
-    op: str   # "NOT" | "-"
+    op: str  # "NOT" | "-"
     expr: Expr
 
     def eval(self, batch: pa.RecordBatch) -> pa.Array:
@@ -173,7 +173,11 @@ class BetweenExpr(Expr):
         return pc.invert(result) if self.negated else result
 
     def columns_used(self) -> set[str]:
-        return self.expr.columns_used() | self.low.columns_used() | self.high.columns_used()
+        return (
+            self.expr.columns_used()
+            | self.low.columns_used()
+            | self.high.columns_used()
+        )
 
 
 @dataclass
@@ -192,9 +196,10 @@ class CastExpr(Expr):
 # Aggregate expressions (evaluated by the aggregate operator, not per-row)
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class AggExpr(Expr):
-    func: str          # count_star | count | sum | avg | min | max
+    func: str  # count_star | count | sum | avg | min | max
     expr: Optional[Expr] = None
     alias: Optional[str] = None
     distinct: bool = False
@@ -206,6 +211,7 @@ class AggExpr(Expr):
         """Return a Python scalar for one batch."""
         if self.func == "count_star":
             return pc.count(batch.column(batch.schema.names[0])).as_py()
+        assert self.expr is not None
         v = self.expr.eval(batch)
         if self.func == "count":
             return pc.count(v).as_py()

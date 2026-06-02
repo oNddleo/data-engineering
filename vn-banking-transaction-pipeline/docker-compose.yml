@@ -1,0 +1,5 @@
+services:
+  vnbank:
+    build: .
+    image: vn-banking-transaction-pipeline:latest
+    command: ["info"]

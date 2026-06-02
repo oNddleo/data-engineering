@@ -30,9 +30,9 @@ def mixed_workload(
             yield ("get", k, None)
 
 
-def write_heavy(n_ops: int, n_keys: int, seed: int = 0):
+def write_heavy(n_ops: int, n_keys: int, seed: int = 0) -> Iterator[tuple[str, bytes, int | None]]:
     yield from mixed_workload(n_ops, n_keys, write_fraction=0.9, seed=seed)
 
 
-def read_heavy(n_ops: int, n_keys: int, seed: int = 0):
+def read_heavy(n_ops: int, n_keys: int, seed: int = 0) -> Iterator[tuple[str, bytes, int | None]]:
     yield from mixed_workload(n_ops, n_keys, write_fraction=0.1, seed=seed)

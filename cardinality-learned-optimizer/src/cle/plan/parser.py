@@ -1,7 +1,10 @@
 """Parse PostgreSQL EXPLAIN (ANALYZE, FORMAT JSON) output into PlanNode trees."""
+
 from __future__ import annotations
+
 import json
 from typing import Any
+
 from .node import PlanNode
 
 _FIELD_MAP = {
@@ -55,7 +58,7 @@ def _parse_node(raw: dict[str, Any], depth: int, counter: list[int]) -> PlanNode
     return node
 
 
-def parse_explain_json(explain_output: str | list | dict) -> PlanNode:
+def parse_explain_json(explain_output: str | list[Any] | dict[str, Any]) -> PlanNode:
     """Parse the result of EXPLAIN (FORMAT JSON) — accepts raw string or already-parsed object."""
     if isinstance(explain_output, str):
         data = json.loads(explain_output)
@@ -71,7 +74,7 @@ def parse_explain_json(explain_output: str | list | dict) -> PlanNode:
     return _parse_node(data, depth=0, counter=[0])
 
 
-def parse_explain_result(rows: list) -> PlanNode:
+def parse_explain_result(rows: list[Any]) -> PlanNode:
     """Parse rows returned by psycopg2 from EXPLAIN (ANALYZE, FORMAT JSON)."""
     # rows is [(json_string,), ...] or [({'Plan': ...},), ...]
     first = rows[0][0]

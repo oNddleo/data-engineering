@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 _BQ_PARTITION_SAVINGS_PCT = 0.30
 _SF_PARTITION_SAVINGS_PCT = 0.25  # Snowflake range-partitioning benefit
 
-_MIN_SIZE_BYTES = 512 * 1024 ** 2  # 512 MiB minimum before recommending
+_MIN_SIZE_BYTES = 512 * 1024**2  # 512 MiB minimum before recommending
 _MIN_QUERY_COUNT = 5
 
 # Common timestamp / date column name patterns

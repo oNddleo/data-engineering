@@ -21,11 +21,11 @@ if TYPE_CHECKING:
 
 # TPC-C transaction mix (standard percentages)
 _MIX = [
-    ("new_order", 0.45, (4, 12)),    # name, fraction, (min, max) pages
-    ("payment",   0.43, (3, 5)),
-    ("delivery",  0.04, (10, 15)),
+    ("new_order", 0.45, (4, 12)),  # name, fraction, (min, max) pages
+    ("payment", 0.43, (3, 5)),
+    ("delivery", 0.04, (10, 15)),
     ("order_status", 0.04, (2, 5)),
-    ("stock_level",  0.04, (5, 8)),
+    ("stock_level", 0.04, (5, 8)),
 ]
 
 

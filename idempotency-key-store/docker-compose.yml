@@ -1,0 +1,5 @@
+services:
+  idemp:
+    build: .
+    image: idempotency-key-store:latest
+    command: ["info"]

@@ -1,5 +1,4 @@
 """Tests for the augmented AVL interval tree."""
-import pytest
 from temporal_join.interval_tree import IntervalTree
 
 

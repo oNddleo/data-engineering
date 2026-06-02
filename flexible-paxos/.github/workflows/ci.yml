@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    paths:
+      - "flexible-paxos/src/**"
+      - "flexible-paxos/tests_py/**"
+      - "flexible-paxos/pyproject.toml"
+  pull_request:
+    paths:
+      - "flexible-paxos/**"
+
+defaults:
+  run:
+    working-directory: flexible-paxos
+
+jobs:
+  quality:
+    name: "Lint & type-check (Python ${{ matrix.python-version }})"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install package + dev tools
+        run: pip install -e . ruff mypy hypothesis pytest
+      - name: ruff check
+        run: python -m ruff check src/fpaxos/
+      - name: ruff format check
+        run: python -m ruff format --check src/fpaxos/ tests_py/
+      - name: mypy
+        run: python -m mypy --strict src/fpaxos/
+      - name: pytest
+        run: python -m pytest tests_py/ -q

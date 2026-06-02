@@ -1,0 +1,5 @@
+services:
+  logietr:
+    build: .
+    image: logistics-eta-tracker:latest
+    command: ["info"]

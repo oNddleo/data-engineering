@@ -1,9 +1,9 @@
 """Cost model: selectivity estimation and plan cost computation."""
+
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 from dqp.predicate import (
     AndPredicate,
@@ -18,7 +18,7 @@ from dqp.predicate import (
     OrPredicate,
     Predicate,
 )
-from dqp.cost.statistics import StatsRegistry, TableStats
+from dqp.cost.statistics import ColumnStats, StatsRegistry, TableStats
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +65,7 @@ def estimate_selectivity(pred: Predicate, table_stats: TableStats) -> float:
     return 0.1
 
 
-def _col_stats(col: ColumnRef, table_stats: TableStats):
+def _col_stats(col: ColumnRef, table_stats: TableStats) -> Optional[ColumnStats]:
     return table_stats.get_column(col.column)
 
 
@@ -257,8 +257,8 @@ class CostModel:
         self,
         table_name: str,
         engine_name: str,
-        pushed_preds: list,
-        residual_preds: list,
+        pushed_preds: list[Any],
+        residual_preds: list[Any],
         table_stats: TableStats,
     ) -> PlanCost:
         """Cost when some predicates are pushed into the engine.
@@ -272,6 +272,7 @@ class CostModel:
         # Selectivity of pushed predicates (reduces IO)
         if pushed_preds:
             from dqp.predicate import AndPredicate as AP
+
             combined_pushed = AP(pushed_preds) if len(pushed_preds) > 1 else pushed_preds[0]
             pushed_sel = estimate_selectivity(combined_pushed, table_stats)
         else:
@@ -283,6 +284,7 @@ class CostModel:
         # CPU for evaluating residual predicates in Python
         if residual_preds:
             from dqp.predicate import AndPredicate as AP
+
             combined_residual = AP(residual_preds) if len(residual_preds) > 1 else residual_preds[0]
             residual_sel = estimate_selectivity(combined_residual, table_stats)
         else:

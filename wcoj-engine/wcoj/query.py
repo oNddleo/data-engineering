@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import numpy as np
 
@@ -19,7 +19,7 @@ class Relation:
 
     name: str
     variables: List[str]
-    data: np.ndarray  # shape (n_tuples, len(variables)), sorted lex
+    data: np.ndarray[Any, np.dtype[Any]]  # shape (n_tuples, len(variables)), sorted lex
 
     def __post_init__(self) -> None:
         self.data = np.asarray(self.data, dtype=np.int64)
@@ -57,7 +57,7 @@ class JoinQuery:
     @property
     def variables(self) -> List[str]:
         """All variables in appearance order (no duplicates)."""
-        seen: set = set()
+        seen: set[Any] = set()
         result = []
         for r in self.relations:
             for v in r.variables:

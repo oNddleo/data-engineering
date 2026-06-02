@@ -17,27 +17,31 @@ Implementation sketch:
   Executor pulls batches from source and calls sink.push(batch) which chains
   through all intermediate ops inline.
 """
+
 from __future__ import annotations
 
 import collections
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Callable, Dict, Generator, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple
 
 import pyarrow as pa
 import pyarrow.compute as pc
 
 from .catalog import Catalog
 from .expressions import AggExpr, ColumnRef, Expr
-from .physical_plan import BATCH_SIZE, SequentialScan
+from .physical_plan import SequentialScan
 
 
 # ---------------------------------------------------------------------------
 # Push-based operator interface
 # ---------------------------------------------------------------------------
 
+
 class PushOp(ABC):
     """An operator that consumes batches and forwards them to a downstream sink."""
+
+    _downstream: Optional["PushOp"] = None
 
     def set_downstream(self, downstream: "PushOp") -> None:
         self._downstream = downstream
@@ -58,6 +62,7 @@ class PushOp(ABC):
 # ---------------------------------------------------------------------------
 # Pipelineable (non-blocking) operators
 # ---------------------------------------------------------------------------
+
 
 class PushFilter(PushOp):
     def __init__(self, predicate: Expr) -> None:
@@ -127,6 +132,7 @@ class PushLimit(PushOp):
 # Pipeline-breaker sinks
 # ---------------------------------------------------------------------------
 
+
 class CollectSink(PushOp):
     """Trivial sink: collect all batches into a list."""
 
@@ -155,7 +161,7 @@ class HashAggSink(PushOp):
     def __init__(self, group_by: List[Expr], aggregates: List[AggExpr]) -> None:
         self.group_by = group_by
         self.aggregates = aggregates
-        self._states: Dict[Tuple, List] = collections.defaultdict(
+        self._states: Dict[Tuple[Any, ...], List[Any]] = collections.defaultdict(
             lambda: [None] * len(aggregates)
         )
         self._result: Optional[pa.Table] = None
@@ -167,7 +173,9 @@ class HashAggSink(PushOp):
 
         if self.group_by:
             key_cols = [e.eval(batch).to_pylist() for e in self.group_by]
-            group_indices: Dict[Tuple, List[int]] = collections.defaultdict(list)
+            group_indices: Dict[Tuple[Any, ...], List[int]] = collections.defaultdict(
+                list
+            )
             for i in range(n):
                 key = tuple(col[i] for col in key_cols)
                 group_indices[key].append(i)
@@ -184,8 +192,8 @@ class HashAggSink(PushOp):
                 self._states[key][j] = agg.merge(self._states[key][j], partial)
 
     def finish(self) -> None:
-        key_arrays: List[List] = [[] for _ in self.group_by]
-        agg_arrays: List[List] = [[] for _ in self.aggregates]
+        key_arrays: List[List[Any]] = [[] for _ in self.group_by]
+        agg_arrays: List[List[Any]] = [[] for _ in self.aggregates]
 
         for key, agg_states in self._states.items():
             for i, v in enumerate(key):
@@ -245,12 +253,14 @@ class SortSink(PushOp):
 # Pipeline and executor
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class Pipeline:
     """A linear chain: source → [ops] → sink."""
+
     source: SequentialScan
-    ops: List[PushOp]        # filter, project, limit — non-blocking
-    sink: PushOp             # collect, agg, sort — may block
+    ops: List[PushOp]  # filter, project, limit — non-blocking
+    sink: PushOp  # collect, agg, sort — may block
 
     def wire(self) -> None:
         """Connect operators in order."""

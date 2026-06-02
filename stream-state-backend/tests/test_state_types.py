@@ -2,17 +2,8 @@
 
 from __future__ import annotations
 
-import pytest
 
 from ssb.manager import StateBackendManager
-from ssb.state.descriptor import StateDescriptor
-from ssb.state.handle import (
-    AggregatingStateHandle,
-    ListStateHandle,
-    MapStateHandle,
-    ReducingStateHandle,
-    ValueStateHandle,
-)
 
 
 # ---------------------------------------------------------------------------

@@ -1,6 +1,5 @@
 """Tests for the strategy recommender."""
 
-import pytest
 
 from cow_mor_bench.recommender.engine import Recommendation, recommend_from_params
 

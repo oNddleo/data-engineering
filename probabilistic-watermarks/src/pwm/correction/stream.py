@@ -30,7 +30,7 @@ class CorrectionStream:
     window: TumblingWindowState = field(default_factory=TumblingWindowState)
     _emitted: list[CorrectionRecord] = field(default_factory=list)
     _on_correction: Callable[[CorrectionRecord], None] | None = None
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def submit_late(
         self,

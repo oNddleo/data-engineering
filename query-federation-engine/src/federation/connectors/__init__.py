@@ -5,7 +5,10 @@ from .s3_parquet import S3ParquetConnector
 from .rest_api import RestApiConnector
 
 __all__ = [
-    "BaseConnector", "ConnectorResult",
-    "PostgresConnector", "MongoDBConnector",
-    "S3ParquetConnector", "RestApiConnector",
+    "BaseConnector",
+    "ConnectorResult",
+    "PostgresConnector",
+    "MongoDBConnector",
+    "S3ParquetConnector",
+    "RestApiConnector",
 ]

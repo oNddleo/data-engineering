@@ -17,7 +17,8 @@ class HubSpotDestination(BaseDestination):
     """
 
     def __init__(self, params: dict[str, Any]) -> None:
-        import hubspot  # lazy import — optional dependency
+        import hubspot  # type: ignore[import-not-found]  # lazy import — optional dependency
+
         super().__init__(params)
         token = params.get("access_token", settings.hubspot_access_token)
         self._client = hubspot.Client.create(access_token=token)
@@ -60,8 +61,12 @@ class HubSpotDestination(BaseDestination):
             try:
                 ok = self._upsert_batch(batch)
                 synced += ok
-            except ApiException as e:
-                logger.error(f"HubSpotDestination: batch {i//self._batch_size + 1} failed: {e}")
+            except Exception as e:
+                logger.error(
+                    f"HubSpotDestination: batch {i//self._batch_size + 1} failed: {e}"
+                )
 
-        logger.info(f"HubSpotDestination: synced {synced}/{len(records)} to {self._object_type}")
+        logger.info(
+            f"HubSpotDestination: synced {synced}/{len(records)} to {self._object_type}"
+        )
         return synced

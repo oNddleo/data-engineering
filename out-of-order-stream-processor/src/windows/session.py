@@ -22,11 +22,7 @@ class SessionWindow(Window):
 
     def assign(self, event_time: float) -> list[WindowAssignment]:
         # Provisional single-event window; processor merges them.
-        return [
-            WindowAssignment(
-                start=event_time, end=event_time + self.gap_seconds
-            )
-        ]
+        return [WindowAssignment(start=event_time, end=event_time + self.gap_seconds)]
 
     def is_session_window(self) -> bool:
         return True

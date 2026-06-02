@@ -40,7 +40,9 @@ from ..kms.client import KMSClient
 SCHEMA_VERSION = 1
 
 # Columns that must be encrypted — anything else is stored plaintext
-DEFAULT_PII_COLUMNS = frozenset(["ssn", "email", "phone", "dob", "full_name", "address", "ip_address"])
+DEFAULT_PII_COLUMNS = frozenset(
+    ["ssn", "email", "phone", "dob", "full_name", "address", "ip_address"]
+)
 
 
 @dataclass
@@ -49,8 +51,8 @@ class EncryptedRecord:
     customer_id: str
     schema_version: int
     key_version: int
-    encrypted_dek: str      # base64
-    encrypted_columns: dict[str, dict]   # {col: {ct, nonce}}
+    encrypted_dek: str  # base64
+    encrypted_columns: dict[str, dict]  # {col: {ct, nonce}}
     plaintext_columns: dict[str, Any]
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
@@ -96,7 +98,11 @@ class EncryptionEngine:
     This covers the window between a key rotation starting and completing.
     """
 
-    def __init__(self, kms_client: KMSClient | None = None, pii_columns: frozenset[str] | None = None):
+    def __init__(
+        self,
+        kms_client: KMSClient | None = None,
+        pii_columns: frozenset[str] | None = None,
+    ) -> None:
         self._kms = kms_client or KMSClient()
         self._pii_columns = pii_columns or DEFAULT_PII_COLUMNS
 
@@ -182,7 +188,9 @@ class EncryptionEngine:
 
         return result
 
-    def _try_decrypt_dek(self, ciphertext: bytes, primary_key_id: str, fallback_key_id: str | None) -> bytes:
+    def _try_decrypt_dek(
+        self, ciphertext: bytes, primary_key_id: str, fallback_key_id: str | None
+    ) -> bytes:
         try:
             return self._kms.decrypt_data_key(ciphertext, primary_key_id)
         except Exception:
@@ -224,6 +232,7 @@ class EncryptionEngine:
 # ------------------------------------------------------------------
 # Helpers
 # ------------------------------------------------------------------
+
 
 def _b64(data: bytes) -> str:
     return base64.b64encode(data).decode()

@@ -27,9 +27,11 @@ class DSLMigrationRequest(BaseModel):
 
 
 class ReplayRequest(BaseModel):
-    events: list[dict[str, Any]] = Field(..., description="List of {event_id, schema_version, payload}")
+    events: list[dict[str, Any]] = Field(
+        ..., description="List of {event_id, schema_version, payload}"
+    )
     target_version: int
-    validate: bool = True
+    validate_schema: bool = True
 
 
 class MigratePayloadRequest(BaseModel):

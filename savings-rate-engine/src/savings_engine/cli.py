@@ -9,15 +9,14 @@ CLI entry-point.  Install the package (`pip install -e .`) then run:
     sre trends VCB --term 365
     sre compare --term 180
 """
+
 import logging
-import sys
 from datetime import datetime, timedelta
-from typing import Optional
 
 import typer
+from rich import box
 from rich.console import Console
 from rich.table import Table
-from rich import box
 
 from savings_engine.storage.database import init_db
 
@@ -40,14 +39,17 @@ def _setup_logging(verbose: bool) -> None:
 
 # ── Commands ──────────────────────────────────────────────────────────────────
 
+
 @app.command()
 def scrape(
-    banks: Optional[str] = typer.Option(
-        None, "--banks", "-b",
+    banks: str | None = typer.Option(
+        None,
+        "--banks",
+        "-b",
         help="Comma-separated bank codes to scrape (default: all). E.g. VCB,BIDV,TCB",
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
-):
+) -> None:
     """Run the scraping pipeline once (all banks or a subset)."""
     _setup_logging(verbose)
     from savings_engine.pipeline import run_pipeline
@@ -64,8 +66,9 @@ def scrape(
 
     for r in run.results:
         status = "[green]✓[/]" if r.success else "[red]✗[/]"
-        table.add_row(r.bank_code, status, str(r.rates_saved),
-                      f"{r.duration_s:.2f}s", r.error or "")
+        table.add_row(
+            r.bank_code, status, str(r.rates_saved), f"{r.duration_s:.2f}s", r.error or ""
+        )
 
     console.print(table)
     console.print(
@@ -80,11 +83,13 @@ def serve(
     host: str = typer.Option("0.0.0.0", "--host"),
     port: int = typer.Option(8000, "--port", "-p"),
     reload: bool = typer.Option(False, "--reload"),
-):
+) -> None:
     """Start the FastAPI server."""
     _setup_logging(False)
     import uvicorn
+
     from savings_engine.api.app import create_app  # noqa: F401 — ensure app is importable
+
     uvicorn.run(
         "savings_engine.api.app:create_app",
         factory=True,
@@ -96,10 +101,10 @@ def serve(
 
 @app.command()
 def rates(
-    bank: Optional[str] = typer.Option(None, "--bank", "-b", help="Bank code, e.g. VCB"),
-    term: Optional[int] = typer.Option(None, "--term", "-t", help="Term in days, e.g. 180"),
+    bank: str | None = typer.Option(None, "--bank", "-b", help="Bank code, e.g. VCB"),
+    term: int | None = typer.Option(None, "--term", "-t", help="Term in days, e.g. 180"),
     rate_type: str = typer.Option("standard", "--type"),
-):
+) -> None:
     """Show latest rates from the database."""
     _setup_logging(False)
     init_db()
@@ -120,15 +125,14 @@ def rates(
         raise typer.Exit(1)
 
     table = Table(title="Latest Rates", box=box.ROUNDED)
-    table.add_column("Bank",       style="cyan")
-    table.add_column("Term",       justify="right")
+    table.add_column("Bank", style="cyan")
+    table.add_column("Term", justify="right")
     table.add_column("Label")
     table.add_column("Rate %p.a.", justify="right", style="green")
     table.add_column("Type")
 
     for r in sorted(records, key=lambda x: (x.bank_code, x.term_days)):
-        table.add_row(r.bank_code, str(r.term_days), r.term_label,
-                      f"{r.rate_pa:.2f}%", r.rate_type)
+        table.add_row(r.bank_code, str(r.term_days), r.term_label, f"{r.rate_pa:.2f}%", r.rate_type)
 
     console.print(table)
 
@@ -138,13 +142,13 @@ def compare(
     term: int = typer.Option(..., "--term", "-t", help="Term in days, e.g. 180"),
     rate_type: str = typer.Option("standard", "--type"),
     top_n: int = typer.Option(10, "--top"),
-):
+) -> None:
     """Rank all banks by rate for a given term."""
     _setup_logging(False)
     init_db()
+    from savings_engine.analyzer.comparisons import compare_banks
     from savings_engine.storage.database import SessionLocal
     from savings_engine.storage.repository import RateRepository
-    from savings_engine.analyzer.comparisons import compare_banks
 
     with SessionLocal() as db:
         repo = RateRepository(db)
@@ -155,8 +159,8 @@ def compare(
         raise typer.Exit(1)
 
     table = Table(title=f"Best rates — {term}d {rate_type}", box=box.ROUNDED)
-    table.add_column("#",         justify="right")
-    table.add_column("Bank",      style="cyan")
+    table.add_column("#", justify="right")
+    table.add_column("Bank", style="cyan")
     table.add_column("Name")
     table.add_column("Rate %p.a.", justify="right", style="green")
 
@@ -173,13 +177,13 @@ def trends(
     term: int = typer.Option(..., "--term", "-t", help="Term in days, e.g. 365"),
     rate_type: str = typer.Option("standard", "--type"),
     days_back: int = typer.Option(90, "--days"),
-):
+) -> None:
     """Show rate trend history for a bank + term."""
     _setup_logging(False)
     init_db()
+    from savings_engine.analyzer.trends import compute_trend
     from savings_engine.storage.database import SessionLocal
     from savings_engine.storage.repository import RateRepository
-    from savings_engine.analyzer.trends import compute_trend
 
     since = datetime.utcnow() - timedelta(days=days_back)
     with SessionLocal() as db:
@@ -188,15 +192,21 @@ def trends(
 
     summary = compute_trend(history, bank_code.upper(), term, rate_type)
     if not summary:
-        console.print(f"[yellow]No history found for {bank_code}/{term}d. Need more scrape runs.[/]")
+        console.print(
+            f"[yellow]No history found for {bank_code}/{term}d. Need more scrape runs.[/]"
+        )
         raise typer.Exit(1)
 
     arrow = {"up": "↑ ", "down": "↓ ", "stable": "→ "}.get(summary.direction, "")
     direction_style = {"up": "green", "down": "red", "stable": "yellow"}.get(summary.direction)
 
     console.print(f"\n[bold]{bank_code.upper()} — {term}d {rate_type}[/]")
-    console.print(f"  Current : [bold]{summary.current_rate:.2f}%[/]  [{direction_style}]{arrow}{summary.direction}[/]")
-    console.print(f"  Range   : {summary.min_rate:.2f}% — {summary.max_rate:.2f}%  (avg {summary.avg_rate:.2f}%)")
+    console.print(
+        f"  Current : [bold]{summary.current_rate:.2f}%[/]  [{direction_style}]{arrow}{summary.direction}[/]"
+    )
+    console.print(
+        f"  Range   : {summary.min_rate:.2f}% — {summary.max_rate:.2f}%  (avg {summary.avg_rate:.2f}%)"
+    )
     console.print(f"  Δ  7d   : {_fmt_delta(summary.change_7d)}")
     console.print(f"  Δ 30d   : {_fmt_delta(summary.change_30d)}")
     console.print(f"  Δ 90d   : {_fmt_delta(summary.change_90d)}")
@@ -216,15 +226,16 @@ def trends(
 @app.command()
 def schedule(
     interval_hours: int = typer.Option(6, "--interval", "-i", help="Scrape interval in hours"),
-):
+) -> None:
     """Start the background scheduler (blocks until interrupted)."""
     _setup_logging(False)
     from savings_engine.scheduler import start_scheduler
+
     console.print(f"[green]Starting scheduler — every {interval_hours}h[/]  (Ctrl-C to stop)")
     start_scheduler(interval_hours=interval_hours)
 
 
-def _fmt_delta(delta: Optional[float]) -> str:
+def _fmt_delta(delta: float | None) -> str:
     if delta is None:
         return "[dim]n/a[/]"
     color = "green" if delta > 0 else ("red" if delta < 0 else "white")

@@ -1,6 +1,4 @@
 """Tests for Thompson Sampling bandit."""
-import math
-import pytest
 
 from cle.bao.bandit import BayesianArm, ThompsonSamplingBandit
 

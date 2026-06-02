@@ -6,6 +6,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 from src.config import HISTORICAL_DIR, config
 from src.kappa_arch.stream_processor import KappaProcessor
@@ -13,7 +14,6 @@ from src.lambda_arch.batch_layer import BatchProcessor
 from src.lambda_arch.models import BatchView
 from src.lambda_arch.serving_layer import ServingLayer
 from src.lambda_arch.speed_layer import SpeedLayer
-from src.migration.backfill import BackfillJob
 from src.validator.correctness_validator import CorrectnessValidator
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ class MigrationState:
 
     phase: MigrationPhase = MigrationPhase.INITIAL
     started_at: datetime = field(default_factory=datetime.utcnow)
-    phase_log: list[dict] = field(default_factory=list)
+    phase_log: list[dict[str, Any]] = field(default_factory=list)
     validation_passed: bool = False
     events_backfilled: int = 0
 

@@ -1,6 +1,6 @@
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
-from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.schedulers.background import BackgroundScheduler  # type: ignore[import-not-found]
+from apscheduler.triggers.cron import CronTrigger  # type: ignore[import-not-found]
+from apscheduler.triggers.interval import IntervalTrigger  # type: ignore[import-not-found]
 from ..models import PipelineConfig
 from ..pipeline import run_pipeline
 from ..logger import get_logger
@@ -20,11 +20,15 @@ class PipelineScheduler:
 
         if sched.type == "cron":
             if not sched.cron:
-                raise ValueError(f"[{config.name}] cron schedule requires a 'cron' expression")
+                raise ValueError(
+                    f"[{config.name}] cron schedule requires a 'cron' expression"
+                )
             trigger = CronTrigger.from_crontab(sched.cron, timezone="UTC")
         elif sched.type == "interval":
             if not sched.seconds:
-                raise ValueError(f"[{config.name}] interval schedule requires 'seconds'")
+                raise ValueError(
+                    f"[{config.name}] interval schedule requires 'seconds'"
+                )
             trigger = IntervalTrigger(seconds=sched.seconds)
         else:
             raise ValueError(f"[{config.name}] unknown schedule type: {sched.type!r}")
@@ -38,7 +42,9 @@ class PipelineScheduler:
             replace_existing=True,
             misfire_grace_time=300,
         )
-        logger.info(f"[{config.name}] registered ({sched.type}: {sched.cron or sched.seconds})")
+        logger.info(
+            f"[{config.name}] registered ({sched.type}: {sched.cron or sched.seconds})"
+        )
 
     def register_all(self, configs: list[PipelineConfig]) -> None:
         for config in configs:
@@ -52,7 +58,7 @@ class PipelineScheduler:
         self._scheduler.shutdown(wait=True)
         logger.info("Scheduler stopped")
 
-    def list_jobs(self) -> list[dict]:
+    def list_jobs(self) -> list[dict[str, str]]:
         return [
             {
                 "id": job.id,

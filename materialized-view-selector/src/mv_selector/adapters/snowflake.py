@@ -7,14 +7,15 @@ Requires:  snowflake-connector-python >= 3.0
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from ..models import CandidateView, MaterializedView, QueryRecord, Warehouse
 from .base import BaseAdapter
 
 try:
     import snowflake.connector
+
     _SF_AVAILABLE = True
 except ImportError:
     _SF_AVAILABLE = False
@@ -43,11 +44,11 @@ class SnowflakeAdapter(BaseAdapter):
         self,
         account: str,
         user: str,
-        password: Optional[str] = None,
+        password: str | None = None,
         warehouse_name: str = "COMPUTE_WH",
         database: str = "ANALYTICS",
         schema: str = "PUBLIC",
-        private_key_path: Optional[str] = None,
+        private_key_path: str | None = None,
         **extra_kwargs: Any,
     ) -> None:
         _require_sf()
@@ -59,7 +60,7 @@ class SnowflakeAdapter(BaseAdapter):
         self.schema = schema
         self.private_key_path = private_key_path
         self._extra = extra_kwargs
-        self._conn: Optional[Any] = None
+        self._conn: Any | None = None
 
     @property
     def conn(self) -> Any:
@@ -79,10 +80,10 @@ class SnowflakeAdapter(BaseAdapter):
             self._conn = snowflake.connector.connect(**params)
         return self._conn
 
-    def _execute(self, sql: str, params: Optional[list] = None) -> list[dict]:
+    def _execute(self, sql: str, params: list[Any] | None = None) -> list[dict[str, Any]]:
         cur = self.conn.cursor(snowflake.connector.DictCursor)
         cur.execute(sql, params or [])
-        return cur.fetchall()
+        return cur.fetchall()  # type: ignore[no-any-return]
 
     # ------------------------------------------------------------------
     # Worklog
@@ -122,7 +123,7 @@ class SnowflakeAdapter(BaseAdapter):
                     query_id=str(row["QUERY_ID"]),
                     sql=row.get("QUERY_TEXT") or "",
                     warehouse=Warehouse.SNOWFLAKE,
-                    executed_at=row["START_TIME"].replace(tzinfo=timezone.utc),
+                    executed_at=row["START_TIME"].replace(tzinfo=UTC),
                     duration_ms=int(row.get("EXECUTION_TIME") or 0),
                     bytes_processed=int(row.get("BYTES_SCANNED") or 0),
                     cost_usd=cost_usd,
@@ -146,15 +147,12 @@ class SnowflakeAdapter(BaseAdapter):
         db = parts[0] if len(parts) > 1 else self.database
         schema = parts[-1]
         fqn = f"{db}.{schema}.{candidate.name.upper()}"
-        ddl = (
-            f"CREATE OR REPLACE MATERIALIZED VIEW {fqn} AS\n"
-            f"{candidate.sql}"
-        )
+        ddl = f"CREATE OR REPLACE MATERIALIZED VIEW {fqn} AS\n" f"{candidate.sql}"
         self._execute(ddl)
         return MaterializedView(
             candidate=candidate,
             warehouse=Warehouse.SNOWFLAKE,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
             fqn=fqn,
         )
 
@@ -162,7 +160,7 @@ class SnowflakeAdapter(BaseAdapter):
         # Snowflake MVs refresh automatically; force via SUSPEND+RESUME
         self._execute(f"ALTER MATERIALIZED VIEW {view.fqn} SUSPEND")
         self._execute(f"ALTER MATERIALIZED VIEW {view.fqn} RESUME")
-        view.last_refreshed_at = datetime.now(timezone.utc)
+        view.last_refreshed_at = datetime.now(UTC)
         view.refresh_count += 1
         return view
 
@@ -180,8 +178,7 @@ class SnowflakeAdapter(BaseAdapter):
         since: datetime,
     ) -> float:
         table_conditions = " OR ".join(
-            f"LOWER(QUERY_TEXT) LIKE '%{t.lower()}%'"
-            for t in view.candidate.referenced_tables
+            f"LOWER(QUERY_TEXT) LIKE '%{t.lower()}%'" for t in view.candidate.referenced_tables
         )
         created_str = view.created_at.strftime("%Y-%m-%d %H:%M:%S")
         since_str = since.strftime("%Y-%m-%d %H:%M:%S")

@@ -1,0 +1,5 @@
+services:
+  evn:
+    build: .
+    image: vn-utility-meter-pipeline:latest
+    command: ["info"]

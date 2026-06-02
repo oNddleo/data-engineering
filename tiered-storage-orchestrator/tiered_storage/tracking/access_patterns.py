@@ -119,6 +119,8 @@ class AccessPatternTracker:
         self._persist_path.write_text(json.dumps(data, indent=2))
 
     def _load(self) -> None:
+        if not self._persist_path:
+            return
         data = json.loads(self._persist_path.read_text())
         for k, v in data.items():
             self._stats[k] = KeyStats(**v)

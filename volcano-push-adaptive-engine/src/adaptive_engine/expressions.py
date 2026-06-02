@@ -1,6 +1,8 @@
 """Expression and predicate DSL for query plan nodes."""
+
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from typing import Any
 
 Row = dict[str, Any]
@@ -43,7 +45,7 @@ class Literal(Expr):
 
 
 class BinOp(Expr):
-    _OPS = {
+    _OPS: dict[str, Callable[[Any, Any], Any]] = {
         "=": lambda a, b: a == b,
         "!=": lambda a, b: a != b,
         "<": lambda a, b: a < b,

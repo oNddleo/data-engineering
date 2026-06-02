@@ -1,9 +1,9 @@
 from .base import BaseTarget
-from .kafka import KafkaTarget
-from .http import HttpTarget
-from .stdout import StdoutTarget
-from .file import FileTarget
 from .factory import make_target
+from .file import FileTarget
+from .http import HttpTarget
+from .kafka import KafkaTarget
+from .stdout import StdoutTarget
 
 __all__ = [
     "BaseTarget",

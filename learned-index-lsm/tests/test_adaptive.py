@@ -1,6 +1,5 @@
 """Tests for the adaptive index manager."""
 import numpy as np
-import pytest
 
 from lsm_learned.adaptive.index_manager import AdaptiveIndexManager, IndexMode
 

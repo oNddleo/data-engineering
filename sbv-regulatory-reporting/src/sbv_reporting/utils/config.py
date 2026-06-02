@@ -1,6 +1,8 @@
 """Load and expose pipeline configuration."""
+
 import os
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -17,7 +19,7 @@ def _find_default_config() -> Path:
     )
 
 
-def load_config(path: str | Path | None = None) -> dict:
+def load_config(path: str | Path | None = None) -> dict[str, Any]:
     if path:
         cfg_path = Path(path)
     elif "SBV_CONFIG" in os.environ:
@@ -25,13 +27,14 @@ def load_config(path: str | Path | None = None) -> dict:
     else:
         cfg_path = _find_default_config()
     with cfg_path.open("r", encoding="utf-8") as fh:
-        return yaml.safe_load(fh)
+        result: dict[str, Any] = yaml.safe_load(fh)
+        return result
 
 
-_config: dict | None = None
+_config: dict[str, Any] | None = None
 
 
-def get_config() -> dict:
+def get_config() -> dict[str, Any]:
     global _config
     if _config is None:
         _config = load_config()

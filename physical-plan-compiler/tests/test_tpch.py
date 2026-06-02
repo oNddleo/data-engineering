@@ -65,11 +65,13 @@ def test_q1_compiles_at_sf1(small_catalog):
 
 def test_q3_compiles_at_sf1(small_catalog):
     p = _opt(Q3, small_catalog)
+
     # Should include at least one HashJoin
     def has_join(n):
         if isinstance(n, PhysicalHashJoin):
             return True
         return any(has_join(c) for c in n.children)
+
     assert has_join(p.root)
 
 

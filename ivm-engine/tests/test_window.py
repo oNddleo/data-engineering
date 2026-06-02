@@ -1,21 +1,21 @@
 """Tests for WindowOperator — tumbling, sliding, and partition windows."""
-import pytest
-import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from ivm import IVMEngine, TumblingWindow, SlidingWindow, PartitionWindow
+from __future__ import annotations
+
 import ivm.aggregates as agg
-
+from ivm import IVMEngine, PartitionWindow, SlidingWindow, TumblingWindow
 
 # ---------------------------------------------------------------------------
 # Tumbling window
 # ---------------------------------------------------------------------------
 
-def test_tumbling_single_window():
+
+def test_tumbling_single_window() -> None:
     e = IVMEngine()
     src = e.source("s")
-    v = src.window(TumblingWindow(size_ms=10_000),
-                   aggregates={"count": agg.Count(), "total": agg.Sum("val")})
+    v = src.window(
+        TumblingWindow(size_ms=10_000), aggregates={"count": agg.Count(), "total": agg.Sum("val")}
+    )
     e.register_view("v", v)
 
     e.ingest("s", {"val": 5}, timestamp=1_000)
@@ -29,13 +29,13 @@ def test_tumbling_single_window():
     assert rows[0]["window_end"] == 9_999
 
 
-def test_tumbling_two_windows():
+def test_tumbling_two_windows() -> None:
     e = IVMEngine()
     src = e.source("s")
     v = src.window(TumblingWindow(size_ms=10_000), aggregates={"count": agg.Count()})
     e.register_view("v", v)
 
-    e.ingest("s", {"x": 1}, timestamp=5_000)   # window 0
+    e.ingest("s", {"x": 1}, timestamp=5_000)  # window 0
     e.ingest("s", {"x": 2}, timestamp=15_000)  # window 1
     e.ingest("s", {"x": 3}, timestamp=25_000)  # window 2
 
@@ -44,14 +44,14 @@ def test_tumbling_two_windows():
     assert all(r["count"] == 1 for r in rows)
 
 
-def test_tumbling_retraction():
+def test_tumbling_retraction() -> None:
     e = IVMEngine()
     src = e.source("s")
     v = src.window(TumblingWindow(size_ms=10_000), aggregates={"count": agg.Count()})
     e.register_view("v", v)
 
-    e.ingest("s",  {"x": 1}, timestamp=3_000)
-    e.ingest("s",  {"x": 2}, timestamp=7_000)
+    e.ingest("s", {"x": 1}, timestamp=3_000)
+    e.ingest("s", {"x": 2}, timestamp=7_000)
     e.retract("s", {"x": 1}, timestamp=3_000)
 
     rows = e.query("v")
@@ -59,13 +59,13 @@ def test_tumbling_retraction():
     assert rows[0]["count"] == 1
 
 
-def test_tumbling_window_empty_after_full_retraction():
+def test_tumbling_window_empty_after_full_retraction() -> None:
     e = IVMEngine()
     src = e.source("s")
     v = src.window(TumblingWindow(size_ms=10_000), aggregates={"count": agg.Count()})
     e.register_view("v", v)
 
-    e.ingest("s",  {"x": 1}, timestamp=1_000)
+    e.ingest("s", {"x": 1}, timestamp=1_000)
     e.retract("s", {"x": 1}, timestamp=1_000)
 
     assert e.query("v") == []
@@ -75,13 +75,14 @@ def test_tumbling_window_empty_after_full_retraction():
 # Sliding window
 # ---------------------------------------------------------------------------
 
-def test_sliding_membership():
+
+def test_sliding_membership() -> None:
     """Record at t=15000 with size=30000, step=10000 belongs to 3 windows.
 
     Windows are aligned at multiples of step_ms (including negative starts):
-      wid=-1: [-10000, 19999]  ← contains 15000
-      wid= 0: [     0, 29999]  ← contains 15000
-      wid= 1: [ 10000, 39999]  ← contains 15000
+      wid=-1: [-10000, 19999]  <- contains 15000
+      wid= 0: [     0, 29999]  <- contains 15000
+      wid= 1: [ 10000, 39999]  <- contains 15000
     """
     e = IVMEngine()
     src = e.source("s")
@@ -99,15 +100,15 @@ def test_sliding_membership():
         assert row["window_start"] <= 15_000 <= row["window_end"]
 
 
-def test_sliding_retraction():
+def test_sliding_retraction() -> None:
     e = IVMEngine()
     src = e.source("s")
     spec = SlidingWindow(size_ms=30_000, step_ms=10_000)
     v = src.window(spec, aggregates={"count": agg.Count()})
     e.register_view("v", v)
 
-    e.ingest("s",  {"x": 1}, timestamp=5_000)
-    e.ingest("s",  {"x": 2}, timestamp=5_000)
+    e.ingest("s", {"x": 1}, timestamp=5_000)
+    e.ingest("s", {"x": 2}, timestamp=5_000)
     e.retract("s", {"x": 1}, timestamp=5_000)
 
     # Only x=2 remains
@@ -119,7 +120,8 @@ def test_sliding_retraction():
 # Partition window (ROW_NUMBER)
 # ---------------------------------------------------------------------------
 
-def test_row_number_basic():
+
+def test_row_number_basic() -> None:
     e = IVMEngine()
     src = e.source("s")
     spec = PartitionWindow(partition_by=["user"], order_by=[("score", "desc")])
@@ -127,16 +129,16 @@ def test_row_number_basic():
     e.register_view("v", v)
 
     e.ingest("s", {"user": "alice", "score": 100}, timestamp=1)
-    e.ingest("s", {"user": "alice", "score": 50},  timestamp=2)
-    e.ingest("s", {"user": "alice", "score": 75},  timestamp=3)
+    e.ingest("s", {"user": "alice", "score": 50}, timestamp=2)
+    e.ingest("s", {"user": "alice", "score": 75}, timestamp=3)
 
     rows = sorted(e.query("v"), key=lambda r: r["rn"])
     scores = [r["score"] for r in rows]
-    assert scores == [100, 75, 50]   # descending
+    assert scores == [100, 75, 50]  # descending
     assert [r["rn"] for r in rows] == [1, 2, 3]
 
 
-def test_row_number_multiple_partitions():
+def test_row_number_multiple_partitions() -> None:
     e = IVMEngine()
     src = e.source("s")
     spec = PartitionWindow(partition_by=["dept"], order_by=[("salary", "asc")])
@@ -144,15 +146,15 @@ def test_row_number_multiple_partitions():
     e.register_view("v", v)
 
     data = [
-        {"dept": "eng",  "name": "a", "salary": 100},
-        {"dept": "eng",  "name": "b", "salary": 90},
-        {"dept": "sales","name": "c", "salary": 80},
-        {"dept": "sales","name": "d", "salary": 95},
+        {"dept": "eng", "name": "a", "salary": 100},
+        {"dept": "eng", "name": "b", "salary": 90},
+        {"dept": "sales", "name": "c", "salary": 80},
+        {"dept": "sales", "name": "d", "salary": 95},
     ]
     for r in data:
         e.ingest("s", r, timestamp=1)
 
-    by_dept = {}
+    by_dept: dict[str, list[tuple[int, int]]] = {}
     for r in e.query("v"):
         by_dept.setdefault(r["dept"], []).append((r["rn"], r["salary"]))
 
@@ -167,7 +169,7 @@ def test_row_number_multiple_partitions():
     assert sales[1] == (2, 95)
 
 
-def test_row_number_insert_shifts_ranks():
+def test_row_number_insert_shifts_ranks() -> None:
     e = IVMEngine()
     src = e.source("s")
     spec = PartitionWindow(partition_by=["g"], order_by=[("v", "asc")])
@@ -185,7 +187,7 @@ def test_row_number_insert_shifts_ranks():
     assert [r["rn"] for r in rows] == [1, 2, 3]
 
 
-def test_row_number_retraction_shifts_ranks():
+def test_row_number_retraction_shifts_ranks() -> None:
     e = IVMEngine()
     src = e.source("s")
     spec = PartitionWindow(partition_by=["g"], order_by=[("v", "asc")])

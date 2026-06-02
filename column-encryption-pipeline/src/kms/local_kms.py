@@ -6,17 +6,14 @@ Implements the same interface surface used by the KMS client wrapper so
 the rest of the system is storage-agnostic.
 """
 
+import base64
 import json
 import os
-import base64
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
-from cryptography.hazmat.backends import default_backend
 
 
 class KeyNotFoundError(Exception):
@@ -39,7 +36,7 @@ class LocalKMS:
     Key store:   JSON file; each entry holds key material encrypted under master key.
     """
 
-    def __init__(self, store_path: str, master_key_path: str):
+    def __init__(self, store_path: str, master_key_path: str) -> None:
         self._store_path = Path(store_path)
         self._master_key = self._load_or_create_master_key(Path(master_key_path))
         self._store: dict = self._load_store()
@@ -64,7 +61,9 @@ class LocalKMS:
             "pending_deletion_at": None,
         }
         self._save_store()
-        return {"KeyMetadata": {"KeyId": key_id, "Description": description, "KeyState": "Enabled"}}
+        return {
+            "KeyMetadata": {"KeyId": key_id, "Description": description, "KeyState": "Enabled"}
+        }
 
     def generate_data_key(self, key_id: str) -> dict:
         """
@@ -92,7 +91,9 @@ class LocalKMS:
         aesgcm = AESGCM(cmk_material)
         return aesgcm.decrypt(nonce, ciphertext, key_id.encode())
 
-    def re_encrypt_data_key(self, ciphertext_blob: bytes, source_key_id: str, dest_key_id: str) -> bytes:
+    def re_encrypt_data_key(
+        self, ciphertext_blob: bytes, source_key_id: str, dest_key_id: str
+    ) -> bytes:
         """Re-encrypt a DEK from one CMK to another (used during key rotation)."""
         plaintext = self.decrypt_data_key(ciphertext_blob, source_key_id)
         dest_material = self._get_key_material(dest_key_id)

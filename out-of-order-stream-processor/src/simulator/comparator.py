@@ -1,8 +1,9 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Optional
+from typing import Union
 
 from .replay import StreamReplay, ReplayConfig, ReplayMetrics
+from ..event import Event
 
 
 @dataclass
@@ -39,7 +40,9 @@ class WhatIfComparator:
         best = report.best_by("completeness")
     """
 
-    def __init__(self, events: list, sort_by_processing_time: bool = True) -> None:
+    def __init__(
+        self, events: list[Event], sort_by_processing_time: bool = True
+    ) -> None:
         self._replay = StreamReplay(events, sort_by_processing_time)
         self._configs: list[ReplayConfig] = []
 
@@ -70,7 +73,10 @@ class ComparisonReport:
         'dropped_events' (lower is better).
         """
         maximize = {"completeness", "events_in_windows"}
-        key_fn = lambda r: getattr(r.metrics, metric)
+
+        def key_fn(r: StrategyResult) -> Union[float, int]:
+            return getattr(r.metrics, metric)  # type: ignore[no-any-return]
+
         if metric in maximize:
             return max(self.results, key=key_fn)
         return min(self.results, key=key_fn)

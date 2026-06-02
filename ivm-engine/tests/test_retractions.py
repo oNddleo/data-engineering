@@ -8,19 +8,21 @@ every operator handles negative multiplicities correctly, including:
   - Retraction propagating through filter, project, group_by, join, window
   - Delta log has exact retract/assert pairs
 """
-import pytest
-import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from ivm import IVMEngine, TumblingWindow
+from __future__ import annotations
+
+from collections import Counter
+
 import ivm.aggregates as agg
-
+from ivm import IVMEngine, TumblingWindow
+from ivm.types import freeze_record
 
 # ---------------------------------------------------------------------------
 # Value correction pattern
 # ---------------------------------------------------------------------------
 
-def test_value_correction_through_group_by():
+
+def test_value_correction_through_group_by() -> None:
     """Retract the old value, insert the corrected value → aggregate updates."""
     e = IVMEngine()
     src = e.source("s")
@@ -32,7 +34,7 @@ def test_value_correction_through_group_by():
 
     # Correct the first record: v was 100, should be 150
     e.retract("s", {"k": "x", "v": 100}, timestamp=3)
-    e.ingest("s",  {"k": "x", "v": 150}, timestamp=3)
+    e.ingest("s", {"k": "x", "v": 150}, timestamp=3)
 
     rows = {r["k"]: r["total"] for r in e.query("v")}
     assert rows["x"] == 350  # 150 + 200
@@ -42,13 +44,14 @@ def test_value_correction_through_group_by():
 # Retraction followed by re-insertion
 # ---------------------------------------------------------------------------
 
-def test_retract_then_reinsert():
+
+def test_retract_then_reinsert() -> None:
     e = IVMEngine()
     src = e.source("s")
     view = src.group_by(["k"], {"n": agg.Count()})
     e.register_view("v", view)
 
-    e.ingest("s",  {"k": "x"}, timestamp=1)
+    e.ingest("s", {"k": "x"}, timestamp=1)
     e.retract("s", {"k": "x"}, timestamp=2)
     assert e.query("v") == []
 
@@ -61,14 +64,15 @@ def test_retract_then_reinsert():
 # Retraction through filter
 # ---------------------------------------------------------------------------
 
-def test_retraction_through_filter():
+
+def test_retraction_through_filter() -> None:
     e = IVMEngine()
     src = e.source("s")
     view = src.filter(lambda r: r["active"]).group_by(["k"], {"n": agg.Count()})
     e.register_view("v", view)
 
-    e.ingest("s", {"k": "x", "active": True},  timestamp=1)
-    e.ingest("s", {"k": "x", "active": True},  timestamp=2)
+    e.ingest("s", {"k": "x", "active": True}, timestamp=1)
+    e.ingest("s", {"k": "x", "active": True}, timestamp=2)
     e.ingest("s", {"k": "x", "active": False}, timestamp=3)  # filtered out
 
     assert {r["k"]: r["n"] for r in e.query("v")}["x"] == 2
@@ -86,15 +90,15 @@ def test_retraction_through_filter():
 # Retraction through window
 # ---------------------------------------------------------------------------
 
-def test_retraction_through_tumbling_window():
+
+def test_retraction_through_tumbling_window() -> None:
     e = IVMEngine()
     src = e.source("s")
-    view = src.window(TumblingWindow(size_ms=10_000),
-                      aggregates={"total": agg.Sum("v")})
+    view = src.window(TumblingWindow(size_ms=10_000), aggregates={"total": agg.Sum("v")})
     e.register_view("v", view)
 
     e.ingest("s", {"v": 100}, timestamp=1_000)
-    e.ingest("s", {"v": 50},  timestamp=2_000)
+    e.ingest("s", {"v": 50}, timestamp=2_000)
 
     rows = e.query("v")
     assert rows[0]["total"] == 150
@@ -108,7 +112,8 @@ def test_retraction_through_tumbling_window():
 # Min/Max: retract the extreme value
 # ---------------------------------------------------------------------------
 
-def test_retract_min_updates_correctly():
+
+def test_retract_min_updates_correctly() -> None:
     e = IVMEngine()
     src = e.source("s")
     view = src.group_by(["g"], {"mn": agg.Min("v"), "mx": agg.Max("v")})
@@ -122,7 +127,7 @@ def test_retract_min_updates_correctly():
     assert rows["x"]["mx"] == 20
 
     # Retract both extremes
-    e.retract("s", {"g": "x", "v": 5},  timestamp=2)
+    e.retract("s", {"g": "x", "v": 5}, timestamp=2)
     e.retract("s", {"g": "x", "v": 20}, timestamp=3)
 
     rows = {r["g"]: r for r in e.query("v")}
@@ -134,7 +139,8 @@ def test_retract_min_updates_correctly():
 # Duplicate values with retractions
 # ---------------------------------------------------------------------------
 
-def test_duplicate_values_retraction():
+
+def test_duplicate_values_retraction() -> None:
     """When the same value appears multiple times, one retraction removes one copy."""
     e = IVMEngine()
     src = e.source("s")
@@ -165,18 +171,19 @@ def test_duplicate_values_retraction():
 # Multi-hop retraction (through join then group_by)
 # ---------------------------------------------------------------------------
 
-def test_retraction_propagates_through_join_and_group_by():
+
+def test_retraction_propagates_through_join_and_group_by() -> None:
     e = IVMEngine()
-    orders   = e.source("orders")
+    orders = e.source("orders")
     products = e.source("products")
 
-    joined  = orders.join(products, left_key="pid", right_key="pid")
+    joined = orders.join(products, left_key="pid", right_key="pid")
     revenue = joined.group_by(["cat"], {"rev": agg.Sum("amount")})
     e.register_view("revenue", revenue)
 
     e.ingest("products", {"pid": "p1", "cat": "A"}, timestamp=0)
-    e.ingest("orders",   {"pid": "p1", "amount": 100}, timestamp=1)
-    e.ingest("orders",   {"pid": "p1", "amount": 200}, timestamp=2)
+    e.ingest("orders", {"pid": "p1", "amount": 100}, timestamp=1)
+    e.ingest("orders", {"pid": "p1", "amount": 200}, timestamp=2)
 
     assert {r["cat"]: r["rev"] for r in e.query("revenue")}["A"] == 300
 
@@ -192,11 +199,9 @@ def test_retraction_propagates_through_join_and_group_by():
 # Delta log consistency
 # ---------------------------------------------------------------------------
 
-def test_delta_log_is_consistent():
-    """Net multiplicity of each unique record in delta log should equal 0 or >0."""
-    from collections import Counter
-    from ivm.types import freeze_record
 
+def test_delta_log_is_consistent() -> None:
+    """Net multiplicity of each unique record in delta log should equal 0 or >0."""
     e = IVMEngine()
     src = e.source("s")
     view = src.group_by(["k"], {"n": agg.Count(), "total": agg.Sum("v")})
@@ -217,10 +222,10 @@ def test_delta_log_is_consistent():
             e.retract("s", rec, timestamp=1)
 
     log = e.delta_log("v")
-    net: Counter = Counter()
+    net: Counter[object] = Counter()
     for delta in log:
         net[freeze_record(delta.record)] += delta.diff
 
     # All net counts must be non-negative
-    for key, count in net.items():
-        assert count >= 0, f"Negative net multiplicity for {dict(key)}: {count}"
+    for key, cnt in net.items():
+        assert cnt >= 0, f"Negative net multiplicity for {dict(key)}: {cnt}"  # type: ignore[call-overload]

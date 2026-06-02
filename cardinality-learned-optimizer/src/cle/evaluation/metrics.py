@@ -5,10 +5,11 @@ Key metrics:
   p-error     = abs(log2(est/act))      — log-scale absolute error
   plan quality= relative latency vs optimal (PostgreSQL default)
 """
+
 from __future__ import annotations
+
 import math
 import statistics
-from typing import Optional
 
 from ..plan.node import PlanNode
 
@@ -24,11 +25,7 @@ def p_error(estimated: float, actual: float) -> float:
 
 
 def plan_node_q_errors(root: PlanNode) -> list[float]:
-    return [
-        node.q_error
-        for node in root.all_nodes()
-        if node.q_error is not None
-    ]
+    return [node.q_error for node in root.all_nodes() if node.q_error is not None]
 
 
 def tree_q_error_stats(root: PlanNode) -> dict[str, float]:
@@ -83,9 +80,11 @@ def latency_speedup_stats(
     speedups.sort()
     n = len(speedups)
     return {
-        "geometric_mean_speedup": math.exp(statistics.mean(math.log(max(s, 0.001)) for s in speedups)),
+        "geometric_mean_speedup": math.exp(
+            statistics.mean(math.log(max(s, 0.001)) for s in speedups)
+        ),
         "median_speedup": speedups[n // 2],
-        "p10_speedup": speedups[int(0.1 * n)],   # worst 10%
+        "p10_speedup": speedups[int(0.1 * n)],  # worst 10%
         "p90_speedup": speedups[int(0.9 * n)],
         "fraction_faster": sum(1 for s in speedups if s > 1.0) / n,
         "fraction_2x_faster": sum(1 for s in speedups if s > 2.0) / n,

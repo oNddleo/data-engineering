@@ -12,11 +12,11 @@ A term_label is matched by:
   2. Regex extraction of (N, unit) then conversion
   3. Fallback: None (record is dropped with a warning)
 """
+
 import logging
 import re
-from typing import Optional
 
-from savings_engine.models.schemas import RateEntry, NormalizedRate
+from savings_engine.models.schemas import NormalizedRate, RateEntry
 
 logger = logging.getLogger(__name__)
 
@@ -46,14 +46,21 @@ _KEYWORD_MAP: dict[str, int] = {
     "36 tháng": 1095,
     "3 năm": 1095,
     # English variants
-    "1 month": 30, "1m": 30,
-    "2 months": 60, "2m": 60,
-    "3 months": 90, "3m": 90,
-    "6 months": 180, "6m": 180,
-    "9 months": 270, "9m": 270,
-    "12 months": 365, "12m": 365,
+    "1 month": 30,
+    "1m": 30,
+    "2 months": 60,
+    "2m": 60,
+    "3 months": 90,
+    "3m": 90,
+    "6 months": 180,
+    "6m": 180,
+    "9 months": 270,
+    "9m": 270,
+    "12 months": 365,
+    "12m": 365,
     "1 year": 365,
-    "18 months": 540, "18m": 540,
+    "18 months": 540,
+    "18m": 540,
     "24 months": 730,
     "2 years": 730,
     "36 months": 1095,
@@ -61,10 +68,20 @@ _KEYWORD_MAP: dict[str, int] = {
 }
 
 _UNIT_DAYS: dict[str, int] = {
-    "ngày": 1, "day": 1, "days": 1,
-    "tuần": 7, "week": 7, "weeks": 7,
-    "tháng": 30, "month": 30, "months": 30, "thang": 30,
-    "năm": 365, "year": 365, "years": 365, "nam": 365,
+    "ngày": 1,
+    "day": 1,
+    "days": 1,
+    "tuần": 7,
+    "week": 7,
+    "weeks": 7,
+    "tháng": 30,
+    "month": 30,
+    "months": 30,
+    "thang": 30,
+    "năm": 365,
+    "year": 365,
+    "years": 365,
+    "nam": 365,
 }
 
 _TERM_REGEX = re.compile(
@@ -78,7 +95,7 @@ def _snap_to_canonical(days: int) -> int:
     return min(CANONICAL_TERMS, key=lambda c: abs(c - days))
 
 
-def parse_term_days(label: str) -> Optional[int]:
+def parse_term_days(label: str) -> int | None:
     clean = label.strip().lower()
 
     # Exact keyword match
@@ -114,14 +131,16 @@ def normalize(entries: list[RateEntry]) -> list[NormalizedRate]:
         if term_days is None:
             logger.warning("Could not parse term '%s' for %s — skipping", e.term_label, e.bank_code)
             continue
-        results.append(NormalizedRate(
-            bank_code=e.bank_code,
-            term_days=term_days,
-            term_label=e.term_label,
-            rate_pa=round(e.rate_pa, 4),
-            rate_type=e.rate_type,
-            min_amount_vnd=e.min_amount_vnd,
-            currency=e.currency,
-            scraped_at=e.scraped_at,
-        ))
+        results.append(
+            NormalizedRate(
+                bank_code=e.bank_code,
+                term_days=term_days,
+                term_label=e.term_label,
+                rate_pa=round(e.rate_pa, 4),
+                rate_type=e.rate_type,
+                min_amount_vnd=e.min_amount_vnd,
+                currency=e.currency,
+                scraped_at=e.scraped_at,
+            )
+        )
     return results

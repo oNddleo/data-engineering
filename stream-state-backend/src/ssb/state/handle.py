@@ -21,13 +21,12 @@ key without deserializing a potentially huge blob.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Generic, Iterable, Iterator, TypeVar
+from typing import Any, Callable, Generic, Iterable, TypeVar, cast
 
 from ..backend.base import StorageBackend
 from .descriptor import StateDescriptor, TTLConfig
 from .serializer import (
     TOMBSTONE,
-    decode_key,
     decode_map_suffix,
     decode_value,
     encode_key,
@@ -95,12 +94,12 @@ class ValueStateHandle(_BaseStateHandle, Generic[T]):
     def get(self) -> T | None:
         raw = self._backend.get(self._cf, self._record_key_bytes)
         if raw is None or is_tombstone(raw):
-            return self._descriptor.default
+            return cast("T | None", self._descriptor.default)
         ts, value = decode_value(raw)
         if self._is_expired(ts):
-            return self._descriptor.default
+            return cast("T | None", self._descriptor.default)
         self._refresh_if_needed(raw)
-        return value  # type: ignore[return-value]
+        return cast("T | None", value)
 
     def set(self, value: T) -> None:
         raw = encode_value(value)
@@ -123,7 +122,7 @@ class ListStateHandle(_BaseStateHandle, Generic[T]):
         if self._is_expired(ts):
             return []
         self._refresh_if_needed(raw)
-        return value  # type: ignore[return-value]
+        return cast("list[T]", value)
 
     def add(self, value: T) -> None:
         existing = self.get()
@@ -162,9 +161,10 @@ class MapStateHandle(_BaseStateHandle, Generic[K, V]):
         ts, value = decode_value(raw)
         if self._is_expired(ts):
             return None
-        if self._ttl() and self._ttl().update_on_read:  # type: ignore[union-attr]
+        ttl = self._ttl()
+        if ttl and ttl.update_on_read:
             self._backend.put(self._cf, self._entry_key(key), encode_value(value))
-        return value  # type: ignore[return-value]
+        return cast("V | None", value)
 
     def put(self, key: K, value: V) -> None:
         self._backend.put(self._cf, self._entry_key(key), encode_value(value))
@@ -192,7 +192,7 @@ class MapStateHandle(_BaseStateHandle, Generic[K, V]):
                 continue
             if self._is_expired(ts):
                 continue
-            suffix = raw_k[len(self._record_key_bytes):]
+            suffix = raw_k[len(self._record_key_bytes) :]
             map_key = decode_map_suffix(suffix)
             yield map_key, value
 
@@ -232,7 +232,7 @@ class ReducingStateHandle(_BaseStateHandle, Generic[T]):
         if self._is_expired(ts):
             return None
         self._refresh_if_needed(raw)
-        return value  # type: ignore[return-value]
+        return cast("T | None", value)
 
     def add(self, value: T) -> None:
         existing = self.get()
@@ -278,7 +278,7 @@ class AggregatingStateHandle(_BaseStateHandle, Generic[IN, ACC, OUT]):
         if self._is_expired(ts):
             return self._initial_acc
         self._refresh_if_needed(raw)
-        return acc  # type: ignore[return-value]
+        return cast("ACC", acc)
 
     def add(self, value: IN) -> None:
         acc = self._load_acc()

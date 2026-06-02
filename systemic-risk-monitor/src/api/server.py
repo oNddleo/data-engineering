@@ -12,17 +12,15 @@ POST /api/simulate/{id}    — run contagion simulation from node
 WS   /ws                   — streaming updates (graph + alerts)
 """
 
-import asyncio
 import json
 import logging
 import time
 from typing import Any
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 
 from src.config import settings
 
@@ -45,19 +43,19 @@ _state: dict[str, Any] = {}
 
 
 class ConnectionManager:
-    def __init__(self):
+    def __init__(self) -> None:
         self.active: list[WebSocket] = []
 
-    async def connect(self, ws: WebSocket):
+    async def connect(self, ws: WebSocket) -> None:
         await ws.accept()
         self.active.append(ws)
         log.info("WS client connected (%d total)", len(self.active))
 
-    def disconnect(self, ws: WebSocket):
+    def disconnect(self, ws: WebSocket) -> None:
         self.active.remove(ws)
         log.info("WS client disconnected (%d total)", len(self.active))
 
-    async def broadcast(self, message: dict):
+    async def broadcast(self, message: dict[str, Any]) -> None:
         data = json.dumps(message)
         dead = []
         for ws in self.active:
@@ -72,7 +70,7 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-async def push_update(payload: dict):
+async def push_update(payload: dict[str, Any]) -> None:
     """Called by the monitor loop to broadcast state to WS clients."""
     await manager.broadcast(payload)
 
@@ -82,13 +80,13 @@ async def push_update(payload: dict):
 # ------------------------------------------------------------------ #
 
 
-@app.get("/api/health")
-async def health():
+@app.get("/api/health")  # type: ignore[misc]
+async def health() -> dict[str, Any]:
     return {"status": "ok", "timestamp": time.time()}
 
 
-@app.get("/api/graph")
-async def get_graph():
+@app.get("/api/graph")  # type: ignore[misc]
+async def get_graph() -> dict[str, Any]:
     mg = _state.get("memgraph")
     if not mg:
         raise HTTPException(503, "Graph DB not ready")
@@ -97,21 +95,21 @@ async def get_graph():
     return {"nodes": nodes, "edges": edges}
 
 
-@app.get("/api/metrics")
-async def get_metrics():
-    return _state.get("latest_metrics", {})
+@app.get("/api/metrics")  # type: ignore[misc]
+async def get_metrics() -> dict[str, Any]:
+    return dict(_state.get("latest_metrics", {}))
 
 
-@app.get("/api/alerts")
-async def get_alerts(limit: int = 50):
+@app.get("/api/alerts")  # type: ignore[misc]
+async def get_alerts(limit: int = 50) -> dict[str, Any]:
     engine = _state.get("alert_engine")
     if not engine:
         return {"alerts": []}
     return {"alerts": engine.recent(limit)}
 
 
-@app.get("/api/institutions/{inst_id}")
-async def get_institution(inst_id: str):
+@app.get("/api/institutions/{inst_id}")  # type: ignore[misc]
+async def get_institution(inst_id: str) -> dict[str, Any]:
     mg = _state.get("memgraph")
     registry = _state.get("registry")
     if not mg or not registry:
@@ -130,9 +128,10 @@ async def get_institution(inst_id: str):
     }
 
 
-@app.post("/api/simulate/{inst_id}")
-async def simulate_contagion(inst_id: str, shock_pct: float = 0.30):
+@app.post("/api/simulate/{inst_id}")  # type: ignore[misc]
+async def simulate_contagion(inst_id: str, shock_pct: float = 0.30) -> dict[str, Any]:
     from src.algorithms.contagion import simulate_cascade
+
     mg = _state.get("memgraph")
     registry = _state.get("registry")
     if not mg or not registry:
@@ -155,8 +154,8 @@ async def simulate_contagion(inst_id: str, shock_pct: float = 0.30):
 # ------------------------------------------------------------------ #
 
 
-@app.websocket("/ws")
-async def websocket_endpoint(ws: WebSocket):
+@app.websocket("/ws")  # type: ignore[misc]
+async def websocket_endpoint(ws: WebSocket) -> None:
     await manager.connect(ws)
     # Send current state immediately on connect
     current = _state.get("latest_metrics")
@@ -174,16 +173,17 @@ async def websocket_endpoint(ws: WebSocket):
 # ------------------------------------------------------------------ #
 
 
-@app.get("/", response_class=HTMLResponse)
-async def dashboard():
+@app.get("/", response_class=HTMLResponse)  # type: ignore[misc]
+async def dashboard() -> HTMLResponse:
     import pathlib
+
     html_path = pathlib.Path(__file__).parent.parent.parent / "dashboard" / "index.html"
     if html_path.exists():
         return HTMLResponse(html_path.read_text())
     return HTMLResponse("<h1>Dashboard not found</h1>", status_code=404)
 
 
-def start(state: dict):
+def start(state: dict[str, Any]) -> None:
     global _state
     _state = state
     uvicorn.run(

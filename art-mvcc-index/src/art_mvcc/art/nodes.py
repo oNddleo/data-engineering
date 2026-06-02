@@ -79,7 +79,7 @@ class Node(ABC):
 class Node4(Node):
     __slots__ = ("_children", "keys")
     CAP = 4
-    MIN = 0   # collapses when reaches 1
+    MIN = 0  # collapses when reaches 1
 
     def __init__(self, prefix: bytes = b"", value: Any = MISSING) -> None:
         super().__init__(prefix, value)
@@ -210,7 +210,7 @@ class Node48(Node):
 
     def __init__(self, prefix: bytes = b"", value: Any = MISSING) -> None:
         super().__init__(prefix, value)
-        self.index: list[int] = [0] * 256          # 0 = absent; else 1..n
+        self.index: list[int] = [0] * 256  # 0 = absent; else 1..n
         self.slots: list[Node | None] = [None] * self.CAP
         self.n = 0
 

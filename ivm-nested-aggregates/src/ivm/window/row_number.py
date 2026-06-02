@@ -22,11 +22,9 @@ class RowNumberIVM:
     """Per-partition rankings under incremental insert/delete."""
 
     _partitions: dict[object, list[tuple[float, object]]] = field(default_factory=dict)
-    _lock: threading.RLock = field(default_factory=threading.RLock)  # type: ignore[assignment]
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
-    def insert(
-        self, partition: object, t: float, row_id: object
-    ) -> list[tuple[object, int]]:
+    def insert(self, partition: object, t: float, row_id: object) -> list[tuple[object, int]]:
         """Insert `(t, row_id)` into partition. Return deltas for the
         suffix: `(row_id, new_rank)` pairs, 1-indexed."""
         with self._lock:
@@ -36,9 +34,7 @@ class RowNumberIVM:
             idx = bisect_left(rows, entry)
             return [(rid, i + 1) for i, (_, rid) in enumerate(rows[idx:], start=idx)]
 
-    def delete(
-        self, partition: object, t: float, row_id: object
-    ) -> list[tuple[object, int]]:
+    def delete(self, partition: object, t: float, row_id: object) -> list[tuple[object, int]]:
         """Delete `(t, row_id)` from partition. Return deltas for the suffix."""
         with self._lock:
             rows = self._partitions.get(partition, [])

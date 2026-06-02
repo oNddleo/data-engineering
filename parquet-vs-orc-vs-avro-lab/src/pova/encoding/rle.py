@@ -12,9 +12,6 @@ from typing import Any
 
 from pova.encoding.plain import plain_decode, plain_encode
 
-if False:  # pragma: no cover — forward refs only
-    pass
-
 
 def rle_encode(values: list[Any], ctype) -> bytes:  # type: ignore[no-untyped-def]
     out = bytearray()

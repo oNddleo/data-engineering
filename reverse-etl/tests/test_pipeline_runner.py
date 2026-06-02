@@ -1,6 +1,5 @@
-import pytest
 from unittest.mock import MagicMock, patch
-from src.models import PipelineConfig, RunResult
+from src.models import PipelineConfig
 from src.pipeline import run_pipeline
 
 

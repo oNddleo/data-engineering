@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 
 class FieldType(str, Enum):
@@ -38,7 +38,7 @@ class FieldSchema:
     name: str
     dtype: FieldType
     nullable: bool = True
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, FieldSchema):

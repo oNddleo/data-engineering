@@ -1,16 +1,36 @@
 """Query plan node data structures."""
+
 from __future__ import annotations
+
+import math
 from dataclasses import dataclass, field
 from typing import Optional
-import math
-
 
 OPERATOR_TYPES = [
-    "Seq Scan", "Index Scan", "Index Only Scan", "Bitmap Heap Scan",
-    "Bitmap Index Scan", "Hash Join", "Merge Join", "Nested Loop",
-    "Hash", "Sort", "Aggregate", "Group", "Gather", "Gather Merge",
-    "Materialize", "Memoize", "Subquery Scan", "Result", "Limit",
-    "Unique", "SetOp", "Append", "MergeAppend", "Unknown",
+    "Seq Scan",
+    "Index Scan",
+    "Index Only Scan",
+    "Bitmap Heap Scan",
+    "Bitmap Index Scan",
+    "Hash Join",
+    "Merge Join",
+    "Nested Loop",
+    "Hash",
+    "Sort",
+    "Aggregate",
+    "Group",
+    "Gather",
+    "Gather Merge",
+    "Materialize",
+    "Memoize",
+    "Subquery Scan",
+    "Result",
+    "Limit",
+    "Unique",
+    "SetOp",
+    "Append",
+    "MergeAppend",
+    "Unknown",
 ]
 OPERATOR_INDEX = {op: i for i, op in enumerate(OPERATOR_TYPES)}
 

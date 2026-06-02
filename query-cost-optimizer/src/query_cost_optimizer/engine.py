@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Literal
 
 from .models import AnalysisReport, Platform
 from .recommenders.clustering import ClusteringRecommender
@@ -32,7 +31,11 @@ def run_bigquery(
     patterns = PatternDetector(min_query_count=min_query_count).detect(records)
 
     all_recs = sorted(
-        [r for r in clustering_recs + partition_recs if r.estimated_savings_usd_monthly >= min_savings_usd],
+        [
+            r
+            for r in clustering_recs + partition_recs
+            if r.estimated_savings_usd_monthly >= min_savings_usd
+        ],
         key=lambda r: r.estimated_savings_usd_monthly,
         reverse=True,
     )
@@ -80,7 +83,11 @@ def run_snowflake(
     patterns = PatternDetector(min_query_count=min_query_count).detect(records)
 
     all_recs = sorted(
-        [r for r in clustering_recs + partition_recs if r.estimated_savings_usd_monthly >= min_savings_usd],
+        [
+            r
+            for r in clustering_recs + partition_recs
+            if r.estimated_savings_usd_monthly >= min_savings_usd
+        ],
         key=lambda r: r.estimated_savings_usd_monthly,
         reverse=True,
     )

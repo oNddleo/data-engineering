@@ -44,13 +44,13 @@ assert struct.calcsize(FOOTER_FMT) == FOOTER_SIZE
 
 def _compress(data: bytes, use_lz4: bool) -> bytes:
     if use_lz4 and _HAS_LZ4:
-        return lz4.compress(data, compression_level=1)
+        return bytes(lz4.compress(data, compression_level=1))
     return data
 
 
 def _decompress(data: bytes, uncompressed_size: int, use_lz4: bool) -> bytes:
     if use_lz4 and _HAS_LZ4 and len(data) != uncompressed_size:
-        return lz4.decompress(data)
+        return bytes(lz4.decompress(data))
     return data
 
 
@@ -85,18 +85,8 @@ class SSTableWriter:
         if self._block_entries:
             self._flush_block()
 
-        # Build bloom filter over all keys we wrote
-        bloom = BloomFilter(max(1, self._entry_count))
-        for _, first_key, _ in self._index:
-            pass  # we didn't store all keys; rebuild requires a second pass
-        # We track all keys via the index's first_key — not sufficient for bloom.
-        # We re-read blocks to populate bloom. Simple alternative: accumulate keys.
-        # For correctness, we stored _all_keys during add().
-        bloom_bytes = bloom.to_bytes()  # empty bloom is fine; populated below
-
-        # Accumulate all keys from index blocks for bloom (trade-off: mem)
+        # Build bloom filter by re-reading blocks (trade-off: mem vs. second pass).
         # Real impl: pass keys during add() with a separate list.
-        # Here we re-read our own blocks:
         bloom = BloomFilter(max(1, self._entry_count))
         self._f.flush()
         with open(self.path, "rb") as rf:
@@ -117,7 +107,7 @@ class SSTableWriter:
 
         # Write index block
         index_offset = self._cur_offset
-        idx_buf = []
+        idx_buf: list[bytes] = []
         for first_key, offset, blk_size in self._index:
             idx_buf.append(struct.pack(">H", len(first_key)))
             idx_buf.append(first_key)
@@ -182,7 +172,7 @@ def _decode_block_data(
     offset = 0
     (num_entries,) = struct.unpack_from(">I", data, offset)
     offset += 4
-    entries = []
+    entries: list[tuple[bytes, bytes | None]] = []
     for _ in range(num_entries):
         (key_len,) = struct.unpack_from(">H", data, offset)
         offset += 2

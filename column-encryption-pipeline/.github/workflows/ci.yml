@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    paths:
+      - "column-encryption-pipeline/**"
+  pull_request:
+    paths:
+      - "column-encryption-pipeline/**"
+
+defaults:
+  run:
+    working-directory: column-encryption-pipeline
+
+jobs:
+  quality:
+    name: "Lint & type-check (Python ${{ matrix.python-version }})"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install package + dev tools
+        run: pip install -e . ruff mypy hypothesis pytest
+      - name: ruff check
+        run: python -m ruff check src/colenc/
+      - name: ruff format check
+        run: python -m ruff format --check src/colenc/ tests/
+      - name: mypy
+        run: python -m mypy --strict --package colenc
+      - name: pytest
+        run: python -m pytest tests/test_colenc.py -q

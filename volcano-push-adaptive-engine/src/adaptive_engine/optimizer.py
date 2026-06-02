@@ -11,6 +11,7 @@ Two responsibilities:
      * Push filters closer to their source
      * Upgrade NestedLoopJoin → HashJoin when the input size justifies it
 """
+
 from __future__ import annotations
 import itertools
 from typing import Any
@@ -27,7 +28,6 @@ from .plan import (
     ProjectNode,
     ScanNode,
     SortNode,
-    walk,
 )
 
 
@@ -41,6 +41,7 @@ def _new_id(prefix: str) -> str:
 # ------------------------------------------------------------------
 # Initial optimizer
 # ------------------------------------------------------------------
+
 
 class Optimizer:
     """Annotates a plan tree with estimated cardinalities and node IDs."""
@@ -116,7 +117,6 @@ def _filter_selectivity(node: "FilterNode", catalog: "Catalog") -> float | None:
     anchored to a scan child.  Returns None if it can't improve on the
     caller-supplied estimate.
     """
-    from .expressions import BinOp, ColRef, Literal, AndExpr, OrExpr
     from .plan import ScanNode
 
     # Find the nearest scan in the child chain to know the table name
@@ -149,13 +149,13 @@ def _pred_selectivity(pred: Any, tbl_stats: Any) -> float | None:
         if isinstance(left, ColRef) and isinstance(right, Literal):
             col = tbl_stats.column(left.name)
             if col is not None:
-                return col.selectivity_for_op(op, right.value)
+                return float(col.selectivity_for_op(op, right.value))
         # literal op col (reverse)
         if isinstance(right, ColRef) and isinstance(left, Literal):
             col = tbl_stats.column(right.name)
             rev = {"<": ">", ">": "<", "<=": ">=", ">=": "<=", "=": "=", "!=": "!="}
             if col is not None and op in rev:
-                return col.selectivity_for_op(rev[op], left.value)
+                return float(col.selectivity_for_op(rev[op], left.value))
         return None
 
     if isinstance(pred, AndExpr):
@@ -188,6 +188,7 @@ def _pred_selectivity(pred: Any, tbl_stats: Any) -> float | None:
 # ------------------------------------------------------------------
 # Runtime re-optimizer
 # ------------------------------------------------------------------
+
 
 class ReOptimizer:
     """Rewrites a plan subtree based on observed runtime statistics.
@@ -269,9 +270,11 @@ class ReOptimizer:
             # (In practice we'd extract from the predicate; here we skip the upgrade
             #  if the predicate doesn't look like an equality)
             pred = node.predicate
-            if pred and hasattr(pred, "op") and pred.op == "=":
-                left_key = pred.left.name if hasattr(pred.left, "name") else ""
-                right_key = pred.right.name if hasattr(pred.right, "name") else ""
+            from .expressions import BinOp as _BinOp, ColRef as _ColRef
+
+            if pred and isinstance(pred, _BinOp) and pred.op == "=":
+                left_key = pred.left.name if isinstance(pred.left, _ColRef) else ""
+                right_key = pred.right.name if isinstance(pred.right, _ColRef) else ""
                 if left_key and right_key:
                     return HashJoinNode(
                         left=node.left,
@@ -291,13 +294,12 @@ class ReOptimizer:
         if isinstance(node.child, FilterNode):
             # Merge into a single AndExpr filter at the lower level
             from .expressions import AndExpr
-            inner: FilterNode = node.child  # type: ignore[assignment]
+
+            inner: FilterNode = node.child
             assert inner.predicate and node.predicate
             inner.predicate = AndExpr(inner.predicate, node.predicate)
             inner.selectivity = inner.selectivity * node.selectivity
             inner.estimated_rows = node.estimated_rows
-            self.reoptimizations.append(
-                f"Merged stacked filters into {inner.node_id}"
-            )
+            self.reoptimizations.append(f"Merged stacked filters into {inner.node_id}")
             return inner
         return node

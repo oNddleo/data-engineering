@@ -20,7 +20,7 @@ def cmd_demo(_args: argparse.Namespace) -> int:
 
     hn = select(cust, lambda t: t[1] == "Hanoi", H)
     joined = join(hn, ord_, key_a=(0,), key_b=(1,), K=H)
-    result = project(joined, (4,), H)   # amount
+    result = project(joined, (4,), H)  # amount
     for tup, ann in sorted(result.items()):
         print(f"  amount={tup[0]}  annotation={ann}")
 
@@ -38,6 +38,7 @@ def cmd_demo(_args: argparse.Namespace) -> int:
 
 def cmd_info(_args: argparse.Namespace) -> int:
     from prov import __version__
+
     print(f"provenance-semiring-engine {__version__}")
     print("Semirings: Bag (N), Boolean, Why, How (polynomials), TriCS (probabilistic)")
     return 0

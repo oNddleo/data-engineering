@@ -7,6 +7,7 @@ Usage:
     python benchmarks/run_benchmarks.py --list       # list available scenarios
     python benchmarks/run_benchmarks.py --repeats 10 # override repeat count
 """
+
 from __future__ import annotations
 import argparse
 import sys
@@ -17,7 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from benchmarks import ALL_SCENARIOS, BenchmarkRunner, render_all, render_table
+from benchmarks import ALL_SCENARIOS, BenchmarkRunner, render_table
 
 
 def main() -> None:
@@ -54,7 +55,8 @@ def main() -> None:
     selected = ALL_SCENARIOS
     if args.scenarios:
         selected = [
-            s for s in ALL_SCENARIOS
+            s
+            for s in ALL_SCENARIOS
             if any(kw.lower() in s.name.lower() for kw in args.scenarios)
         ]
         if not selected:
@@ -67,10 +69,14 @@ def main() -> None:
 
     t_total = time.perf_counter()
     for scenario in selected:
-        print(f"\nRunning: {scenario.name} ({len(scenario.param_values)} points × {args.repeats} reps)…")
+        print(
+            f"\nRunning: {scenario.name} ({len(scenario.param_values)} points × {args.repeats} reps)…"
+        )
         results = runner.run(scenario)
         all_results[scenario.name] = results
-        print(render_table(results, title=scenario.name, description=scenario.description))
+        print(
+            render_table(results, title=scenario.name, description=scenario.description)
+        )
 
     elapsed = time.perf_counter() - t_total
     print(f"\nTotal benchmark time: {elapsed:.1f}s")

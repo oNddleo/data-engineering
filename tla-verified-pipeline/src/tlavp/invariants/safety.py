@@ -1,11 +1,11 @@
 """Safety invariants — must hold at EVERY state.
 
-  WarehouseSubsetOfPg   : warehouse ⊆ pg
-  RevETLSubsetOfWh      : rev_etl ⊆ warehouse
-  KafkaSubsetOfPg       : every record in kafka was inserted in pg
-  ExactlyOnceInAgg      : flink_sum[g] equals sum of consumed records with group g
-  BoundedLag            : len(kafka) ≤ max_lag
-  MonotoneRevETLOffset  : rev_etl never shrinks (caller tracks across steps)
+WarehouseSubsetOfPg   : warehouse ⊆ pg
+RevETLSubsetOfWh      : rev_etl ⊆ warehouse
+KafkaSubsetOfPg       : every record in kafka was inserted in pg
+ExactlyOnceInAgg      : flink_sum[g] equals sum of consumed records with group g
+BoundedLag            : len(kafka) ≤ max_lag
+MonotoneRevETLOffset  : rev_etl never shrinks (caller tracks across steps)
 """
 
 from __future__ import annotations

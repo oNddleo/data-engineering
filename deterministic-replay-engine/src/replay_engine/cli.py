@@ -24,10 +24,16 @@ def main() -> None:
 
 @main.command("replay")
 @click.argument("log_file", type=click.Path(exists=True, dir_okay=False))
-@click.option("--format", "fmt", default="auto", type=click.Choice(["auto", "json", "jsonl"]))
-@click.option("--udf-runs", default=2, show_default=True, help="Runs per event for UDF checks.")
+@click.option(
+    "--format", "fmt", default="auto", type=click.Choice(["auto", "json", "jsonl"])
+)
+@click.option(
+    "--udf-runs", default=2, show_default=True, help="Runs per event for UDF checks."
+)
 @click.option("--stop-on-violation", is_flag=True, help="Abort on first violation.")
-@click.option("--output", "-o", type=click.Path(), help="Write ordered log to file (JSONL).")
+@click.option(
+    "--output", "-o", type=click.Path(), help="Write ordered log to file (JSONL)."
+)
 @click.option("--report", "-r", type=click.Path(), help="Write JSON report to file.")
 def replay_cmd(
     log_file: str,
@@ -115,7 +121,9 @@ def replay_cmd(
 
 @main.command("validate")
 @click.argument("log_file", type=click.Path(exists=True, dir_okay=False))
-@click.option("--format", "fmt", default="auto", type=click.Choice(["auto", "json", "jsonl"]))
+@click.option(
+    "--format", "fmt", default="auto", type=click.Choice(["auto", "json", "jsonl"])
+)
 def validate_cmd(log_file: str, fmt: str) -> None:
     """Validate the causal structure of LOG_FILE without replaying."""
     from .causal_order import validate_monotone_sequences, causal_sort

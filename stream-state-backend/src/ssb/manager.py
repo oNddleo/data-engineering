@@ -7,7 +7,7 @@ import logging
 import threading
 from typing import Any, Callable
 
-import msgpack
+import msgpack  # type: ignore[import-untyped]
 
 from .backend.base import StorageBackend
 from .backend.memory_backend import MemoryBackend
@@ -59,10 +59,8 @@ class StateContext:
         name: str,
         default: Any = None,
         ttl: TTLConfig | None = None,
-    ) -> ValueStateHandle:
-        desc = StateDescriptor(
-            name=name, state_type="value", default=default, ttl=ttl
-        )
+    ) -> "ValueStateHandle[Any]":
+        desc = StateDescriptor(name=name, state_type="value", default=default, ttl=ttl)
         cf = self._manager._ensure_state(self._operator_id, desc)
         return ValueStateHandle(self._manager.backend, cf, self._record_key, desc)
 
@@ -70,7 +68,7 @@ class StateContext:
         self,
         name: str,
         ttl: TTLConfig | None = None,
-    ) -> ListStateHandle:
+    ) -> "ListStateHandle[Any]":
         desc = StateDescriptor(name=name, state_type="list", ttl=ttl)
         cf = self._manager._ensure_state(self._operator_id, desc)
         return ListStateHandle(self._manager.backend, cf, self._record_key, desc)
@@ -79,7 +77,7 @@ class StateContext:
         self,
         name: str,
         ttl: TTLConfig | None = None,
-    ) -> MapStateHandle:
+    ) -> "MapStateHandle[Any, Any]":
         desc = StateDescriptor(name=name, state_type="map", ttl=ttl)
         cf = self._manager._ensure_state(self._operator_id, desc)
         return MapStateHandle(self._manager.backend, cf, self._record_key, desc)
@@ -89,7 +87,7 @@ class StateContext:
         name: str,
         reduce_fn: Callable[[Any, Any], Any],
         ttl: TTLConfig | None = None,
-    ) -> ReducingStateHandle:
+    ) -> "ReducingStateHandle[Any]":
         desc = StateDescriptor(
             name=name, state_type="reducing", reduce_fn=reduce_fn, ttl=ttl
         )
@@ -103,7 +101,7 @@ class StateContext:
         get_fn: Callable[[Any], Any],
         initial_acc: Any = None,
         ttl: TTLConfig | None = None,
-    ) -> AggregatingStateHandle:
+    ) -> "AggregatingStateHandle[Any, Any, Any]":
         desc = StateDescriptor(
             name=name,
             state_type="aggregating",
@@ -113,9 +111,7 @@ class StateContext:
             ttl=ttl,
         )
         cf = self._manager._ensure_state(self._operator_id, desc)
-        return AggregatingStateHandle(
-            self._manager.backend, cf, self._record_key, desc
-        )
+        return AggregatingStateHandle(self._manager.backend, cf, self._record_key, desc)
 
 
 class StateBackendManager:
@@ -165,8 +161,8 @@ class StateBackendManager:
         self._lock = threading.RLock()
 
         # FastAPI app / uvicorn server (started on request)
-        self._api_app = None
-        self._api_server = None
+        self._api_app: Any = None
+        self._api_server: Any = None
         self._api_thread: threading.Thread | None = None
 
     # ------------------------------------------------------------------
@@ -318,11 +314,10 @@ class StateBackendManager:
 
         return cf
 
-    def _update_topology_with_state(
-        self, operator_id: str, state_name: str
-    ) -> None:
+    def _update_topology_with_state(self, operator_id: str, state_name: str) -> None:
         """Add *state_name* to *operator_id* in the current topology."""
         with self._lock:
+            op: OperatorDescriptor | None
             if self._topology is None:
                 op = OperatorDescriptor(
                     operator_id=operator_id, state_names=[state_name]
@@ -357,9 +352,7 @@ class StateBackendManager:
             try:
                 data = msgpack.unpackb(raw, raw=False)
                 self._topology = TopologyDescriptor.from_dict(data)
-                logger.info(
-                    "Restored topology version %d", self._topology.version
-                )
+                logger.info("Restored topology version %d", self._topology.version)
             except Exception:
                 logger.exception("Failed to restore topology; starting fresh")
 

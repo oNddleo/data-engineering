@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from cctest.codecs.alp import ALPCodec, _find_best_exponent
 

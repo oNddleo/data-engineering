@@ -1,10 +1,11 @@
 """Tests for adaptive recompilation monitor."""
 import json
 from pathlib import Path
+
 import pytest
 
+from cle.adaptive.monitor import CardinalityMonitor
 from cle.plan.parser import parse_explain_json
-from cle.adaptive.monitor import CardinalityMonitor, CRITICAL_THRESHOLD
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sample_plan.json"
 
@@ -62,7 +63,6 @@ def test_summary_string(plan):
 
 def test_monitor_no_actuals():
     """Monitor should handle plans without actuals gracefully."""
-    import json
     # Plan without actual rows
     raw = [{"Plan": {
         "Node Type": "Seq Scan",

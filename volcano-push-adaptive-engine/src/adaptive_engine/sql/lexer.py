@@ -1,88 +1,113 @@
 """SQL lexer — converts a SQL string into a flat token stream."""
+
 from __future__ import annotations
-import re
 from dataclasses import dataclass
 from enum import Enum, auto
 
 
 class TT(Enum):
     """Token type."""
+
     # Literals
-    INTEGER   = auto()
-    FLOAT     = auto()
-    STRING    = auto()
-    TRUE      = auto()
-    FALSE     = auto()
-    NULL      = auto()
+    INTEGER = auto()
+    FLOAT = auto()
+    STRING = auto()
+    TRUE = auto()
+    FALSE = auto()
+    NULL = auto()
     # Identifiers / keywords
-    IDENT     = auto()
+    IDENT = auto()
     # Keywords (each gets its own type for unambiguous parsing)
-    SELECT    = auto()
-    FROM      = auto()
-    WHERE     = auto()
-    JOIN      = auto()
-    INNER     = auto()
-    LEFT      = auto()
-    RIGHT     = auto()
-    FULL      = auto()
-    OUTER     = auto()
-    ON        = auto()
-    AND       = auto()
-    OR        = auto()
-    NOT       = auto()
-    AS        = auto()
-    GROUP     = auto()
-    BY        = auto()
-    ORDER     = auto()
-    HAVING    = auto()
-    LIMIT     = auto()
-    OFFSET    = auto()
-    ASC       = auto()
-    DESC      = auto()
-    IS        = auto()
-    IN        = auto()
-    BETWEEN   = auto()
-    LIKE      = auto()
-    DISTINCT  = auto()
-    STAR      = auto()
+    SELECT = auto()
+    FROM = auto()
+    WHERE = auto()
+    JOIN = auto()
+    INNER = auto()
+    LEFT = auto()
+    RIGHT = auto()
+    FULL = auto()
+    OUTER = auto()
+    ON = auto()
+    AND = auto()
+    OR = auto()
+    NOT = auto()
+    AS = auto()
+    GROUP = auto()
+    BY = auto()
+    ORDER = auto()
+    HAVING = auto()
+    LIMIT = auto()
+    OFFSET = auto()
+    ASC = auto()
+    DESC = auto()
+    IS = auto()
+    IN = auto()
+    BETWEEN = auto()
+    LIKE = auto()
+    DISTINCT = auto()
+    STAR = auto()
     # Aggregate / scalar functions
-    COUNT     = auto()
-    SUM       = auto()
-    AVG       = auto()
-    MIN       = auto()
-    MAX       = auto()
+    COUNT = auto()
+    SUM = auto()
+    AVG = auto()
+    MIN = auto()
+    MAX = auto()
     # Operators
-    EQ        = auto()   # =
-    NEQ       = auto()   # != or <>
-    LT        = auto()   # <
-    LTE       = auto()   # <=
-    GT        = auto()   # >
-    GTE       = auto()   # >=
-    PLUS      = auto()   # +
-    MINUS     = auto()   # -
-    SLASH     = auto()   # /
+    EQ = auto()  # =
+    NEQ = auto()  # != or <>
+    LT = auto()  # <
+    LTE = auto()  # <=
+    GT = auto()  # >
+    GTE = auto()  # >=
+    PLUS = auto()  # +
+    MINUS = auto()  # -
+    SLASH = auto()  # /
     # Punctuation
-    COMMA     = auto()
-    DOT       = auto()
-    LPAREN    = auto()
-    RPAREN    = auto()
+    COMMA = auto()
+    DOT = auto()
+    LPAREN = auto()
+    RPAREN = auto()
     SEMICOLON = auto()
     # Control
-    EOF       = auto()
+    EOF = auto()
 
 
 _KEYWORDS: dict[str, TT] = {
-    "select": TT.SELECT, "from": TT.FROM, "where": TT.WHERE,
-    "join": TT.JOIN, "inner": TT.INNER, "left": TT.LEFT,
-    "right": TT.RIGHT, "full": TT.FULL, "outer": TT.OUTER,
-    "on": TT.ON, "and": TT.AND, "or": TT.OR, "not": TT.NOT,
-    "as": TT.AS, "group": TT.GROUP, "by": TT.BY, "order": TT.ORDER,
-    "having": TT.HAVING, "limit": TT.LIMIT, "offset": TT.OFFSET,
-    "asc": TT.ASC, "desc": TT.DESC, "is": TT.IS, "in": TT.IN,
-    "between": TT.BETWEEN, "like": TT.LIKE, "distinct": TT.DISTINCT,
-    "true": TT.TRUE, "false": TT.FALSE, "null": TT.NULL,
-    "count": TT.COUNT, "sum": TT.SUM, "avg": TT.AVG,
-    "min": TT.MIN, "max": TT.MAX,
+    "select": TT.SELECT,
+    "from": TT.FROM,
+    "where": TT.WHERE,
+    "join": TT.JOIN,
+    "inner": TT.INNER,
+    "left": TT.LEFT,
+    "right": TT.RIGHT,
+    "full": TT.FULL,
+    "outer": TT.OUTER,
+    "on": TT.ON,
+    "and": TT.AND,
+    "or": TT.OR,
+    "not": TT.NOT,
+    "as": TT.AS,
+    "group": TT.GROUP,
+    "by": TT.BY,
+    "order": TT.ORDER,
+    "having": TT.HAVING,
+    "limit": TT.LIMIT,
+    "offset": TT.OFFSET,
+    "asc": TT.ASC,
+    "desc": TT.DESC,
+    "is": TT.IS,
+    "in": TT.IN,
+    "between": TT.BETWEEN,
+    "like": TT.LIKE,
+    "distinct": TT.DISTINCT,
+    "true": TT.TRUE,
+    "false": TT.FALSE,
+    "null": TT.NULL,
+    "count": TT.COUNT,
+    "sum": TT.SUM,
+    "avg": TT.AVG,
+    "min": TT.MIN,
+    "max": TT.MAX,
 }
 
 _AGG_FUNCS: set[TT] = {TT.COUNT, TT.SUM, TT.AVG, TT.MIN, TT.MAX}
@@ -92,7 +117,7 @@ _AGG_FUNCS: set[TT] = {TT.COUNT, TT.SUM, TT.AVG, TT.MIN, TT.MAX}
 class Token:
     type: TT
     value: object  # str | int | float | None
-    pos: int       # character offset in source
+    pos: int  # character offset in source
 
     def __repr__(self) -> str:
         return f"Token({self.type.name}, {self.value!r})"
@@ -133,8 +158,15 @@ def tokenize(sql: str) -> list[Token]:
             continue
 
         # Number
-        if sql[i].isdigit() or (sql[i] == "-" and i + 1 < n and sql[i + 1].isdigit()
-                                  and (not tokens or tokens[-1].type not in (TT.INTEGER, TT.FLOAT, TT.IDENT, TT.RPAREN))):
+        if sql[i].isdigit() or (
+            sql[i] == "-"
+            and i + 1 < n
+            and sql[i + 1].isdigit()
+            and (
+                not tokens
+                or tokens[-1].type not in (TT.INTEGER, TT.FLOAT, TT.IDENT, TT.RPAREN)
+            )
+        ):
             j = i
             if sql[j] == "-":
                 j += 1
@@ -146,8 +178,13 @@ def tokenize(sql: str) -> list[Token]:
                 while j < n and sql[j].isdigit():
                     j += 1
             raw = sql[i:j]
-            tokens.append(Token(TT.FLOAT if is_float else TT.INTEGER,
-                                 float(raw) if is_float else int(raw), i))
+            tokens.append(
+                Token(
+                    TT.FLOAT if is_float else TT.INTEGER,
+                    float(raw) if is_float else int(raw),
+                    i,
+                )
+            )
             i = j
             continue
 
@@ -165,23 +202,41 @@ def tokenize(sql: str) -> list[Token]:
         # Two-char operators
         two = sql[i : i + 2]
         if two == "!=":
-            tokens.append(Token(TT.NEQ, "!=", i)); i += 2; continue
+            tokens.append(Token(TT.NEQ, "!=", i))
+            i += 2
+            continue
         if two == "<>":
-            tokens.append(Token(TT.NEQ, "<>", i)); i += 2; continue
+            tokens.append(Token(TT.NEQ, "<>", i))
+            i += 2
+            continue
         if two == "<=":
-            tokens.append(Token(TT.LTE, "<=", i)); i += 2; continue
+            tokens.append(Token(TT.LTE, "<=", i))
+            i += 2
+            continue
         if two == ">=":
-            tokens.append(Token(TT.GTE, ">=", i)); i += 2; continue
+            tokens.append(Token(TT.GTE, ">=", i))
+            i += 2
+            continue
 
         # Single-char
         ONE = {
-            "=": TT.EQ, "<": TT.LT, ">": TT.GT,
-            "+": TT.PLUS, "-": TT.MINUS, "*": TT.STAR, "/": TT.SLASH,
-            ",": TT.COMMA, ".": TT.DOT,
-            "(": TT.LPAREN, ")": TT.RPAREN, ";": TT.SEMICOLON,
+            "=": TT.EQ,
+            "<": TT.LT,
+            ">": TT.GT,
+            "+": TT.PLUS,
+            "-": TT.MINUS,
+            "*": TT.STAR,
+            "/": TT.SLASH,
+            ",": TT.COMMA,
+            ".": TT.DOT,
+            "(": TT.LPAREN,
+            ")": TT.RPAREN,
+            ";": TT.SEMICOLON,
         }
         if sql[i] in ONE:
-            tokens.append(Token(ONE[sql[i]], sql[i], i)); i += 1; continue
+            tokens.append(Token(ONE[sql[i]], sql[i], i))
+            i += 1
+            continue
 
         raise LexError(f"Unexpected character {sql[i]!r} at position {i}")
 

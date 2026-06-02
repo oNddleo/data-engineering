@@ -1,4 +1,5 @@
 """Token-bucket rate limiter applied externally at a job's source reader."""
+
 from __future__ import annotations
 
 import asyncio
@@ -38,7 +39,6 @@ class TokenBucketThrottle:
     def set_throttle_factor(self, factor: float) -> None:
         """Apply a throttle factor in [0, 1]. 1.0 = full rate, 0.0 = paused."""
         factor = max(0.0, min(1.0, factor))
-        old = self._factor
         self._factor = factor
         new_rate = self._baseline_rate * factor
         if new_rate != self._rate:

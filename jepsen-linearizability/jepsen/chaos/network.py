@@ -32,6 +32,7 @@ class PartitionTable:
                 self._partitions.clear()
                 self._latency_ms.clear()
             else:
+                assert b is not None, "heal() requires b when a is given"
                 self._partitions.discard(frozenset({a, b}))
                 self._latency_ms.pop(frozenset({a, b}), None)
 

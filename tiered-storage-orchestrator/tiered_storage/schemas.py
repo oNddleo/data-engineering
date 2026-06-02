@@ -28,7 +28,7 @@ class DataRecord:
     created_at: float = field(default_factory=time.time)
     last_accessed_at: float = field(default_factory=time.time)
     access_count: int = 0
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -58,7 +58,7 @@ class CostBreakdown:
     cold_archive_usd: float
     rehydration_usd: float
     total_usd: float
-    details: dict = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
     def summary(self) -> str:
         lines = [

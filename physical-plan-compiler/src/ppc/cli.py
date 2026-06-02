@@ -20,8 +20,12 @@ from ppc.ir.schema import Column, Schema, Stats
 from ppc.ir.types import BOOLEAN, DOUBLE, INT32, INT64, STRING, TIMESTAMP
 
 _TYPES = {
-    "INT32": INT32, "INT64": INT64, "DOUBLE": DOUBLE,
-    "STRING": STRING, "BOOLEAN": BOOLEAN, "TIMESTAMP": TIMESTAMP,
+    "INT32": INT32,
+    "INT64": INT64,
+    "DOUBLE": DOUBLE,
+    "STRING": STRING,
+    "BOOLEAN": BOOLEAN,
+    "TIMESTAMP": TIMESTAMP,
 }
 
 
@@ -39,6 +43,7 @@ def _load_catalog(path: Path) -> Catalog:
     if path.suffix.lower() in (".yaml", ".yml"):
         try:
             import yaml
+
             data = yaml.safe_load(raw)
         except ImportError:
             print("YAML catalog requires PyYAML (pip install pyyaml)", file=sys.stderr)
@@ -50,8 +55,7 @@ def _load_catalog(path: Path) -> Catalog:
         cols = []
         for c in tspec["columns"]:
             dtype = _TYPES[c["type"]]
-            stats = Stats(ndv=c.get("ndv"), nulls=c.get("nulls", 0.0),
-                          avg_len=c.get("avg_len"))
+            stats = Stats(ndv=c.get("ndv"), nulls=c.get("nulls", 0.0), avg_len=c.get("avg_len"))
             cols.append(Column(name=c["name"], dtype=dtype, stats=stats))
         cat.register(table_name, Schema.of(*cols, rows=tspec.get("rows")))
     return cat
@@ -69,6 +73,7 @@ def cmd_compile(args: argparse.Namespace) -> int:
     sql = Path(args.sql).read_text() if args.sql.endswith(".sql") else args.sql
     catalog = _load_catalog(Path(args.catalog))
     from ppc.cascades.optimizer import Optimizer
+
     logical = sql_to_logical(sql, catalog)
     plan = Optimizer(catalog=catalog).optimize(logical)
 
@@ -77,19 +82,22 @@ def cmd_compile(args: argparse.Namespace) -> int:
         manifest = emit_dagster(plan)
         try:
             import yaml
+
             out = yaml.safe_dump(manifest, sort_keys=False)
         except ImportError:
             out = json.dumps(manifest, indent=2)
     elif args.emit in EMITTERS:
-        out = EMITTERS[args.emit](plan)
+        out = EMITTERS[args.emit](plan)  # type: ignore[operator]
     else:
         print(f"unknown --emit target: {args.emit}", file=sys.stderr)
         return 2
 
     if args.output:
         Path(args.output).write_text(out)
-        print(f"Wrote {args.output} (cost={plan.total_cost:.2f}, engine={plan.root.engine})",
-              file=sys.stderr)
+        print(
+            f"Wrote {args.output} (cost={plan.total_cost:.2f}, engine={plan.root.engine})",
+            file=sys.stderr,
+        )
     else:
         sys.stdout.write(out)
     return 0
@@ -99,6 +107,7 @@ def cmd_explain(args: argparse.Namespace) -> int:
     sql = Path(args.sql).read_text() if args.sql.endswith(".sql") else args.sql
     catalog = _load_catalog(Path(args.catalog))
     from ppc.cascades.optimizer import Optimizer
+
     logical = sql_to_logical(sql, catalog)
     plan = Optimizer(catalog=catalog).optimize(logical)
 
@@ -126,8 +135,9 @@ def main(argv: list[str] | None = None) -> int:
     p_compile = sub.add_parser("compile", help="Compile SQL → engine artefact")
     p_compile.add_argument("--sql", required=True, help="SQL string or path to .sql file")
     p_compile.add_argument("--catalog", required=True, help="Path to catalog .yaml/.json")
-    p_compile.add_argument("--emit", required=True,
-                           choices=["spark", "dbt", "duckdb", "flink", "dagster"])
+    p_compile.add_argument(
+        "--emit", required=True, choices=["spark", "dbt", "duckdb", "flink", "dagster"]
+    )
     p_compile.add_argument("--output", "-o", help="Output file (default: stdout)")
     p_compile.set_defaults(func=cmd_compile)
 

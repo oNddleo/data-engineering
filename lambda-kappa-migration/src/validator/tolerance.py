@@ -107,30 +107,60 @@ class ToleranceChecker:
         if field in self.AMOUNT_FIELDS:
             return self._compare_relative(key, field, lv, kv)
         # Default: try relative if numeric, else exact
-        if isinstance(lv, (int, float)) and isinstance(kv, (int, float)):
+        if isinstance(lv, int | float) and isinstance(kv, int | float):
             return self._compare_relative(key, field, lv, kv)
         return self._compare_exact(key, field, lv, kv)
 
     def _compare_exact(self, key: str, field: str, lv: Any, kv: Any) -> FieldComparison:
         if lv == kv:
-            return FieldComparison(key=key, field=field, lambda_value=lv, kappa_value=kv,
-                                   result=MatchResult.EXACT_MATCH, delta_pct=0.0)
-        return FieldComparison(key=key, field=field, lambda_value=lv, kappa_value=kv,
-                               result=MatchResult.MISMATCH, delta_pct=None)
+            return FieldComparison(
+                key=key,
+                field=field,
+                lambda_value=lv,
+                kappa_value=kv,
+                result=MatchResult.EXACT_MATCH,
+                delta_pct=0.0,
+            )
+        return FieldComparison(
+            key=key,
+            field=field,
+            lambda_value=lv,
+            kappa_value=kv,
+            result=MatchResult.MISMATCH,
+            delta_pct=None,
+        )
 
     def _compare_relative(self, key: str, field: str, lv: float, kv: float) -> FieldComparison:
         lv_f = float(lv)
         kv_f = float(kv)
         if lv_f == kv_f:
-            return FieldComparison(key=key, field=field, lambda_value=lv, kappa_value=kv,
-                                   result=MatchResult.EXACT_MATCH, delta_pct=0.0)
+            return FieldComparison(
+                key=key,
+                field=field,
+                lambda_value=lv,
+                kappa_value=kv,
+                result=MatchResult.EXACT_MATCH,
+                delta_pct=0.0,
+            )
         if lv_f == 0.0:
             delta_pct = abs(kv_f) * 100
         else:
             delta_pct = abs(kv_f - lv_f) / abs(lv_f) * 100
 
         if delta_pct / 100 <= self.amount_rel_tolerance:
-            return FieldComparison(key=key, field=field, lambda_value=lv, kappa_value=kv,
-                                   result=MatchResult.WITHIN_TOLERANCE, delta_pct=delta_pct)
-        return FieldComparison(key=key, field=field, lambda_value=lv, kappa_value=kv,
-                               result=MatchResult.MISMATCH, delta_pct=delta_pct)
+            return FieldComparison(
+                key=key,
+                field=field,
+                lambda_value=lv,
+                kappa_value=kv,
+                result=MatchResult.WITHIN_TOLERANCE,
+                delta_pct=delta_pct,
+            )
+        return FieldComparison(
+            key=key,
+            field=field,
+            lambda_value=lv,
+            kappa_value=kv,
+            result=MatchResult.MISMATCH,
+            delta_pct=delta_pct,
+        )

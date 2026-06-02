@@ -9,7 +9,7 @@ Each annotation is a **set of witnesses**, where a witness is a
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from prov.semiring.base import Semiring
 
@@ -20,28 +20,28 @@ if TYPE_CHECKING:
 # Annotation = frozenset[Witness]
 
 
-class WhyProvenance(Semiring[frozenset]):
+class WhyProvenance(Semiring[frozenset[Any]]):
     """Set-of-witness-sets provenance."""
 
-    def zero(self) -> frozenset:
+    def zero(self) -> frozenset[Any]:
         return frozenset()
 
-    def one(self) -> frozenset:
+    def one(self) -> frozenset[Any]:
         return frozenset({frozenset()})
 
-    def plus(self, a: frozenset, b: frozenset) -> frozenset:
+    def plus(self, a: frozenset[Any], b: frozenset[Any]) -> frozenset[Any]:
         return a | b
 
-    def times(self, a: frozenset, b: frozenset) -> frozenset:
+    def times(self, a: frozenset[Any], b: frozenset[Any]) -> frozenset[Any]:
         return frozenset(w1 | w2 for w1 in a for w2 in b)
 
     @staticmethod
-    def singleton(token: Hashable) -> frozenset:
+    def singleton(token: Hashable) -> frozenset[Any]:
         """Annotation for a base tuple with one witness containing one token."""
         return frozenset({frozenset({token})})
 
     @staticmethod
-    def witnesses(annotation: frozenset) -> list[frozenset]:
+    def witnesses(annotation: frozenset[Any]) -> list[frozenset[Any]]:
         return sorted(annotation, key=lambda w: sorted(map(repr, w)))
 
 

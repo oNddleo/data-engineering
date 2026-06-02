@@ -3,9 +3,11 @@ Freshness monitor — checks how current each table's data is and scores it.
 Score 0-100: 100 = updated within expected interval, decays exponentially past deadline.
 """
 
+from __future__ import annotations
+
 import sqlite3
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 
 def _now() -> str:
@@ -21,7 +23,7 @@ class FreshnessMonitor:
         table_name: str,
         last_updated_at: str,
         expected_interval_hours: float,
-    ) -> dict:
+    ) -> dict[str, Any]:
         checked_at = _now()
         now_dt = datetime.now(timezone.utc)
 
@@ -62,7 +64,7 @@ class FreshnessMonitor:
             "status": self._status(hours_since, expected_interval_hours),
         }
 
-    def latest(self, table_name: str) -> Optional[dict]:
+    def latest(self, table_name: str) -> Optional[dict[str, Any]]:
         row = self.conn.execute(
             """
             SELECT * FROM meta_freshness
@@ -73,7 +75,7 @@ class FreshnessMonitor:
         ).fetchone()
         return dict(row) if row else None
 
-    def stale_tables(self, threshold_score: float = 60.0) -> list[dict]:
+    def stale_tables(self, threshold_score: float = 60.0) -> list[dict[str, Any]]:
         """Return all tables with freshness score below threshold."""
         rows = self.conn.execute(
             """

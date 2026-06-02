@@ -1,7 +1,6 @@
 """Tests for query analyser."""
 
-import pytest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from mv_selector.models import QueryRecord, Warehouse
 from mv_selector.query_analyzer import QueryAnalyzer, fingerprint, normalise_sql
@@ -11,7 +10,7 @@ def _q(sql: str, cost: float = 1.0) -> QueryRecord:
     return QueryRecord(
         sql=sql,
         warehouse=Warehouse.BIGQUERY,
-        executed_at=datetime(2025, 1, 1, tzinfo=timezone.utc),
+        executed_at=datetime(2025, 1, 1, tzinfo=UTC),
         duration_ms=1000,
         bytes_processed=1_000_000_000,
         cost_usd=cost,
@@ -54,7 +53,7 @@ class TestQueryAnalyzer:
     def test_repeated_query_becomes_candidate(self):
         analyzer = QueryAnalyzer(min_query_frequency=3, min_cost_threshold_usd=1.0)
         candidates = analyzer.analyse(WORKLOAD)
-        names = [c.name for c in candidates]
+        _names = [c.name for c in candidates]
         assert len(candidates) >= 1
 
     def test_single_query_not_candidate(self):

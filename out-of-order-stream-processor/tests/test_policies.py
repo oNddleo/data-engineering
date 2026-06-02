@@ -1,5 +1,4 @@
 """Tests for late-data handling policies."""
-import pytest
 from src.event import Event
 from src.windows.base import WindowAssignment
 from src.policies import DropPolicy, RestatePolicy, SideOutputPolicy

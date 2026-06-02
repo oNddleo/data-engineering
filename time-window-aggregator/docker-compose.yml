@@ -1,0 +1,5 @@
+services:
+  windows:
+    build: .
+    image: time-window-aggregator:latest
+    command: ["info"]
