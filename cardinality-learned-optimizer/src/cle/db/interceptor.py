@@ -1,4 +1,5 @@
 """Query interceptor: run queries with EXPLAIN ANALYZE and collect plan trees."""
+
 from __future__ import annotations
 
 import logging
@@ -20,9 +21,9 @@ _EXPLAIN_DRY = "EXPLAIN (FORMAT JSON, VERBOSE)"
 @dataclass
 class ExecutionRecord:
     sql: str
-    hint_sql: Optional[str]             # SQL with pg_hint_plan header if any
-    plan_dry: PlanNode                   # plan without actuals (dry run)
-    plan_analyzed: Optional[PlanNode]    # plan with actuals (after execution)
+    hint_sql: Optional[str]  # SQL with pg_hint_plan header if any
+    plan_dry: PlanNode  # plan without actuals (dry run)
+    plan_analyzed: Optional[PlanNode]  # plan with actuals (after execution)
     latency_ms: float = 0.0
     hint_id: int = 0
 
@@ -82,9 +83,7 @@ class QueryInterceptor:
         )
         if has_critical_error(plan_analyzed):
             worst = [
-                (n, n.q_error)
-                for n in plan_analyzed.all_nodes()
-                if n.q_error and n.q_error >= 100
+                (n, n.q_error) for n in plan_analyzed.all_nodes() if n.q_error and n.q_error >= 100
             ]
             logger.warning(
                 "Critical cardinality error in %d node(s): %s",

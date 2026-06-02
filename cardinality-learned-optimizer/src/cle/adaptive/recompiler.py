@@ -13,6 +13,7 @@ For a real implementation the PG patch from CMU's Orca/Bao repo would
 intercept executor nodes via ExecutorRun hooks — that approach is
 described in Section 4.2 of the Bao paper.
 """
+
 from __future__ import annotations
 
 import logging
@@ -33,17 +34,14 @@ class RecompileResult:
     recompiled_record: Optional[ExecutionRecord]
     monitor_report: MonitorReport
     triggered: bool
-    speedup: float   # original_ms / recompiled_ms; > 1 means recompile was faster
+    speedup: float  # original_ms / recompiled_ms; > 1 means recompile was faster
 
     def summary(self) -> str:
         if not self.triggered:
             return f"No recompile needed. Latency={self.original_record.latency_ms:.1f}ms"
         orig = self.original_record.latency_ms
         new = self.recompiled_record.latency_ms if self.recompiled_record else orig
-        return (
-            f"Recompiled: {orig:.1f}ms → {new:.1f}ms  "
-            f"(speedup={self.speedup:.2f}×)"
-        )
+        return f"Recompiled: {orig:.1f}ms → {new:.1f}ms  " f"(speedup={self.speedup:.2f}×)"
 
 
 class AdaptiveRecompiler:
@@ -68,7 +66,23 @@ class AdaptiveRecompiler:
         """Execute query; recompile with corrected hints if error ≥ threshold."""
 
         # Initial execution
-        record = self.interceptor.intercept(sql, hint_id=hint_id, hints=base_hints, timeout_ms=timeout_ms)
+        record = self.interceptor.intercept(
+            sql, hint_id=hint_id, hints=base_hints, timeout_ms=timeout_ms
+        )
+        if record.plan_analyzed is None:
+            return RecompileResult(
+                original_record=record,
+                recompiled_record=None,
+                monitor_report=MonitorReport(
+                    alerts=[],
+                    needs_replan=False,
+                    worst_q_error=1.0,
+                    total_nodes=0,
+                    affected_nodes=0,
+                ),
+                triggered=False,
+                speedup=1.0,
+            )
         report = self.monitor.analyze(record.plan_analyzed)
 
         if not report.needs_replan:

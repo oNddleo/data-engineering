@@ -11,7 +11,7 @@ import math
 import struct
 from array import array
 
-import mmh3
+import mmh3  # type: ignore[import-untyped]
 
 
 class BloomFilter:

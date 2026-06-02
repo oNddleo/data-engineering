@@ -78,9 +78,13 @@ def test_schema_bytes_estimate_with_unknown_rows():
 
 @given(
     cols=st.lists(
-        st.tuples(st.text(min_size=1, max_size=10, alphabet="abcdefg"),
-                  st.sampled_from([INT32, INT64, DOUBLE, STRING, BOOLEAN, TIMESTAMP])),
-        min_size=1, max_size=8, unique_by=lambda x: x[0],
+        st.tuples(
+            st.text(min_size=1, max_size=10, alphabet="abcdefg"),
+            st.sampled_from([INT32, INT64, DOUBLE, STRING, BOOLEAN, TIMESTAMP]),
+        ),
+        min_size=1,
+        max_size=8,
+        unique_by=lambda x: x[0],
     ),
     rows=st.integers(min_value=0, max_value=10**12),
 )

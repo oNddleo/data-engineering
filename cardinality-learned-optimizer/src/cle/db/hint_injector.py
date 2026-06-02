@@ -10,6 +10,7 @@ pg_hint_plan hint syntax reference:
   MergeJoin(t1 t2)    — force merge join
   Leading(t1 t2 t3)   — force join order
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -83,7 +84,7 @@ BAO_HINT_SETS: list[dict[str, Any]] = [
     # 5-8: scan method variants
     {"disable": ["SeqScan"]},
     {"disable": ["IndexScan"]},
-    {"disable": ["SeqScan", "IndexScan"]},          # force bitmap
+    {"disable": ["SeqScan", "IndexScan"]},  # force bitmap
     {"disable": ["HashJoin", "SeqScan"]},
     # 9-12: combined
     {"disable": ["MergeJoin", "SeqScan"]},
@@ -143,7 +144,10 @@ def apply_hint_set_to_connection(conn_pool: Any, hint_set: dict[str, Any]) -> No
 
 def reset_hint_set(conn_pool: Any) -> None:
     for guc in [
-        "enable_hashjoin", "enable_mergejoin", "enable_nestloop",
-        "enable_seqscan", "enable_indexscan",
+        "enable_hashjoin",
+        "enable_mergejoin",
+        "enable_nestloop",
+        "enable_seqscan",
+        "enable_indexscan",
     ]:
         conn_pool.execute(f"RESET {guc}")

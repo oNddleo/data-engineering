@@ -118,9 +118,7 @@ def create_app(manager: "StateBackendManager") -> FastAPI:
         # Check if there are more results
         if last_raw_k is not None and len(keys) == limit:
             # Peek one more to see if we're at the end
-            remaining = list(
-                manager.backend.scan(cf, start_key=last_raw_k, limit=2)
-            )
+            remaining = list(manager.backend.scan(cf, start_key=last_raw_k, limit=2))
             # remaining[0] is last_raw_k itself; if len > 1 there are more
             if len(remaining) > 1:
                 next_cursor = base64.b64encode(last_raw_k).decode()
@@ -166,9 +164,7 @@ def create_app(manager: "StateBackendManager") -> FastAPI:
 
         next_cursor = None
         if last_raw_k is not None and len(entries) == limit:
-            remaining = list(
-                manager.backend.scan(cf, start_key=last_raw_k, limit=2)
-            )
+            remaining = list(manager.backend.scan(cf, start_key=last_raw_k, limit=2))
             if len(remaining) > 1:
                 next_cursor = base64.b64encode(last_raw_k).decode()
 

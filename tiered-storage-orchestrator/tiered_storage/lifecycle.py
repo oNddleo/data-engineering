@@ -20,6 +20,7 @@ import asyncio
 import logging
 import time
 from dataclasses import dataclass, field
+from typing import Any
 
 from tiered_storage.schemas import DataRecord, LifecyclePolicy, Tier
 
@@ -74,10 +75,10 @@ class LifecycleEngine:
     def __init__(
         self,
         policy: LifecyclePolicy,
-        hot_tier,
-        warm_tier,
-        cold_tier,
-        tracker,
+        hot_tier: Any,
+        warm_tier: Any,
+        cold_tier: Any,
+        tracker: Any,
     ):
         self._policy = policy
         self._hot = hot_tier

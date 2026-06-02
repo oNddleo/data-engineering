@@ -5,14 +5,14 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-import pyarrow as pa  # type: ignore[import-untyped]
+import pyarrow as pa
 
 
 @dataclass
 class WriteResult:
     rows_written: int
     files_written: int
-    files_rewritten: int       # CoW: rewrites; MoR: 0 for deltas
+    files_rewritten: int  # CoW: rewrites; MoR: 0 for deltas
     bytes_written: int
     duration_s: float
     operation: str
@@ -23,7 +23,7 @@ class ReadResult:
     rows_returned: int
     files_scanned: int
     bytes_scanned: int
-    delta_files_merged: int    # MoR: number of delta files merged
+    delta_files_merged: int  # MoR: number of delta files merged
     duration_s: float
     query: str
 
@@ -44,37 +44,28 @@ class StorageEngine(ABC):
         self.schema_name = schema_name
 
     @abstractmethod
-    def create_table(self, initial_data: pa.Table) -> WriteResult:
-        ...
+    def create_table(self, initial_data: pa.Table) -> WriteResult: ...
 
     @abstractmethod
-    def insert(self, rows: pa.Table) -> WriteResult:
-        ...
+    def insert(self, rows: pa.Table) -> WriteResult: ...
 
     @abstractmethod
-    def update(self, updated_rows: pa.Table) -> WriteResult:
-        ...
+    def update(self, updated_rows: pa.Table) -> WriteResult: ...
 
     @abstractmethod
-    def delete(self, pk_values: list[int]) -> WriteResult:
-        ...
+    def delete(self, pk_values: list[int]) -> WriteResult: ...
 
     @abstractmethod
-    def full_scan(self, filter_expr: str | None = None) -> ReadResult:
-        ...
+    def full_scan(self, filter_expr: str | None = None) -> ReadResult: ...
 
     @abstractmethod
-    def point_lookup(self, pk_value: int) -> ReadResult:
-        ...
+    def point_lookup(self, pk_value: int) -> ReadResult: ...
 
     @abstractmethod
-    def range_scan(self, pk_min: int, pk_max: int) -> ReadResult:
-        ...
+    def range_scan(self, pk_min: int, pk_max: int) -> ReadResult: ...
 
     @abstractmethod
-    def stats(self) -> TableStats:
-        ...
+    def stats(self) -> TableStats: ...
 
     @abstractmethod
-    def compact(self) -> WriteResult:
-        ...
+    def compact(self) -> WriteResult: ...

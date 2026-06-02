@@ -32,8 +32,8 @@ class GroupExpression:
     """
 
     op: LogicalNode | PhysicalNode
-    children: tuple[int, ...]           # group IDs
-    group_id: int = -1                  # set after insertion into memo
+    children: tuple[int, ...]  # group IDs
+    group_id: int = -1  # set after insertion into memo
     is_physical: bool = False
 
     @property
@@ -79,13 +79,17 @@ class Memo:
         self._by_key[key] = gid
         return gid
 
-    def add_physical(self, group_id: int, op: PhysicalNode, child_groups: tuple[int, ...]) -> GroupExpression:
+    def add_physical(
+        self, group_id: int, op: PhysicalNode, child_groups: tuple[int, ...]
+    ) -> GroupExpression:
         """Add a physical alternative to an existing group."""
         expr = GroupExpression(op=op, children=child_groups, group_id=group_id, is_physical=True)
         self.groups[group_id].physical_exprs.append(expr)
         return expr
 
-    def add_logical(self, group_id: int, op: LogicalNode, child_groups: tuple[int, ...]) -> GroupExpression | None:
+    def add_logical(
+        self, group_id: int, op: LogicalNode, child_groups: tuple[int, ...]
+    ) -> GroupExpression | None:
         """Add a transformed logical alternative; dedupes on (op, children)."""
         key = ("logical", type(op).__name__, _op_key(op), child_groups)
         if key in self._by_key and self._by_key[key] != group_id:

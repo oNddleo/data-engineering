@@ -12,11 +12,12 @@ import os
 import time
 import uuid
 from pathlib import Path
+from typing import Any
 
 import duckdb
-import pyarrow as pa  # type: ignore[import-untyped]
-import pyarrow.compute as pc  # type: ignore[import-untyped]
-import pyarrow.parquet as pq  # type: ignore[import-untyped]
+import pyarrow as pa
+import pyarrow.compute as pc
+import pyarrow.parquet as pq
 
 from cow_mor_bench.data.generator import primary_key_for
 from cow_mor_bench.data.schemas import (
@@ -66,7 +67,7 @@ class CopyOnWriteEngine(StorageEngine):
         snap = meta.current_snapshot()
         return snap.data_files if snap else []
 
-    def _commit(self, data_files: list[DataFile], summary: dict) -> None:
+    def _commit(self, data_files: list[DataFile], summary: dict[str, Any]) -> None:
         meta = self._load_metadata()
         meta.new_snapshot(data_files=data_files, delta_files=[], summary=summary)
 
@@ -147,9 +148,8 @@ class CopyOnWriteEngine(StorageEngine):
 
         rewritten: list[DataFile] = []
         total_bytes = 0
-        update_map: dict[int, dict] = {
-            row[self._pk]: row
-            for row in updated_rows.to_pylist()
+        update_map: dict[int, dict[str, Any]] = {
+            row[self._pk]: row for row in updated_rows.to_pylist()
         }
 
         for df in to_rewrite:

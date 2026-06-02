@@ -11,7 +11,6 @@ from .base import BaseConnector, ConnectorResult
 
 
 class MongoDBConnector(BaseConnector):
-
     def __init__(self) -> None:
         self._mock_data: dict[str, pd.DataFrame] = {}
 
@@ -108,7 +107,7 @@ class MongoDBConnector(BaseConnector):
         """Convert sqlglot predicates to a MongoDB query filter document."""
         if not predicates:
             return {}
-        filters: list[dict] = [_expr_to_mql(p) for p in predicates]
+        filters: list[dict[str, Any]] = [_expr_to_mql(p) for p in predicates]
         if len(filters) == 1:
             return filters[0]
         return {"$and": filters}

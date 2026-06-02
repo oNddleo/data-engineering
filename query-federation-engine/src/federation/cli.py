@@ -22,6 +22,7 @@ import argparse
 import sys
 import textwrap
 from pathlib import Path
+from typing import Any
 
 
 def _make_parser() -> argparse.ArgumentParser:
@@ -45,7 +46,9 @@ def _make_parser() -> argparse.ArgumentParser:
     q.add_argument("--file", "-f", help="Path to a .sql file")
     q.add_argument("--config", "-c", required=True, help="Path to catalog YAML")
     q.add_argument(
-        "--format", choices=["table", "csv", "json"], default="table",
+        "--format",
+        choices=["table", "csv", "json"],
+        default="table",
         help="Output format (default: table)",
     )
     q.add_argument("--stats", action="store_true", help="Print execution stats")
@@ -92,8 +95,10 @@ def _read_sql(args: argparse.Namespace) -> str | None:
 # Sub-commands
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def _cmd_tables(args: argparse.Namespace) -> int:
     from .catalog import SchemaCatalog
+
     try:
         catalog = SchemaCatalog.from_yaml(args.config)
     except Exception as exc:
@@ -127,6 +132,7 @@ def _cmd_tables(args: argparse.Namespace) -> int:
 
 def _cmd_explain(args: argparse.Namespace, sql: str) -> int:
     from .engine import FederationEngine
+
     try:
         engine = FederationEngine.from_yaml(args.config)
         plan_text = engine.explain(sql)
@@ -181,7 +187,8 @@ def _cmd_query(args: argparse.Namespace, sql: str) -> int:
 # Output helpers
 # ──────────────────────────────────────────────────────────────────────────────
 
-def _print_table(df, use_color: bool) -> None:
+
+def _print_table(df: Any, use_color: bool) -> None:
     if use_color:
         try:
             from rich.console import Console
@@ -201,7 +208,7 @@ def _print_table(df, use_color: bool) -> None:
     print(df.to_string(index=False))
 
 
-def _print_stats(stats, use_color: bool) -> None:
+def _print_stats(stats: Any, use_color: bool) -> None:
     if use_color:
         try:
             from rich.console import Console

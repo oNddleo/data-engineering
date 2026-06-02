@@ -59,7 +59,7 @@ class MemTable:
         """Sorted (key, value) pairs; tombstones appear as value=None."""
         result = []
         for k, v in self._data.items():
-            result.append((k, None if v is _TOMBSTONE else v))  # type: ignore
+            result.append((k, None if v is _TOMBSTONE else v))
         return result
 
     def clear(self) -> None:

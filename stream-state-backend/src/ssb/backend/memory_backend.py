@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import threading
-from typing import Iterator
+from typing import Iterator, cast
 
 from sortedcontainers import SortedDict
 
@@ -70,7 +70,7 @@ class MemoryBackend(StorageBackend):
             store = self._stores.get(cf)
             if store is None:
                 return None
-            return store.get(key)
+            return cast("bytes | None", store.get(key))
 
     def delete(self, cf: str, key: bytes) -> None:
         with self._lock:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import click
 from rich.console import Console
@@ -12,7 +13,7 @@ from rich.table import Table
 from rich import box
 
 from cow_mor_bench.benchmark.metrics import compare
-from cow_mor_bench.benchmark.runner import BenchmarkSuite, run_benchmark
+from cow_mor_bench.benchmark.runner import BenchmarkResult, BenchmarkSuite, run_benchmark
 from cow_mor_bench.compaction.model import build_amplification_curve
 from cow_mor_bench.recommender.engine import recommend, recommend_from_params
 from cow_mor_bench.workload.classifier import classify_trace
@@ -25,7 +26,7 @@ def _header(text: str) -> None:
     console.print(Panel(f"[bold cyan]{text}[/]", expand=False))
 
 
-def _print_metric_table(result, profile_name: str) -> None:
+def _print_metric_table(result: "BenchmarkResult", profile_name: str) -> None:
     rows = compare(result)
     t = Table(title=f"Profile: {profile_name}", box=box.SIMPLE_HEAD, show_lines=False)
     t.add_column("Metric", style="dim")
@@ -44,17 +45,32 @@ def main() -> None:
 
 
 @main.command()
-@click.option("--profile", "-p", multiple=True, default=list(PROFILES.keys()),
-              help="Workload profile(s) to benchmark")
-@click.option("--schema", "-s", default="orders",
-              type=click.Choice(["orders", "events", "inventory"]))
+@click.option(
+    "--profile",
+    "-p",
+    multiple=True,
+    default=list(PROFILES.keys()),
+    help="Workload profile(s) to benchmark",
+)
+@click.option(
+    "--schema", "-s", default="orders", type=click.Choice(["orders", "events", "inventory"])
+)
 @click.option("--table-size", "-n", default=20_000, show_default=True)
 @click.option("--ops", default=60, show_default=True, help="Number of operations per run")
-@click.option("--compact-every", default=None, type=int,
-              help="Trigger compaction every N operations (MoR)")
+@click.option(
+    "--compact-every", default=None, type=int, help="Trigger compaction every N operations (MoR)"
+)
 @click.option("--output-dir", "-o", default=None, help="Directory to save results JSON")
 @click.option("--plot/--no-plot", default=False, help="Generate comparison charts")
-def run(profile, schema, table_size, ops, compact_every, output_dir, plot):
+def run(
+    profile: tuple[str, ...],
+    schema: str,
+    table_size: int,
+    ops: int,
+    compact_every: int | None,
+    output_dir: str | None,
+    plot: bool,
+) -> None:
     """Run benchmarks across workload profiles."""
     suite = BenchmarkSuite()
 
@@ -67,8 +83,10 @@ def run(profile, schema, table_size, ops, compact_every, output_dir, plot):
 
         with console.status(f"  CoW + MoR workload ({ops} ops)…"):
             result = run_benchmark(
-                prof, schema_name=schema,
-                table_size=table_size, n_ops=ops,
+                prof,
+                schema_name=schema,
+                table_size=table_size,
+                n_ops=ops,
                 compact_every=compact_every,
             )
         suite.add(result)
@@ -76,28 +94,32 @@ def run(profile, schema, table_size, ops, compact_every, output_dir, plot):
 
         cow_cls = classify_trace(result.cow_trace)
         rec = recommend(result, cow_cls, table_name=f"{schema}_{pname}")
-        console.print(Panel(
-            rec.summary(),
-            title="[bold green]Strategy Recommendation[/]",
-            expand=False,
-        ))
+        console.print(
+            Panel(
+                rec.summary(),
+                title="[bold green]Strategy Recommendation[/]",
+                expand=False,
+            )
+        )
 
     if output_dir:
         out = Path(output_dir)
         out.mkdir(parents=True, exist_ok=True)
         export_data = []
         for r in suite.results:
-            export_data.append({
-                "profile": r.profile_name,
-                "schema": r.schema_name,
-                "cow_total_read_s": r.cow_trace.total_read_s,
-                "cow_total_write_s": r.cow_trace.total_write_s,
-                "mor_total_read_s": r.mor_trace.total_read_s,
-                "mor_total_write_s": r.mor_trace.total_write_s,
-                "read_speedup_cow": r.read_speedup_cow,
-                "write_speedup_mor": r.write_speedup_mor,
-                "space_overhead_mor": r.space_overhead_mor,
-            })
+            export_data.append(
+                {
+                    "profile": r.profile_name,
+                    "schema": r.schema_name,
+                    "cow_total_read_s": r.cow_trace.total_read_s,
+                    "cow_total_write_s": r.cow_trace.total_write_s,
+                    "mor_total_read_s": r.mor_trace.total_read_s,
+                    "mor_total_write_s": r.mor_trace.total_write_s,
+                    "read_speedup_cow": r.read_speedup_cow,
+                    "write_speedup_mor": r.write_speedup_mor,
+                    "space_overhead_mor": r.space_overhead_mor,
+                }
+            )
         (out / "results.json").write_text(json.dumps(export_data, indent=2))
         console.print(f"\n[dim]Results saved to {out / 'results.json'}[/]")
 
@@ -117,8 +139,16 @@ def run(profile, schema, table_size, ops, compact_every, output_dir, plot):
 @click.option("--data-gb", default=10.0, show_default=True)
 @click.option("--reads-per-hour", default=100.0, show_default=True)
 @click.option("--table-name", default="my_table", show_default=True)
-def recommend_cmd(write_ratio, update_fraction, avg_batch_rows, full_scan_ratio,
-                  point_read_ratio, data_gb, reads_per_hour, table_name):
+def recommend_cmd(
+    write_ratio: float,
+    update_fraction: float,
+    avg_batch_rows: int,
+    full_scan_ratio: float,
+    point_read_ratio: float,
+    data_gb: float,
+    reads_per_hour: float,
+    table_name: str,
+) -> None:
     """Get a strategy recommendation from workload parameters (no benchmark run)."""
     rec = recommend_from_params(
         write_ratio=write_ratio,
@@ -130,7 +160,9 @@ def recommend_cmd(write_ratio, update_fraction, avg_batch_rows, full_scan_ratio,
         read_ops_per_hour=reads_per_hour,
         table_name=table_name,
     )
-    console.print(Panel(rec.summary(), title="[bold green]Strategy Recommendation[/]", expand=False))
+    console.print(
+        Panel(rec.summary(), title="[bold green]Strategy Recommendation[/]", expand=False)
+    )
 
 
 @main.command("compaction-model")
@@ -138,7 +170,9 @@ def recommend_cmd(write_ratio, update_fraction, avg_batch_rows, full_scan_ratio,
 @click.option("--bytes-per-delta-mb", default=5.0, show_default=True)
 @click.option("--max-delta-files", default=50, show_default=True)
 @click.option("--plot/--no-plot", default=False)
-def compaction_model_cmd(data_gb, bytes_per_delta_mb, max_delta_files, plot):
+def compaction_model_cmd(
+    data_gb: float, bytes_per_delta_mb: float, max_delta_files: int, plot: bool
+) -> None:
     """Show read amplification curve as delta files accumulate (MoR)."""
     data_bytes = int(data_gb * 1024**3)
     bytes_per_delta = int(bytes_per_delta_mb * 1024 * 1024)
@@ -149,7 +183,7 @@ def compaction_model_cmd(data_gb, bytes_per_delta_mb, max_delta_files, plot):
     t.add_column("Amplification", justify="right")
     t.add_column("Extra latency (ms)", justify="right")
 
-    for row in curve[::max(1, max_delta_files // 20)]:
+    for row in curve[:: max(1, max_delta_files // 20)]:
         amp = row["amplification"]
         color = "green" if amp < 1.2 else ("yellow" if amp < 2.0 else "red")
         t.add_row(
@@ -167,7 +201,7 @@ def compaction_model_cmd(data_gb, bytes_per_delta_mb, max_delta_files, plot):
 
 
 @main.command("list-profiles")
-def list_profiles():
+def list_profiles() -> None:
     """List available workload profiles."""
     t = Table(title="Workload Profiles", box=box.SIMPLE_HEAD)
     t.add_column("Name")
@@ -179,9 +213,12 @@ def list_profiles():
     t.add_column("Point read %")
     for name, p in PROFILES.items():
         t.add_row(
-            name, p.cls.value,
-            f"{p.insert_weight:.0%}", f"{p.update_weight:.0%}",
-            f"{p.delete_weight:.0%}", f"{p.full_scan_weight:.0%}",
+            name,
+            p.cls.value,
+            f"{p.insert_weight:.0%}",
+            f"{p.update_weight:.0%}",
+            f"{p.delete_weight:.0%}",
+            f"{p.full_scan_weight:.0%}",
             f"{p.point_read_weight:.0%}",
         )
     console.print(t)
@@ -190,6 +227,7 @@ def list_profiles():
 # ------------------------------------------------------------------
 # Plot helpers
 # ------------------------------------------------------------------
+
 
 def _plot_suite(suite: "BenchmarkSuite", output_dir: str | None) -> None:
     import matplotlib.pyplot as plt
@@ -234,7 +272,7 @@ def _plot_suite(suite: "BenchmarkSuite", output_dir: str | None) -> None:
         plt.show()
 
 
-def _plot_amplification(curve: list[dict], max_delta_files: int) -> None:
+def _plot_amplification(curve: list[dict[str, Any]], max_delta_files: int) -> None:
     import matplotlib.pyplot as plt
 
     x = [r["delta_files"] for r in curve]

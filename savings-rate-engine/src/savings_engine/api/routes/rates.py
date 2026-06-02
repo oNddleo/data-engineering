@@ -1,3 +1,4 @@
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -31,7 +32,7 @@ def get_latest_rates(
     rate_type: str | None = Query(None, description="standard | online | promotional"),
     term_days: int | None = Query(None, description="Filter by canonical term in days"),
     db: Session = Depends(get_db),
-):
+) -> Any:
     """Latest rates for all banks (or a specific bank), from the most recent successful scrape."""
     repo = RateRepository(db)
     records = repo.get_latest_rates(bank_code=bank_code.upper() if bank_code else None)
@@ -50,22 +51,22 @@ def best_rates(
     rate_type: str = Query("standard", description="standard | online | promotional"),
     top_n: int = Query(10, ge=1, le=50),
     db: Session = Depends(get_db),
-):
+) -> Any:
     """Top-N highest rates across all banks for a given term."""
     repo = RateRepository(db)
     records = [r for r in repo.get_best_rates(term_days, top_n=50) if r.rate_type == rate_type]
-    records.sort(key=lambda r: r.rate_pa, reverse=True)
+    records.sort(key=lambda r: float(r.rate_pa), reverse=True)
     records = records[:top_n]
 
     return [
         BestRateOut(
-            bank_code=r.bank_code,
-            term_days=r.term_days,
-            term_label=r.term_label,
-            rate_pa=r.rate_pa,
-            rate_type=r.rate_type,
-            min_amount_vnd=r.min_amount_vnd,
-            currency=r.currency,
+            bank_code=str(r.bank_code),
+            term_days=int(r.term_days),
+            term_label=str(r.term_label),
+            rate_pa=float(r.rate_pa),
+            rate_type=str(r.rate_type),
+            min_amount_vnd=int(r.min_amount_vnd) if r.min_amount_vnd is not None else None,
+            currency=str(r.currency),
             rank=i + 1,
         )
         for i, r in enumerate(records)
@@ -73,7 +74,7 @@ def best_rates(
 
 
 @router.get("/terms", response_model=list[int])
-def available_terms(db: Session = Depends(get_db)):
+def available_terms(db: Session = Depends(get_db)) -> Any:
     """List all canonical term_days values that exist in the database."""
     return RateRepository(db).get_available_terms()
 
@@ -83,7 +84,7 @@ def get_bank_rates(
     bank_code: str,
     rate_type: str | None = Query(None),
     db: Session = Depends(get_db),
-):
+) -> Any:
     """All latest rates for a specific bank."""
     repo = RateRepository(db)
     if not repo.get_bank(bank_code.upper()):

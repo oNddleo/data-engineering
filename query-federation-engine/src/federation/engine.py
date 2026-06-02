@@ -19,8 +19,10 @@ import pandas as pd
 from .catalog import SchemaCatalog, SourceType, TableSchema, ColumnDef
 from .connectors import (
     BaseConnector,
-    MongoDBConnector, PostgresConnector,
-    RestApiConnector, S3ParquetConnector,
+    MongoDBConnector,
+    PostgresConnector,
+    RestApiConnector,
+    S3ParquetConnector,
 )
 from .executor import ExecutionStats, Executor
 from .planner import CostBasedOptimizer, QueryPlanner, explain_plan
@@ -28,10 +30,10 @@ from .planner.nodes import PlanNode
 
 
 _SOURCE_CONNECTOR_MAP = {
-    SourceType.POSTGRES:   PostgresConnector,
-    SourceType.MONGODB:    MongoDBConnector,
+    SourceType.POSTGRES: PostgresConnector,
+    SourceType.MONGODB: MongoDBConnector,
     SourceType.S3_PARQUET: S3ParquetConnector,
-    SourceType.REST_API:   RestApiConnector,
+    SourceType.REST_API: RestApiConnector,
 }
 
 
@@ -121,8 +123,7 @@ class FederationEngine:
     ) -> None:
         """Register an in-memory DataFrame as a federated table (for demos/tests)."""
         columns = [
-            ColumnDef(name=col, dtype=_pandas_dtype_to_str(df[col].dtype))
-            for col in df.columns
+            ColumnDef(name=col, dtype=_pandas_dtype_to_str(df[col].dtype)) for col in df.columns
         ]
         schema = TableSchema(
             source=source,
@@ -140,13 +141,13 @@ class FederationEngine:
         # Wire up mock connector
         connector = self._executor._connectors.get(source)
         if connector is None:
-            connector = _SOURCE_CONNECTOR_MAP[source_type]()
+            connector = _SOURCE_CONNECTOR_MAP[source_type]()  # type: ignore[abstract]
             self._executor.register_connector(source, connector)
         if hasattr(connector, "set_mock"):
             connector.set_mock(table, df)
 
 
-def _pandas_dtype_to_str(dtype) -> str:
+def _pandas_dtype_to_str(dtype: Any) -> str:
     name = str(dtype)
     if "int" in name:
         return "int"

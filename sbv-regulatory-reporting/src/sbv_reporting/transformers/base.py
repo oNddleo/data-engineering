@@ -12,7 +12,7 @@ from sbv_reporting.utils.config import get_config
 class RawTransactionLoader:
     """Load and normalise raw transaction CSV into a clean DataFrame."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.cfg = get_config()
 
     def load(self, path: str | Path) -> tuple[pd.DataFrame, list[str]]:

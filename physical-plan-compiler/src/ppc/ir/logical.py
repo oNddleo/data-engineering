@@ -116,9 +116,9 @@ class LogicalFilter(LogicalNode):
 class AggFunc:
     """A single aggregate function call: COUNT, SUM, AVG, MIN, MAX."""
 
-    func: str               # "COUNT" | "SUM" | "AVG" | "MIN" | "MAX"
-    arg: Expr | None        # None for COUNT(*)
-    alias: str              # output column name
+    func: str  # "COUNT" | "SUM" | "AVG" | "MIN" | "MAX"
+    arg: Expr | None  # None for COUNT(*)
+    alias: str  # output column name
 
     def __repr__(self) -> str:
         a = "*" if self.arg is None else repr(self.arg)
@@ -194,7 +194,7 @@ class LogicalJoin(LogicalNode):
     kind: ClassVar[str] = "join"
     left: LogicalNode
     right: LogicalNode
-    on: Expr                # join condition; INNER for now
+    on: Expr  # join condition; INNER for now
     join_type: str = "INNER"
 
     @cached_property

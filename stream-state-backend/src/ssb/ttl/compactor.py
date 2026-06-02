@@ -161,7 +161,9 @@ class TTLCompactor:
                             keys_to_delete.append(raw_k)
 
                 if keys_to_delete:
-                    ops = [(cf_name, k, None) for k in keys_to_delete]
+                    ops: list[tuple[str, bytes, bytes | None]] = [
+                        (cf_name, k, None) for k in keys_to_delete
+                    ]
                     self._backend.write_batch(ops)
                     total_deleted += len(keys_to_delete)
                     logger.debug(

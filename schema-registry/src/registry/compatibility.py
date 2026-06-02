@@ -31,7 +31,7 @@ def _get_required(schema: dict[str, Any]) -> set[str]:
 
 
 def _get_properties(schema: dict[str, Any]) -> dict[str, Any]:
-    return schema.get("properties", {})
+    return schema.get("properties", {})  # type: ignore[no-any-return]
 
 
 def _is_type_compatible(old_type: Any, new_type: Any) -> bool:

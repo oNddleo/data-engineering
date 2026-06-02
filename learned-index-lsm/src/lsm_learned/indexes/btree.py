@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from sortedcontainers import SortedList
+from sortedcontainers import SortedList  # type: ignore[import-untyped]
 
 
 class BTreeIndex:
@@ -43,13 +43,13 @@ class BTreeIndex:
 
     def contains(self, key: int) -> bool:
         idx = self._keys.bisect_left(key)
-        return idx < len(self._keys) and self._keys[idx] == key
+        return bool(idx < len(self._keys) and self._keys[idx] == key)
 
     def lookup(self, key: int) -> Optional[int]:
         """Return the sorted-array index of *key*, or None if absent."""
         idx = self._keys.bisect_left(key)
         if idx < len(self._keys) and self._keys[idx] == key:
-            return idx
+            return int(idx)
         return None
 
     def range_keys(self, lo: int, hi: int) -> list[int]:

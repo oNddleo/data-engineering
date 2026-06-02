@@ -60,3 +60,7 @@ ignore = ["E501", "B904", "SIM105"]
 [tool.mypy]
 strict = true
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["dateutil", "dateutil.*", "yaml"]
+ignore_missing_imports = true

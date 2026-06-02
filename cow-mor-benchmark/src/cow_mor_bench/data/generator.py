@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 
 import numpy as np
-import pyarrow as pa  # type: ignore[import-untyped]
+import pyarrow as pa
 
 
 _RNG = np.random.default_rng(42)
@@ -31,18 +31,20 @@ def generate_orders(
     quantities = rng.integers(1, 50, n_rows)
     created_offsets = rng.integers(0, 86_400_000_000, n_rows)  # up to 1 day ago
 
-    return pa.table({
-        "order_id": pa.array(range(start_id, start_id + n_rows), type=pa.int64()),
-        "customer_id": pa.array(rng.integers(1, 100_000, n_rows), type=pa.int64()),
-        "product_id": pa.array(rng.integers(1, 10_000, n_rows), type=pa.int64()),
-        "quantity": pa.array(quantities.astype(np.int32), type=pa.int32()),
-        "unit_price": pa.array(unit_prices, type=pa.float64()),
-        "total_amount": pa.array((unit_prices * quantities).round(2), type=pa.float64()),
-        "status": pa.array(rng.choice(STATUSES, n_rows).tolist(), type=pa.string()),
-        "region": pa.array(rng.choice(REGIONS, n_rows).tolist(), type=pa.string()),
-        "created_at": pa.array(now_us - created_offsets, type=pa.timestamp("us")),
-        "updated_at": pa.array([now_us] * n_rows, type=pa.timestamp("us")),
-    })
+    return pa.table(
+        {
+            "order_id": pa.array(range(start_id, start_id + n_rows), type=pa.int64()),
+            "customer_id": pa.array(rng.integers(1, 100_000, n_rows), type=pa.int64()),
+            "product_id": pa.array(rng.integers(1, 10_000, n_rows), type=pa.int64()),
+            "quantity": pa.array(quantities.astype(np.int32), type=pa.int32()),
+            "unit_price": pa.array(unit_prices, type=pa.float64()),
+            "total_amount": pa.array((unit_prices * quantities).round(2), type=pa.float64()),
+            "status": pa.array(rng.choice(STATUSES, n_rows).tolist(), type=pa.string()),
+            "region": pa.array(rng.choice(REGIONS, n_rows).tolist(), type=pa.string()),
+            "created_at": pa.array(now_us - created_offsets, type=pa.timestamp("us")),
+            "updated_at": pa.array([now_us] * n_rows, type=pa.timestamp("us")),
+        }
+    )
 
 
 def generate_events(
@@ -54,18 +56,20 @@ def generate_events(
     now_us = _ts_now_us()
     offsets = rng.integers(0, 3_600_000_000, n_rows)
 
-    return pa.table({
-        "event_id": pa.array(range(start_id, start_id + n_rows), type=pa.int64()),
-        "user_id": pa.array(rng.integers(1, 1_000_000, n_rows), type=pa.int64()),
-        "session_id": pa.array(
-            [f"sess-{rng.integers(1, 999_999):06d}" for _ in range(n_rows)],
-            type=pa.string(),
-        ),
-        "event_type": pa.array(rng.choice(EVENT_TYPES, n_rows).tolist(), type=pa.string()),
-        "page": pa.array(rng.choice(PAGES, n_rows).tolist(), type=pa.string()),
-        "duration_ms": pa.array(rng.integers(10, 30_000, n_rows), type=pa.int64()),
-        "timestamp": pa.array(now_us - offsets, type=pa.timestamp("us")),
-    })
+    return pa.table(
+        {
+            "event_id": pa.array(range(start_id, start_id + n_rows), type=pa.int64()),
+            "user_id": pa.array(rng.integers(1, 1_000_000, n_rows), type=pa.int64()),
+            "session_id": pa.array(
+                [f"sess-{rng.integers(1, 999_999):06d}" for _ in range(n_rows)],
+                type=pa.string(),
+            ),
+            "event_type": pa.array(rng.choice(EVENT_TYPES, n_rows).tolist(), type=pa.string()),
+            "page": pa.array(rng.choice(PAGES, n_rows).tolist(), type=pa.string()),
+            "duration_ms": pa.array(rng.integers(10, 30_000, n_rows), type=pa.int64()),
+            "timestamp": pa.array(now_us - offsets, type=pa.timestamp("us")),
+        }
+    )
 
 
 def generate_inventory(
@@ -79,14 +83,16 @@ def generate_inventory(
     product_ids = np.repeat(np.arange(1, n_products + 1), n_warehouses)
     warehouse_ids = np.tile(np.arange(1, n_warehouses + 1), n_products)
 
-    return pa.table({
-        "product_id": pa.array(product_ids, type=pa.int64()),
-        "warehouse_id": pa.array(warehouse_ids.astype(np.int32), type=pa.int32()),
-        "stock_qty": pa.array(rng.integers(0, 10_000, n_rows), type=pa.int64()),
-        "reserved_qty": pa.array(rng.integers(0, 1_000, n_rows), type=pa.int64()),
-        "reorder_point": pa.array(rng.integers(50, 500, n_rows), type=pa.int64()),
-        "last_updated": pa.array([now_us] * n_rows, type=pa.timestamp("us")),
-    })
+    return pa.table(
+        {
+            "product_id": pa.array(product_ids, type=pa.int64()),
+            "warehouse_id": pa.array(warehouse_ids.astype(np.int32), type=pa.int32()),
+            "stock_qty": pa.array(rng.integers(0, 10_000, n_rows), type=pa.int64()),
+            "reserved_qty": pa.array(rng.integers(0, 1_000, n_rows), type=pa.int64()),
+            "reorder_point": pa.array(rng.integers(50, 500, n_rows), type=pa.int64()),
+            "last_updated": pa.array([now_us] * n_rows, type=pa.timestamp("us")),
+        }
+    )
 
 
 def generate_table(schema_name: str, n_rows: int, start_id: int = 1, seed: int = 42) -> pa.Table:

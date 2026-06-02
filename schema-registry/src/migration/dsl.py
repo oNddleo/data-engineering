@@ -116,7 +116,7 @@ class TransformationDSL:
             if s.params:
                 entry["params"] = s.params
             doc["steps"].append(entry)
-        return yaml.dump(doc, sort_keys=False, allow_unicode=True)
+        return yaml.dump(doc, sort_keys=False, allow_unicode=True)  # type: ignore[no-any-return]
 
     def to_json(self, steps: list[MigrationStep], description: str = "") -> str:
         doc: dict[str, Any] = {"version": 1, "description": description, "steps": []}

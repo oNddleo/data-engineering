@@ -98,9 +98,7 @@ def _select_to_logical(node: sg.Select, catalog: Catalog) -> LogicalNode:
     return plan
 
 
-def _from_clause(
-    node: sg.Select, catalog: Catalog
-) -> tuple[LogicalNode, dict[str, Schema]]:
+def _from_clause(node: sg.Select, catalog: Catalog) -> tuple[LogicalNode, dict[str, Schema]]:
     """Build the FROM/JOIN sub-tree, return (plan, name -> schema)."""
     # sqlglot ≥25 names this `from_` to avoid Python keyword clash
     frm = node.args.get("from_") or node.args.get("from")
@@ -147,9 +145,7 @@ def _from_clause(
     return plan, scope
 
 
-def _build_aggregate(
-    select: sg.Select, plan: LogicalNode, scope: dict[str, Schema]
-) -> LogicalNode:
+def _build_aggregate(select: sg.Select, plan: LogicalNode, scope: dict[str, Schema]) -> LogicalNode:
     """Construct LogicalAggregate from GROUP BY + agg functions in SELECT."""
     group_cols: list[ColumnRef] = []
     aggs: list[AggFunc] = []
@@ -159,9 +155,7 @@ def _build_aggregate(
         for g in grp.expressions:
             ir = _expr_to_ir(g, scope)
             if not isinstance(ir, ColumnRef):
-                raise SqlParseError(
-                    f"GROUP BY supports column refs only, got {type(ir).__name__}"
-                )
+                raise SqlParseError(f"GROUP BY supports column refs only, got {type(ir).__name__}")
             group_cols.append(ir)
 
     for proj in select.expressions:
@@ -184,12 +178,10 @@ def _build_aggregate(
             aggs.append(AggFunc(func="MAX", arg=_expr_to_ir(actual.this, scope), alias=alias))
         else:
             # Non-aggregate column — must be in GROUP BY
-            ir = _expr_to_ir(actual, scope)
+            ir = _expr_to_ir(actual, scope)  # type: ignore[arg-type]
             if isinstance(ir, ColumnRef) and any(g.name == ir.name for g in group_cols):
                 continue
-            raise SqlParseError(
-                f"non-aggregate projection {actual} not in GROUP BY"
-            )
+            raise SqlParseError(f"non-aggregate projection {actual} not in GROUP BY")
     return LogicalAggregate(child=plan, group_by=tuple(group_cols), aggregates=tuple(aggs))
 
 

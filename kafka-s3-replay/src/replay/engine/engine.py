@@ -102,7 +102,9 @@ class ReplayEngine:
         await self._emit_progress()
 
         # Build rate limiter token bucket
-        rate_limiter = _TokenBucket(cfg.rate_limit_per_second) if cfg.rate_limit_per_second else None
+        rate_limiter = (
+            _TokenBucket(cfg.rate_limit_per_second) if cfg.rate_limit_per_second else None
+        )
 
         async def process_key(topic: str, key: str) -> None:
             async with sem:
@@ -159,7 +161,7 @@ class _TokenBucket:
     """Simple token-bucket rate limiter."""
 
     def __init__(self, rate: float) -> None:
-        self._rate = rate          # tokens per second
+        self._rate = rate  # tokens per second
         self._tokens = rate
         self._last = time.monotonic()
 

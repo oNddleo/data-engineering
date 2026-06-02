@@ -11,13 +11,13 @@ class TrendSummary:
     rate_type: str
     current_rate: float
     points: list[TrendPoint]
-    change_7d: float | None   # pp change over last 7 days
+    change_7d: float | None  # pp change over last 7 days
     change_30d: float | None  # pp change over last 30 days
     change_90d: float | None  # pp change over last 90 days
     min_rate: float
     max_rate: float
     avg_rate: float
-    direction: str               # "up" | "down" | "stable"
+    direction: str  # "up" | "down" | "stable"
 
 
 def compute_trend(
@@ -43,6 +43,7 @@ def compute_trend(
 
     def _change_over_days(days: int) -> float | None:
         from datetime import timedelta
+
         cutoff = now - timedelta(days=days)
         older = [(ts, r) for ts, r in sorted_h if ts <= cutoff]
         if not older:

@@ -12,10 +12,11 @@ The index is kept in memory; data records are read on demand via mmap.
 
 from __future__ import annotations
 
+import io
 import mmap
 import struct
 from pathlib import Path
-from typing import Iterator, Optional
+from typing import Any, Iterator, Optional
 
 import numpy as np
 
@@ -85,11 +86,11 @@ class SSTable:
         self._path = Path(path)
         self._use_rmi = use_rmi
         self._mmap: mmap.mmap | None = None
-        self._file = None
+        self._file: io.BufferedReader | None = None
         self._num_entries = 0
         self._index_interval = _INDEX_INTERVAL
-        self._sparse_keys: np.ndarray = np.array([], dtype=np.int64)
-        self._sparse_offsets: np.ndarray = np.array([], dtype=np.int64)
+        self._sparse_keys: np.ndarray[Any, np.dtype[Any]] = np.array([], dtype=np.int64)
+        self._sparse_offsets: np.ndarray[Any, np.dtype[Any]] = np.array([], dtype=np.int64)
         self._bloom: BloomFilter | None = None
         self._rmi: RMI | None = None
         self._btree: BTreeIndex | None = None

@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import itertools
 import tempfile
+import types
 from pathlib import Path
 from typing import Literal
 
@@ -187,7 +188,7 @@ class LSMEngine:
     def l1_count(self) -> int:
         return len(self._l1)
 
-    def stats(self) -> dict:
+    def stats(self) -> dict[str, object]:
         total_entries = sum(t.num_entries for t in self._l0 + self._l1)
         return {
             "memtable_entries": len(self._memtable),
@@ -208,5 +209,10 @@ class LSMEngine:
     def __enter__(self) -> "LSMEngine":
         return self
 
-    def __exit__(self, *_) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: types.TracebackType | None,
+    ) -> None:
         self.close()

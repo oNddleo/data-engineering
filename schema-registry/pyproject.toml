@@ -40,6 +40,14 @@ testpaths = ["tests"]
 [tool.hatch.build.targets.wheel]
 packages = ["src", "cli"]
 
+[tool.mypy]
+python_version = "3.11"
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["yaml.*", "jsonschema.*"]
+ignore_missing_imports = true
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"

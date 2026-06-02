@@ -18,6 +18,7 @@ class JoinType(str, Enum):
 @dataclass
 class PlanNode:
     """Base class for all plan nodes."""
+
     estimated_rows: int = 0
     estimated_cost: float = 0.0
 
@@ -28,11 +29,12 @@ class PlanNode:
 @dataclass
 class TableScan(PlanNode):
     """Reads rows from a single data source table."""
-    source: str = ""          # e.g. "postgres"
-    table: str = ""           # e.g. "orders"
+
+    source: str = ""  # e.g. "postgres"
+    table: str = ""  # e.g. "orders"
     alias: str = ""
     projected_columns: list[str] = field(default_factory=list)
-    pushed_predicates: list[Any] = field(default_factory=list)   # sqlglot expressions
+    pushed_predicates: list[Any] = field(default_factory=list)  # sqlglot expressions
 
     @property
     def qualified_name(self) -> str:
@@ -42,6 +44,7 @@ class TableScan(PlanNode):
 @dataclass
 class Filter(PlanNode):
     """Applies a predicate that couldn't be pushed down."""
+
     child: PlanNode = field(default_factory=lambda: PlanNode())
     predicate: Any = None  # sqlglot expression
 
@@ -52,6 +55,7 @@ class Filter(PlanNode):
 @dataclass
 class Project(PlanNode):
     """Selects a subset of columns."""
+
     child: PlanNode = field(default_factory=lambda: PlanNode())
     columns: list[Any] = field(default_factory=list)  # sqlglot expressions
     output_names: list[str] = field(default_factory=list)
@@ -63,10 +67,11 @@ class Project(PlanNode):
 @dataclass
 class Join(PlanNode):
     """Joins two relations in the federation engine."""
+
     left: PlanNode = field(default_factory=lambda: PlanNode())
     right: PlanNode = field(default_factory=lambda: PlanNode())
     join_type: JoinType = JoinType.INNER
-    condition: Any = None       # sqlglot expression
+    condition: Any = None  # sqlglot expression
     left_keys: list[str] = field(default_factory=list)
     right_keys: list[str] = field(default_factory=list)
 
@@ -77,6 +82,7 @@ class Join(PlanNode):
 @dataclass
 class Aggregate(PlanNode):
     """GROUP BY + aggregation functions."""
+
     child: PlanNode = field(default_factory=lambda: PlanNode())
     group_keys: list[Any] = field(default_factory=list)
     aggregates: list[Any] = field(default_factory=list)
@@ -88,6 +94,7 @@ class Aggregate(PlanNode):
 @dataclass
 class Sort(PlanNode):
     """ORDER BY."""
+
     child: PlanNode = field(default_factory=lambda: PlanNode())
     order_exprs: list[Any] = field(default_factory=list)
 
@@ -98,6 +105,7 @@ class Sort(PlanNode):
 @dataclass
 class Limit(PlanNode):
     """LIMIT / OFFSET."""
+
     child: PlanNode = field(default_factory=lambda: PlanNode())
     count: int = 0
     offset: int = 0
@@ -122,7 +130,9 @@ def explain_plan(node: PlanNode, indent: int = 0) -> str:
                 f"  est_rows={node.estimated_rows:,}"
             )
         case Filter():
-            lines.append(f"{prefix}Filter  predicate={node.predicate}  est_rows={node.estimated_rows:,}")
+            lines.append(
+                f"{prefix}Filter  predicate={node.predicate}  est_rows={node.estimated_rows:,}"
+            )
         case Project():
             names = ", ".join(node.output_names) or "…"
             lines.append(f"{prefix}Project  [{names}]")

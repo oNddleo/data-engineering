@@ -8,6 +8,7 @@ become explicit `materialise → register external` steps.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 from ppc.codegen.dbt_codegen import emit_dbt
 from ppc.codegen.duckdb_codegen import emit_duckdb
@@ -26,14 +27,14 @@ class _Asset:
 
 
 _CODEGENS = {
-    "spark":  emit_spark,
-    "dbt":    emit_dbt,
+    "spark": emit_spark,
+    "dbt": emit_dbt,
     "duckdb": emit_duckdb,
-    "flink":  emit_flink,
+    "flink": emit_flink,
 }
 
 
-def emit_dagster(plan: PhysicalPlan) -> dict:
+def emit_dagster(plan: PhysicalPlan) -> dict[str, Any]:
     """Return a dict suitable for YAML dump."""
     assets: list[_Asset] = []
     counter = {"n": 0}
@@ -44,13 +45,15 @@ def emit_dagster(plan: PhysicalPlan) -> dict:
             inner = _walk(node.child)
             counter["n"] += 1
             aid = f"conv_{counter['n']:02d}_{node.src_engine}_to_{node.dst_engine}"
-            assets.append(_Asset(
-                asset_id=aid,
-                engine="conversion",
-                body=f"# materialise {node.src_engine} result -> {node.dst_engine}-readable\n"
-                     f"# bytes≈{node.bytes_in:,.0f}",
-                depends_on=[inner],
-            ))
+            assets.append(
+                _Asset(
+                    asset_id=aid,
+                    engine="conversion",
+                    body=f"# materialise {node.src_engine} result -> {node.dst_engine}-readable\n"
+                    f"# bytes≈{node.bytes_in:,.0f}",
+                    depends_on=[inner],
+                )
+            )
             return aid
         # Non-conversion: this is the root of an engine region.
         counter["n"] += 1
@@ -60,10 +63,12 @@ def emit_dagster(plan: PhysicalPlan) -> dict:
         # subtree's code for this asset (PPC emits self-contained code per
         # region).
         sub_plan = PhysicalPlan(
-            root=node, total_cost=node.cost,
-            estimated_bytes=node.bytes_out, logical=plan.logical,
+            root=node,
+            total_cost=node.cost,
+            estimated_bytes=node.bytes_out,  # type: ignore[attr-defined]
+            logical=plan.logical,
         )
-        body = _CODEGENS[node.engine](sub_plan)
+        body = _CODEGENS[node.engine](sub_plan)  # type: ignore[operator]
         # Recurse into children to collect upstream IDs
         deps: list[str] = []
         for c in node.children:

@@ -6,12 +6,13 @@ Usage:
     engine.register("lineitem", arrow_table)
     result = engine.execute("SELECT SUM(l_quantity) FROM lineitem WHERE l_discount > 0.05")
 """
+
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, List, Literal, Optional, Tuple
 
-import pyarrow as pa  # type: ignore[import-untyped]
-import pyarrow.compute as pc  # type: ignore[import-untyped]
+import pyarrow as pa
+import pyarrow.compute as pc
 
 from .catalog import Catalog
 from .expressions import ColumnRef
@@ -74,7 +75,7 @@ class Engine:
     def register(self, name: str, data: pa.Table) -> None:
         self.catalog.register(name, data)
 
-    def register_dict(self, name: str, d: dict) -> None:
+    def register_dict(self, name: str, d: dict[str, Any]) -> None:
         self.catalog.register(name, pa.table(d))
 
     # ------------------------------------------------------------------
@@ -143,7 +144,7 @@ class Engine:
         pipeline = Pipeline(source=source, ops=ops, sink=sink)
         return pipeline
 
-    def _decompose(self, plan: LogicalPlan):
+    def _decompose(self, plan: LogicalPlan) -> Tuple[SequentialScan, List[Any], Any]:
         """Recursively decompose plan into (scan, [push_ops], sink)."""
         if isinstance(plan, Scan):
             scan = SequentialScan(plan.table, plan.columns, plan.pushed_predicates)
@@ -178,8 +179,8 @@ class Engine:
         if isinstance(plan, Sort):
             scan, ops, inner_sink = self._decompose(plan.child)
             # Wrap whatever inner_sink we have with a post-sort step
-            wrapped = _PostSortSink(inner_sink, plan.keys, plan.ascending)
-            return scan, ops, wrapped
+            sort_sink = _PostSortSink(inner_sink, plan.keys, plan.ascending)
+            return scan, ops, sort_sink
 
         raise NotImplementedError(f"Cannot build pipeline for {type(plan).__name__}")
 
@@ -188,21 +189,21 @@ class Engine:
         op = self._planner.plan(plan)
 
         class _VolcanoScan:
-            def __init__(self, physical_op):
+            def __init__(self, physical_op: Any) -> None:
                 self._op = physical_op
                 self._opened = False
 
-            def open(self, catalog):
+            def open(self, catalog: Catalog) -> None:
                 self._op.open(catalog)
 
-            def next(self):
+            def next(self) -> Optional[pa.RecordBatch]:
                 return self._op.next()
 
-            def close(self):
+            def close(self) -> None:
                 self._op.close()
 
         sink = CollectSink()
-        return Pipeline(source=_VolcanoScan(op), ops=[], sink=sink)
+        return Pipeline(source=_VolcanoScan(op), ops=[], sink=sink)  # type: ignore[arg-type]
 
 
 def _has_join(plan: LogicalPlan) -> bool:
@@ -220,16 +221,16 @@ class _PostSortSink:
     Composes cleanly with _PostProjectSink and HashAggSink.
     """
 
-    def __init__(self, inner, keys, ascending) -> None:
+    def __init__(self, inner: Any, keys: Any, ascending: Any) -> None:
         self._inner = inner
         self._keys = keys
         self._ascending = ascending
-        self._result = None
+        self._result: Optional[pa.Table] = None
 
-    def set_downstream(self, ds) -> None:
+    def set_downstream(self, ds: Any) -> None:
         pass
 
-    def push(self, batch) -> None:
+    def push(self, batch: Any) -> None:
         self._inner.push(batch)
 
     def finish(self) -> None:
@@ -248,7 +249,7 @@ class _PostSortSink:
             tbl = tbl.take(indices)
         self._result = tbl
 
-    def result(self):
+    def result(self) -> Optional[pa.Table]:
         return self._result
 
 
@@ -258,16 +259,16 @@ class _PostProjectSink:
     Used when a Project node sits directly above a pipeline-breaker (Agg, Sort).
     """
 
-    def __init__(self, inner, exprs, aliases) -> None:
+    def __init__(self, inner: Any, exprs: Any, aliases: Any) -> None:
         self._inner = inner
         self._exprs = exprs
         self._aliases = aliases
-        self._result = None
+        self._result: Optional[pa.Table] = None
 
-    def set_downstream(self, ds) -> None:
+    def set_downstream(self, ds: Any) -> None:
         pass
 
-    def push(self, batch) -> None:
+    def push(self, batch: Any) -> None:
         self._inner.push(batch)
 
     def finish(self) -> None:
@@ -295,5 +296,5 @@ class _PostProjectSink:
             out_arrays.append(col)
         self._result = pa.table(dict(zip(out_names, out_arrays)))
 
-    def result(self):
+    def result(self) -> Optional[pa.Table]:
         return self._result

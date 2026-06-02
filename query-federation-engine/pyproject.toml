@@ -42,3 +42,30 @@ where = ["src"]
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+
+[tool.mypy]
+strict = true
+python_version = "3.10"
+
+[[tool.mypy.overrides]]
+module = [
+    "yaml",
+    "yaml.*",
+    "pandas",
+    "pandas.*",
+    "psycopg2",
+    "psycopg2.*",
+    "pyarrow",
+    "pyarrow.*",
+    "pymongo",
+    "pymongo.*",
+    "boto3",
+    "boto3.*",
+    "botocore",
+    "botocore.*",
+    "s3fs",
+    "s3fs.*",
+    "fastparquet",
+    "fastparquet.*",
+]
+ignore_missing_imports = true

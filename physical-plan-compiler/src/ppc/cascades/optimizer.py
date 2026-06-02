@@ -85,9 +85,7 @@ class Optimizer:
 
     # ---- Recursive search -------------------------------------------------
 
-    def _optimize_group(
-        self, memo: Memo, gid: int, req: PhysicalProperties
-    ) -> _OptResult | None:
+    def _optimize_group(self, memo: Memo, gid: int, req: PhysicalProperties) -> _OptResult | None:
         g = memo.group(gid)
         cached = g.best_for_props.get(req)
         if cached is not None:
@@ -105,7 +103,7 @@ class Optimizer:
                 if not rule.match(lexpr):
                     continue
                 for phys_op, child_gids in rule.apply(lexpr, memo):
-                    pexpr = memo.add_physical(gid, phys_op, child_gids)
+                    pexpr = memo.add_physical(gid, phys_op, child_gids)  # type: ignore[arg-type]
                     candidate = self._cost_physical(memo, pexpr, req)
                     if candidate is None:
                         continue
@@ -166,7 +164,9 @@ class Optimizer:
             # Check if conversion is needed (child delivered ≠ required)
             if cres.delivered.engine != engine:
                 conv_cost = (self.conversions or default_conversion_registry()).cost(
-                    cres.delivered.engine, engine, cres.expr.op.bytes_out  # type: ignore[union-attr]
+                    cres.delivered.engine,
+                    engine,
+                    cres.expr.op.bytes_out,  # type: ignore[union-attr]
                 )
                 total += conv_cost
             total += cres.cost
@@ -191,9 +191,7 @@ class Optimizer:
 
     # ---- Materialization --------------------------------------------------
 
-    def _materialize(
-        self, memo: Memo, result: _OptResult, req: PhysicalProperties
-    ) -> PhysicalNode:
+    def _materialize(self, memo: Memo, result: _OptResult, req: PhysicalProperties) -> PhysicalNode:
         op = result.expr.op
         assert isinstance(op, PhysicalNode)
         child_nodes: list[PhysicalNode] = []
@@ -212,7 +210,7 @@ class Optimizer:
 
         # Attach children to the op (each Physical*Op has a `with_children` method)
         if hasattr(op, "with_children"):
-            return op.with_children(tuple(child_nodes))  # type: ignore[attr-defined]
+            return op.with_children(tuple(child_nodes))  # type: ignore[no-any-return]
         return op
 
 

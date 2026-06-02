@@ -4,6 +4,7 @@ Two training objectives:
   1. Cardinality loss — MSE on log-cardinality per node (q-error minimization)
   2. Cost loss       — MSE on log query latency (Bao bandit regression)
 """
+
 from __future__ import annotations
 
 import logging
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class CardinalityExample:
-    tree: EncodedTree       # has log_cardinalities as target
+    tree: EncodedTree  # has log_cardinalities as target
     hint_id: int = 0
 
 
@@ -33,7 +34,7 @@ class CardinalityExample:
 class CostExample:
     tree: EncodedTree
     hint_id: int
-    log_latency: float      # log(actual_ms)
+    log_latency: float  # log(actual_ms)
 
 
 @dataclass
@@ -77,11 +78,13 @@ class Trainer:
         self.card_buf.append(CardinalityExample(tree=tree, hint_id=hint_id))
 
     def add_cost_sample(self, tree: EncodedTree, hint_id: int, latency_ms: float) -> None:
-        self.cost_buf.append(CostExample(
-            tree=tree,
-            hint_id=hint_id,
-            log_latency=math.log(max(latency_ms, 0.001)),
-        ))
+        self.cost_buf.append(
+            CostExample(
+                tree=tree,
+                hint_id=hint_id,
+                log_latency=math.log(max(latency_ms, 0.001)),
+            )
+        )
 
     def train_step(self) -> dict[str, float]:
         if len(self.card_buf) < max(4, self.config.batch_size // 4):
@@ -101,9 +104,7 @@ class Trainer:
         for ex in card_batch:
             t = ex.tree.to(self.device)
             out = self.model(t, ex.hint_id)
-            loss = nn.functional.mse_loss(
-                out["log_cardinalities"], t.log_cardinalities
-            )
+            loss = nn.functional.mse_loss(out["log_cardinalities"], t.log_cardinalities)
             card_losses.append(loss)
         if card_losses:
             card_loss = torch.stack(card_losses).mean()
@@ -117,10 +118,10 @@ class Trainer:
                 min(self.config.batch_size // 2, len(self.cost_buf)),
             )
             cost_losses = []
-            for ex in cost_batch:
-                t = ex.tree.to(self.device)
-                out = self.model(t, ex.hint_id)
-                target = torch.tensor(ex.log_latency, device=self.device)
+            for cost_ex in cost_batch:
+                t = cost_ex.tree.to(self.device)
+                out = self.model(t, cost_ex.hint_id)
+                target = torch.tensor(cost_ex.log_latency, device=self.device)
                 cost_losses.append(nn.functional.mse_loss(out["log_cost"], target))
             if cost_losses:
                 cost_loss = torch.stack(cost_losses).mean()
@@ -152,12 +153,15 @@ class Trainer:
 
     def save(self, tag: str = "latest") -> Path:
         path = self.ckpt_dir / f"model_{tag}.pt"
-        torch.save({
-            "model_state": self.model.state_dict(),
-            "optimizer_state": self.optimizer.state_dict(),
-            "steps": self.steps,
-            "config": self.config,
-        }, path)
+        torch.save(
+            {
+                "model_state": self.model.state_dict(),
+                "optimizer_state": self.optimizer.state_dict(),
+                "steps": self.steps,
+                "config": self.config,
+            },
+            path,
+        )
         logger.info("Saved checkpoint → %s", path)
         return path
 

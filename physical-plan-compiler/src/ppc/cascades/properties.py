@@ -15,9 +15,9 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True, slots=True)
 class PhysicalProperties:
-    engine: str = "any"                       # "spark" | "dbt" | "duckdb" | "flink" | "any"
-    partitioning: tuple[str, ...] = ()        # hash-partition keys; () = single
-    sort_order: tuple[str, ...] = ()          # sorted-by columns
+    engine: str = "any"  # "spark" | "dbt" | "duckdb" | "flink" | "any"
+    partitioning: tuple[str, ...] = ()  # hash-partition keys; () = single
+    sort_order: tuple[str, ...] = ()  # sorted-by columns
 
     @classmethod
     def any(cls) -> PhysicalProperties:
@@ -42,5 +42,6 @@ class PhysicalProperties:
         return True
 
     def with_engine(self, engine: str) -> PhysicalProperties:
-        return PhysicalProperties(engine=engine, partitioning=self.partitioning,
-                                  sort_order=self.sort_order)
+        return PhysicalProperties(
+            engine=engine, partitioning=self.partitioning, sort_order=self.sort_order
+        )

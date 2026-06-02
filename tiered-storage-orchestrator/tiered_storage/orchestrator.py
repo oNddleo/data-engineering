@@ -75,7 +75,7 @@ class TieredStorageOrchestrator:
         self._cfg = config or StorageConfig()
         self._cost_cfg = cost_config or CostConfig()
         self._started = False
-        self._bg_tasks: list[asyncio.Task] = []
+        self._bg_tasks: list[asyncio.Task[None]] = []
 
         # ---- Tiers -------------------------------------------------------
         self.hot: HotTier = hot_tier or HotTier(
@@ -226,7 +226,7 @@ class TieredStorageOrchestrator:
         key: str,
         value: Any,
         size_bytes: Optional[int] = None,
-        metadata: Optional[dict] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> DataRecord:
         """Write a value to hot tier. Returns the stored DataRecord."""
         if size_bytes is None:
@@ -280,7 +280,7 @@ class TieredStorageOrchestrator:
     # Observability
     # ------------------------------------------------------------------
 
-    async def metrics(self) -> dict:
+    async def metrics(self) -> dict[str, Any]:
         """Aggregate metrics from all tiers + router + rehydration."""
         hot_m = await self.hot.metrics()
         warm_m = await self.warm.metrics()
@@ -318,8 +318,8 @@ class TieredStorageOrchestrator:
             "rehydration": self.rehydration.sla_report(),
             "lifecycle": {
                 "last_cycle": (
-                    self.lifecycle.last_cycle().summary()
-                    if self.lifecycle.last_cycle()
+                    last_cycle.summary()
+                    if (last_cycle := self.lifecycle.last_cycle()) is not None
                     else "no cycles run"
                 ),
                 "total_cycles": len(self.lifecycle.history()),
@@ -349,7 +349,7 @@ class TieredStorageOrchestrator:
             egress_gb_per_day=egress_gb_per_day,
         )
 
-    async def savings_report(self) -> dict:
+    async def savings_report(self) -> dict[str, Any]:
         """Show potential monthly savings if all warm/cold data stayed on hot."""
         hot_m  = await self.hot.metrics()
         warm_m = await self.warm.metrics()

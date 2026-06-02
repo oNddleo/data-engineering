@@ -45,9 +45,9 @@ class Event(BaseModel):
 
     @property
     def event_id(self) -> str:
-        return hashlib.sha1(
-            f"{self.topic}:{self.partition}:{self.offset}".encode()
-        ).hexdigest()[:12]
+        return hashlib.sha1(f"{self.topic}:{self.partition}:{self.offset}".encode()).hexdigest()[
+            :12
+        ]
 
     def model_post_init(self, __context: Any) -> None:
         if self.timestamp.tzinfo is None:

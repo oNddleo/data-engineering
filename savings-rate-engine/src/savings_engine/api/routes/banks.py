@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -19,32 +21,32 @@ class BankOut(BaseModel):
 
 
 @router.get("", response_model=list[BankOut])
-def list_banks(db: Session = Depends(get_db)):
+def list_banks(db: Session = Depends(get_db)) -> Any:
     """Return all active banks tracked by the engine."""
     repo = RateRepository(db)
     banks = repo.get_all_banks()
     return [
         BankOut(
-            code=b.code,
-            name_vi=b.name_vi,
-            name_en=b.name_en,
-            website=b.website,
-            snapshot_count=repo.get_snapshot_count(b.code),
+            code=str(b.code),
+            name_vi=str(b.name_vi),
+            name_en=str(b.name_en),
+            website=str(b.website) if b.website is not None else None,
+            snapshot_count=repo.get_snapshot_count(str(b.code)),
         )
         for b in banks
     ]
 
 
 @router.get("/{bank_code}", response_model=BankOut)
-def get_bank(bank_code: str, db: Session = Depends(get_db)):
+def get_bank(bank_code: str, db: Session = Depends(get_db)) -> Any:
     repo = RateRepository(db)
     bank = repo.get_bank(bank_code.upper())
     if not bank:
         raise HTTPException(404, f"Bank '{bank_code}' not found")
     return BankOut(
-        code=bank.code,
-        name_vi=bank.name_vi,
-        name_en=bank.name_en,
-        website=bank.website,
-        snapshot_count=repo.get_snapshot_count(bank.code),
+        code=str(bank.code),
+        name_vi=str(bank.name_vi),
+        name_en=str(bank.name_en),
+        website=str(bank.website) if bank.website is not None else None,
+        snapshot_count=repo.get_snapshot_count(str(bank.code)),
     )

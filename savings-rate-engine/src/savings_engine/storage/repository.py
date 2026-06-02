@@ -13,7 +13,9 @@ class RateRepository:
 
     # --- writes ---
 
-    def save_snapshot(self, bank_code: str, rates: list[NormalizedRate], *, error: str | None = None) -> RateSnapshot:
+    def save_snapshot(
+        self, bank_code: str, rates: list[NormalizedRate], *, error: str | None = None
+    ) -> RateSnapshot:
         snapshot = RateSnapshot(
             bank_code=bank_code,
             scraped_at=datetime.utcnow(),
@@ -24,16 +26,18 @@ class RateRepository:
         self.db.flush()  # get snapshot.id
 
         for r in rates:
-            self.db.add(RateRecord(
-                snapshot_id=snapshot.id,
-                bank_code=r.bank_code,
-                term_days=r.term_days,
-                term_label=r.term_label,
-                rate_pa=r.rate_pa,
-                rate_type=r.rate_type,
-                min_amount_vnd=r.min_amount_vnd,
-                currency=r.currency,
-            ))
+            self.db.add(
+                RateRecord(
+                    snapshot_id=snapshot.id,
+                    bank_code=r.bank_code,
+                    term_days=r.term_days,
+                    term_label=r.term_label,
+                    rate_pa=r.rate_pa,
+                    rate_type=r.rate_type,
+                    min_amount_vnd=r.min_amount_vnd,
+                    currency=r.currency,
+                )
+            )
 
         self.db.commit()
         self.db.refresh(snapshot)

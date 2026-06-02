@@ -20,10 +20,12 @@ class BaseScraper(ABC):
 
     def __init__(self) -> None:
         self._session = requests.Session()
-        self._session.headers.update({
-            "User-Agent": settings.user_agent,
-            "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8",
-        })
+        self._session.headers.update(
+            {
+                "User-Agent": settings.user_agent,
+                "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8",
+            }
+        )
 
     @abstractmethod
     def _fetch_rates(self) -> list[RateEntry]:
@@ -52,12 +54,12 @@ class BaseScraper(ABC):
     def _fetch_with_retry(self) -> list[RateEntry]:
         return self._fetch_rates()
 
-    def _get(self, url: str, **kwargs) -> requests.Response:
+    def _get(self, url: str, **kwargs: object) -> requests.Response:
         resp = self._session.get(url, timeout=settings.request_timeout_seconds, **kwargs)
         resp.raise_for_status()
         return resp
 
-    def _post(self, url: str, **kwargs) -> requests.Response:
+    def _post(self, url: str, **kwargs: object) -> requests.Response:
         resp = self._session.post(url, timeout=settings.request_timeout_seconds, **kwargs)
         resp.raise_for_status()
         return resp

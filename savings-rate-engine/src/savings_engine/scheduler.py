@@ -7,6 +7,7 @@ Usage (standalone):
 
 The scheduler also exposes start_scheduler() so the CLI command can call it.
 """
+
 import logging
 import signal
 import sys
@@ -46,7 +47,7 @@ def start_scheduler(
         coalesce=True,
     )
 
-    def _shutdown(signum, frame):
+    def _shutdown(signum: int, frame: object) -> None:
         logger.info("Signal %s received — shutting down scheduler", signum)
         scheduler.shutdown(wait=False)
         sys.exit(0)

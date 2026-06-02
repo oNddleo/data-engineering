@@ -16,7 +16,8 @@ from cow_mor_bench.compaction.model import (
     DEFAULT_CLUSTER,
     estimate_compaction_cost,
 )
-from cow_mor_bench.workload.classifier import ClassificationResult, WorkloadClass
+from cow_mor_bench.workload.classifier import ClassificationResult
+from cow_mor_bench.workload.patterns import WorkloadClass
 
 
 class Recommendation(str, Enum):
@@ -100,19 +101,13 @@ def recommend(
     if wc == WorkloadClass.OLAP_HEAVY:
         rec = Recommendation.COW
         reasoning.append("OLAP-heavy workload: reads dominate — CoW's pre-merged files win")
-        reasoning.append(
-            f"Read time: CoW {ct.total_read_s:.3f}s vs MoR {mt.total_read_s:.3f}s"
-        )
-        alternatives.append(
-            "MoR + aggressive compaction if ingest rate is also high (>10k rows/s)"
-        )
+        reasoning.append(f"Read time: CoW {ct.total_read_s:.3f}s vs MoR {mt.total_read_s:.3f}s")
+        alternatives.append("MoR + aggressive compaction if ingest rate is also high (>10k rows/s)")
 
     elif wc == WorkloadClass.STREAMING_INGEST:
         rec = Recommendation.MOR
         reasoning.append("Streaming ingest: high insert rate favours MoR's append-only writes")
-        reasoning.append(
-            f"Write time: MoR {mt.total_write_s:.3f}s vs CoW {ct.total_write_s:.3f}s"
-        )
+        reasoning.append(f"Write time: MoR {mt.total_write_s:.3f}s vs CoW {ct.total_write_s:.3f}s")
         if compaction_cost.should_compact_now:
             rec = Recommendation.MOR_WITH_COMPACTION
             reasoning.append(
@@ -124,9 +119,7 @@ def recommend(
     elif wc == WorkloadClass.OLTP_HEAVY:
         rec = Recommendation.MOR
         reasoning.append("OLTP-heavy: high-frequency small writes favour MoR's O(delta) writes")
-        reasoning.append(
-            f"Write time: MoR {mt.total_write_s:.3f}s vs CoW {ct.total_write_s:.3f}s"
-        )
+        reasoning.append(f"Write time: MoR {mt.total_write_s:.3f}s vs CoW {ct.total_write_s:.3f}s")
         if ms.delta_file_count > 15:
             rec = Recommendation.MOR_WITH_COMPACTION
             reasoning.append(
@@ -152,9 +145,7 @@ def recommend(
         reasoning.append(
             f"Read amplification without compaction: {compaction_cost.read_amplification_factor:.2f}x"
         )
-        alternatives.append(
-            "CoW if the change capture rate is low enough (<1% table per hour)"
-        )
+        alternatives.append("CoW if the change capture rate is low enough (<1% table per hour)")
 
     else:  # MIXED
         # Let the numbers decide
@@ -179,10 +170,7 @@ def recommend(
         alternatives.append("Profile under peak write load and peak read load separately")
 
     # Override: if MoR read latency is > 3x CoW, always flag compaction
-    if (
-        rec == Recommendation.MOR
-        and mt.total_read_s > ct.total_read_s * 3
-    ):
+    if rec == Recommendation.MOR and mt.total_read_s > ct.total_read_s * 3:
         rec = Recommendation.MOR_WITH_COMPACTION
         reasoning.append(
             f"MoR read overhead is {mt.total_read_s / max(ct.total_read_s, 1e-9):.1f}x CoW — "
@@ -258,7 +246,11 @@ def recommend_from_params(
         rec = Recommendation.COW
         reasoning.insert(0, "Batch update — CoW keeps reads clean after large mutations")
     else:
-        rec = Recommendation.MOR_WITH_COMPACTION if compaction_cost.should_compact_now else Recommendation.COW
+        rec = (
+            Recommendation.MOR_WITH_COMPACTION
+            if compaction_cost.should_compact_now
+            else Recommendation.COW
+        )
         reasoning.insert(0, "Mixed workload — defaulting to CoW for simpler read semantics")
 
     return StrategyRecommendation(

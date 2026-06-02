@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+from typing import IO, Any
 
 from replay.models import Event
 from replay.targets.base import BaseTarget
@@ -12,7 +13,7 @@ from replay.targets.base import BaseTarget
 class StdoutTarget(BaseTarget):
     """Prints each event as a JSON line to stdout (or a custom stream)."""
 
-    def __init__(self, pretty: bool = False, stream=None) -> None:
+    def __init__(self, pretty: bool = False, stream: IO[Any] | None = None) -> None:
         self._pretty = pretty
         self._stream = stream or sys.stdout
         self._count = 0

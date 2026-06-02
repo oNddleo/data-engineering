@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
-from scipy import stats as scipy_stats
+from scipy import stats as scipy_stats  # type: ignore[import-untyped]
 
 
 @dataclass
@@ -96,7 +96,7 @@ class ADWINDetector:
             if counts[cnt] >= 2:
                 # Find and merge the two oldest buckets with this count
                 first = second = None
-                tmp = deque()
+                tmp: deque[tuple[int, float]] = deque()
                 for item in new_buckets:
                     if item[0] == cnt and first is None:
                         first = item

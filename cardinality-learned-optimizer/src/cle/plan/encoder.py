@@ -1,10 +1,11 @@
 """Encode a PlanNode tree into tensors consumable by the TreeLSTM/GNN."""
+
 from __future__ import annotations
 
 import math
 from typing import Optional
 
-import torch  # type: ignore[import-not-found]
+import torch
 from torch import Tensor
 
 from .node import PlanNode
@@ -58,7 +59,7 @@ def node_to_feature(node: PlanNode, vocab: Vocabulary) -> list[float]:
     feats.extend([float(x) for x in node.operator_one_hot()])
 
     # log-scaled cardinality / cost
-    feats.append(math.log(max(node.estimated_rows, 1.0)) / 20.0)   # rough normalise
+    feats.append(math.log(max(node.estimated_rows, 1.0)) / 20.0)  # rough normalise
     feats.append(math.log(max(node.estimated_cost_total, 1.0)) / 20.0)
     feats.append(node.estimated_width / 100.0)
 
@@ -79,6 +80,7 @@ def node_to_feature(node: PlanNode, vocab: Vocabulary) -> list[float]:
 
 # ── tree topology helpers ─────────────────────────────────────────────────────
 
+
 def build_index_map(root: PlanNode) -> dict[int, int]:
     """Map node_id → position in BFS order (used to build adjacency for GNN)."""
     idx: dict[int, int] = {}
@@ -97,8 +99,8 @@ class EncodedTree:
 
     def __init__(
         self,
-        node_features: Tensor,      # [N, FEATURE_DIM]
-        parent_ids: list[int],      # length N; -1 for root
+        node_features: Tensor,  # [N, FEATURE_DIM]
+        parent_ids: list[int],  # length N; -1 for root
         children_ids: list[list[int]],  # length N; list of child positions
         log_cardinalities: Optional[Tensor] = None,  # [N] training target
     ) -> None:

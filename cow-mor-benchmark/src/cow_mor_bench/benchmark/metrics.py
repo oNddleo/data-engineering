@@ -78,9 +78,9 @@ def compare(result: BenchmarkResult) -> list[MetricRow]:
             "Data files on disk",
             str(cs.data_file_count),
             str(ms.data_file_count),
-            "tie" if cs.data_file_count == ms.data_file_count else (
-                "CoW" if cs.data_file_count < ms.data_file_count else "MoR"
-            ),
+            "tie"
+            if cs.data_file_count == ms.data_file_count
+            else ("CoW" if cs.data_file_count < ms.data_file_count else "MoR"),
         ),
         MetricRow(
             "Delta files on disk",

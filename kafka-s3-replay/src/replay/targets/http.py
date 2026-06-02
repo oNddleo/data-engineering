@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+from typing import Any
 
 import aiohttp
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
@@ -53,7 +54,7 @@ class HttpTarget(BaseTarget):
             await self._session.close()
             self._session = None
 
-    async def _send_with_retry(self, payload: dict) -> None:
+    async def _send_with_retry(self, payload: dict[str, Any]) -> None:
         @retry(
             stop=stop_after_attempt(self.config.max_retries),
             wait=wait_exponential(multiplier=0.5, min=0.5, max=10),
@@ -77,13 +78,14 @@ class HttpTarget(BaseTarget):
                     )
                 if resp.status >= 400:
                     text = await resp.text()
-                    logger.warning("HTTP %d for event offset=%s: %s",
-                                   resp.status, payload.get("offset"), text)
+                    logger.warning(
+                        "HTTP %d for event offset=%s: %s", resp.status, payload.get("offset"), text
+                    )
 
         await _do()
 
 
-def _event_to_dict(event: Event) -> dict:
+def _event_to_dict(event: Event) -> dict[str, Any]:
     try:
         value = json.loads(event.value)
     except (json.JSONDecodeError, UnicodeDecodeError):

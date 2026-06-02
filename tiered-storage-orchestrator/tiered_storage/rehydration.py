@@ -18,7 +18,7 @@ import asyncio
 import logging
 import time
 import uuid
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from tiered_storage.schemas import (
     REHYDRATION_SLA_SECONDS,
@@ -49,10 +49,10 @@ class RehydrationManager:
 
     def __init__(
         self,
-        cold_tier,
-        warm_tier,
-        hot_tier=None,
-        on_complete: Optional[Callable] = None,
+        cold_tier: Any,
+        warm_tier: Any,
+        hot_tier: Any = None,
+        on_complete: Optional[Callable[..., Any]] = None,
     ):
         self._cold = cold_tier
         self._warm = warm_tier
@@ -60,7 +60,7 @@ class RehydrationManager:
         self._on_complete = on_complete
 
         self._jobs: dict[str, RehydrationJob] = {}
-        self._pending: asyncio.Queue = asyncio.Queue()
+        self._pending: asyncio.Queue[RehydrationJob] = asyncio.Queue()
 
         # SLA metrics
         self._sla_met: int = 0
@@ -165,7 +165,7 @@ class RehydrationManager:
         total = self._sla_met + self._sla_violated
         return self._total_latency_s / total if total else 0.0
 
-    def sla_report(self) -> dict:
+    def sla_report(self) -> dict[str, Any]:
         total = self._sla_met + self._sla_violated
         return {
             "total_jobs": total,

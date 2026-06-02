@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
+from typing import IO, Any
 
 import fastavro
 
@@ -36,8 +37,8 @@ class FileTarget(BaseTarget):
 
     def __init__(self, config: FileTargetConfig) -> None:
         self.config = config
-        self._fh = None
-        self._avro_records: list[dict] = []
+        self._fh: IO[Any] | None = None
+        self._avro_records: list[dict[str, Any]] = []
         self._count = 0
 
     async def open(self) -> None:
@@ -70,7 +71,7 @@ class FileTarget(BaseTarget):
         logger.info("File target closed. Wrote %d events.", self._count)
 
 
-def _event_to_dict(event: Event) -> dict:
+def _event_to_dict(event: Event) -> dict[str, Any]:
     try:
         value = json.loads(event.value)
     except Exception:
@@ -87,7 +88,7 @@ def _event_to_dict(event: Event) -> dict:
     }
 
 
-def _event_to_avro_record(event: Event) -> dict:
+def _event_to_avro_record(event: Event) -> dict[str, Any]:
     try:
         value_str = json.dumps(json.loads(event.value))
     except Exception:

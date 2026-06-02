@@ -9,13 +9,13 @@ from .vpbank import VPBankScraper
 
 # Map bank_code → scraper class. Add new scrapers here.
 SCRAPER_REGISTRY: dict[str, type[BaseScraper]] = {
-    "VCB":  VCBScraper,
+    "VCB": VCBScraper,
     "BIDV": BIDVScraper,
-    "CTG":  VietinBankScraper,
-    "TCB":  TechcombankScraper,
-    "MBB":  MBBankScraper,
-    "ACB":  ACBScraper,
-    "VPB":  VPBankScraper,
+    "CTG": VietinBankScraper,
+    "TCB": TechcombankScraper,
+    "MBB": MBBankScraper,
+    "ACB": ACBScraper,
+    "VPB": VPBankScraper,
 }
 
 

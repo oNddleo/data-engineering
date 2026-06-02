@@ -62,3 +62,7 @@ ignore = ["E501"]
 python_version = "3.11"
 mypy_path = "src"
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["requests.*"]
+ignore_missing_imports = true

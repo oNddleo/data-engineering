@@ -5,6 +5,7 @@ TCB exposes rates at:
   https://www.techcombank.com.vn/api/v1/interest-rates/saving?currency=VND
 (discovered via Network tab — may require a specific Referer header)
 """
+
 import logging
 from datetime import datetime
 
@@ -40,13 +41,15 @@ class TechcombankScraper(BaseScraper):
             term = row.get("term") or row.get("termName", "")
             rate = float(row.get("rate") or row.get("interestRate", 0))
             rate_type = "online" if row.get("isOnline") else "standard"
-            entries.append(RateEntry(
-                bank_code=self.bank_code,
-                term_label=str(term),
-                rate_pa=rate,
-                rate_type=rate_type,
-                scraped_at=datetime.utcnow(),
-            ))
+            entries.append(
+                RateEntry(
+                    bank_code=self.bank_code,
+                    term_label=str(term),
+                    rate_pa=rate,
+                    rate_type=rate_type,
+                    scraped_at=datetime.utcnow(),
+                )
+            )
         if not entries:
             raise ScraperError("TCB API returned no entries")
         return entries
@@ -58,7 +61,11 @@ class TechcombankScraper(BaseScraper):
 
         for table in soup.select("table"):
             rows = table.select("tr")
-            header_text = " ".join(c.get_text(strip=True).lower() for c in rows[0].select("th,td")) if rows else ""
+            header_text = (
+                " ".join(c.get_text(strip=True).lower() for c in rows[0].select("th,td"))
+                if rows
+                else ""
+            )
             if "kỳ hạn" not in header_text and "lãi suất" not in header_text:
                 continue
             for row in rows[1:]:
@@ -67,10 +74,14 @@ class TechcombankScraper(BaseScraper):
                     continue
                 rate_str = cells[1].replace("%", "").replace(",", ".").strip()
                 try:
-                    entries.append(RateEntry(
-                        bank_code=self.bank_code, term_label=cells[0],
-                        rate_pa=float(rate_str), scraped_at=datetime.utcnow(),
-                    ))
+                    entries.append(
+                        RateEntry(
+                            bank_code=self.bank_code,
+                            term_label=cells[0],
+                            rate_pa=float(rate_str),
+                            scraped_at=datetime.utcnow(),
+                        )
+                    )
                 except ValueError:
                     continue
 
@@ -82,18 +93,20 @@ class TechcombankScraper(BaseScraper):
         now = datetime.utcnow()
         data = [
             ("Không kỳ hạn", 0.10, "standard"),
-            ("1 tháng",      5.00, "standard"),
-            ("3 tháng",      5.20, "standard"),
-            ("6 tháng",      5.50, "standard"),
-            ("12 tháng",     6.00, "standard"),
-            ("18 tháng",     6.00, "standard"),
-            ("24 tháng",     6.00, "standard"),
-            ("1 tháng",      5.10, "online"),
-            ("3 tháng",      5.30, "online"),
-            ("6 tháng",      5.60, "online"),
-            ("12 tháng",     6.10, "online"),
+            ("1 tháng", 5.00, "standard"),
+            ("3 tháng", 5.20, "standard"),
+            ("6 tháng", 5.50, "standard"),
+            ("12 tháng", 6.00, "standard"),
+            ("18 tháng", 6.00, "standard"),
+            ("24 tháng", 6.00, "standard"),
+            ("1 tháng", 5.10, "online"),
+            ("3 tháng", 5.30, "online"),
+            ("6 tháng", 5.60, "online"),
+            ("12 tháng", 6.10, "online"),
         ]
         return [
-            RateEntry(bank_code=self.bank_code, term_label=t, rate_pa=r, rate_type=rt, scraped_at=now)
+            RateEntry(
+                bank_code=self.bank_code, term_label=t, rate_pa=r, rate_type=rt, scraped_at=now
+            )
             for t, r, rt in data
         ]

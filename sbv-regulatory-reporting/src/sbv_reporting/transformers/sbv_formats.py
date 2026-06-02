@@ -14,7 +14,7 @@ from sbv_reporting.utils.config import get_config
 
 
 class SBVTransformer:
-    def __init__(self):
+    def __init__(self) -> None:
         self.cfg = get_config()
         self.inst = self.cfg["reporting"]
         self.thresholds = self.cfg["thresholds"]

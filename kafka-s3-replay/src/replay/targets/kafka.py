@@ -55,7 +55,7 @@ class KafkaTarget(BaseTarget):
         headers.append(("x-replay-timestamp", event.timestamp.isoformat().encode()))
 
         await anyio.to_thread.run_sync(
-            lambda: self._producer.produce(  # type: ignore[union-attr]
+            lambda: self._producer.produce(
                 topic=dest_topic,
                 key=event.key,
                 value=event.value,
@@ -73,7 +73,7 @@ class KafkaTarget(BaseTarget):
             logger.info("Kafka producer closed. Total sent: %d", self._sent)
 
     async def _flush(self) -> None:
-        await anyio.to_thread.run_sync(lambda: self._producer.flush(timeout=30))  # type: ignore[union-attr]
+        await anyio.to_thread.run_sync(lambda: self._producer.flush(timeout=30))
 
     @staticmethod
     def _delivery_callback(err: Any, msg: Any) -> None:

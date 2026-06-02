@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional
 
 from tiered_storage.schemas import (
     DataRecord,
@@ -87,11 +87,11 @@ class ReadRouter:
 
     def __init__(
         self,
-        hot_tier,
-        warm_tier,
-        cold_tier,
-        rehydration_manager,
-        tracker,
+        hot_tier: Any,
+        warm_tier: Any,
+        cold_tier: Any,
+        rehydration_manager: Any,
+        tracker: Any,
         promote_freq_threshold: float = 5.0,
         block_on_cold: bool = False,
         default_cold_priority: RehydrationPriority = RehydrationPriority.STANDARD,

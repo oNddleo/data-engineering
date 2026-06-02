@@ -45,13 +45,17 @@ class Rule(ABC):
 
 class TransformationRule(Rule):
     @abstractmethod
-    def apply(self, gexpr: GroupExpression, memo: Memo) -> Iterable[tuple[LogicalNode, tuple[int, ...]]]:
+    def apply(
+        self, gexpr: GroupExpression, memo: Memo
+    ) -> Iterable[tuple[LogicalNode, tuple[int, ...]]]:
         """Return zero-or-more (op, child_group_ids) for new logical alternatives."""
 
 
 class ImplementationRule(Rule):
     @abstractmethod
-    def apply(self, gexpr: GroupExpression, memo: Memo) -> Iterable[tuple[EngineOp, tuple[int, ...]]]:
+    def apply(
+        self, gexpr: GroupExpression, memo: Memo
+    ) -> Iterable[tuple[EngineOp, tuple[int, ...]]]:
         """Return zero-or-more (physical_op, child_group_ids)."""
 
 
@@ -74,7 +78,9 @@ class PredicatePushdownThroughJoin(TransformationRule):
         # We need the single child's representative to be a Join
         return True  # actual check requires memo lookup; do it in apply
 
-    def apply(self, gexpr: GroupExpression, memo: Memo):
+    def apply(
+        self, gexpr: GroupExpression, memo: Memo
+    ) -> Iterable[tuple[LogicalNode, tuple[int, ...]]]:
         f = gexpr.op
         assert isinstance(f, LogicalFilter)
         child_group = memo.group(gexpr.children[0])
@@ -91,14 +97,16 @@ class PredicatePushdownThroughJoin(TransformationRule):
                 new_left_filter = LogicalFilter(child=join.left, predicate=f.predicate)
                 # Need a group for the new Filter(L)
                 lf_gid = memo.insert_logical(new_left_filter, (l_gid,))
-                new_join = LogicalJoin(left=join.left, right=join.right, on=join.on,
-                                       join_type=join.join_type)
+                new_join = LogicalJoin(
+                    left=join.left, right=join.right, on=join.on, join_type=join.join_type
+                )
                 yield (new_join, (lf_gid, r_gid))
             elif refs.issubset(r_cols):
                 new_right_filter = LogicalFilter(child=join.right, predicate=f.predicate)
                 rf_gid = memo.insert_logical(new_right_filter, (r_gid,))
-                new_join = LogicalJoin(left=join.left, right=join.right, on=join.on,
-                                       join_type=join.join_type)
+                new_join = LogicalJoin(
+                    left=join.left, right=join.right, on=join.on, join_type=join.join_type
+                )
                 yield (new_join, (l_gid, rf_gid))
 
 
@@ -112,7 +120,9 @@ class JoinCommutativity(TransformationRule):
     def match(self, gexpr: GroupExpression) -> bool:
         return isinstance(gexpr.op, LogicalJoin)
 
-    def apply(self, gexpr: GroupExpression, memo: Memo):
+    def apply(
+        self, gexpr: GroupExpression, memo: Memo
+    ) -> Iterable[tuple[LogicalNode, tuple[int, ...]]]:
         j = gexpr.op
         assert isinstance(j, LogicalJoin)
         l_gid, r_gid = gexpr.children
@@ -138,7 +148,9 @@ class ScanImpl(ImplementationRule):
     def match(self, gexpr: GroupExpression) -> bool:
         return isinstance(gexpr.op, LogicalScan)
 
-    def apply(self, gexpr: GroupExpression, memo: Memo):
+    def apply(
+        self, gexpr: GroupExpression, memo: Memo
+    ) -> Iterable[tuple[EngineOp, tuple[int, ...]]]:
         from ppc.engines.physical_ops import PhysicalScan
 
         op = gexpr.op
@@ -157,7 +169,9 @@ class FilterImpl(ImplementationRule):
     def match(self, gexpr: GroupExpression) -> bool:
         return isinstance(gexpr.op, LogicalFilter)
 
-    def apply(self, gexpr: GroupExpression, memo: Memo):
+    def apply(
+        self, gexpr: GroupExpression, memo: Memo
+    ) -> Iterable[tuple[EngineOp, tuple[int, ...]]]:
         from ppc.engines.physical_ops import PhysicalFilter
 
         op = gexpr.op
@@ -184,7 +198,9 @@ class AggregateImpl(ImplementationRule):
     def match(self, gexpr: GroupExpression) -> bool:
         return isinstance(gexpr.op, LogicalAggregate)
 
-    def apply(self, gexpr: GroupExpression, memo: Memo):
+    def apply(
+        self, gexpr: GroupExpression, memo: Memo
+    ) -> Iterable[tuple[EngineOp, tuple[int, ...]]]:
         from ppc.engines.physical_ops import PhysicalAggregate
 
         op = gexpr.op
@@ -213,7 +229,9 @@ class HashJoinImpl(ImplementationRule):
     def match(self, gexpr: GroupExpression) -> bool:
         return isinstance(gexpr.op, LogicalJoin)
 
-    def apply(self, gexpr: GroupExpression, memo: Memo):
+    def apply(
+        self, gexpr: GroupExpression, memo: Memo
+    ) -> Iterable[tuple[EngineOp, tuple[int, ...]]]:
         from ppc.engines.physical_ops import PhysicalHashJoin
 
         op = gexpr.op
@@ -245,10 +263,12 @@ def default_transformation_rules() -> list[TransformationRule]:
 def default_implementation_rules(engines: list[str]) -> list[ImplementationRule]:
     rules: list[ImplementationRule] = []
     for e in engines:
-        rules.extend([
-            ScanImpl(e),
-            FilterImpl(e),
-            AggregateImpl(e),
-            HashJoinImpl(e),
-        ])
+        rules.extend(
+            [
+                ScanImpl(e),
+                FilterImpl(e),
+                AggregateImpl(e),
+                HashJoinImpl(e),
+            ]
+        )
     return rules

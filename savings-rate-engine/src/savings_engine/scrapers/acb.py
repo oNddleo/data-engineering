@@ -4,6 +4,7 @@ ACB scraper.
 Rate page: https://www.acb.com.vn/vi/ca-nhan/tien-gui/tiet-kiem
 ACB typically renders rates in a well-structured HTML table.
 """
+
 import logging
 from datetime import datetime
 
@@ -40,10 +41,14 @@ class ACBScraper(BaseScraper):
                     continue
                 rate_str = cells[1].replace("%", "").replace(",", ".").strip()
                 try:
-                    entries.append(RateEntry(
-                        bank_code=self.bank_code, term_label=cells[0],
-                        rate_pa=float(rate_str), scraped_at=datetime.utcnow(),
-                    ))
+                    entries.append(
+                        RateEntry(
+                            bank_code=self.bank_code,
+                            term_label=cells[0],
+                            rate_pa=float(rate_str),
+                            scraped_at=datetime.utcnow(),
+                        )
+                    )
                 except ValueError:
                     continue
 
@@ -55,17 +60,19 @@ class ACBScraper(BaseScraper):
         now = datetime.utcnow()
         data = [
             ("Không kỳ hạn", 0.10, "standard"),
-            ("1 tháng",      5.00, "standard"),
-            ("2 tháng",      5.00, "standard"),
-            ("3 tháng",      5.20, "standard"),
-            ("6 tháng",      5.50, "standard"),
-            ("9 tháng",      5.50, "standard"),
-            ("12 tháng",     6.20, "standard"),
-            ("18 tháng",     6.20, "standard"),
-            ("24 tháng",     6.20, "standard"),
-            ("36 tháng",     6.20, "standard"),
+            ("1 tháng", 5.00, "standard"),
+            ("2 tháng", 5.00, "standard"),
+            ("3 tháng", 5.20, "standard"),
+            ("6 tháng", 5.50, "standard"),
+            ("9 tháng", 5.50, "standard"),
+            ("12 tháng", 6.20, "standard"),
+            ("18 tháng", 6.20, "standard"),
+            ("24 tháng", 6.20, "standard"),
+            ("36 tháng", 6.20, "standard"),
         ]
         return [
-            RateEntry(bank_code=self.bank_code, term_label=t, rate_pa=r, rate_type=rt, scraped_at=now)
+            RateEntry(
+                bank_code=self.bank_code, term_label=t, rate_pa=r, rate_type=rt, scraped_at=now
+            )
             for t, r, rt in data
         ]

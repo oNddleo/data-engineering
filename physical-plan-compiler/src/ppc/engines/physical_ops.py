@@ -45,8 +45,9 @@ def estimate_selectivity(predicate: Expr, schema: Schema) -> float:
                     return 1.0 - (1.0 / ndv)
             return 0.9
         if op == "AND":
-            return estimate_selectivity(predicate.left, schema) * \
-                   estimate_selectivity(predicate.right, schema)
+            return estimate_selectivity(predicate.left, schema) * estimate_selectivity(
+                predicate.right, schema
+            )
         if op == "OR":
             a = estimate_selectivity(predicate.left, schema)
             b = estimate_selectivity(predicate.right, schema)
@@ -61,7 +62,7 @@ def estimate_selectivity(predicate: Expr, schema: Schema) -> float:
 
 @dataclass(frozen=True, slots=True)
 class PhysicalScan(PhysicalNode, EngineOp):
-    engine: str = "spark"  # type: ignore[assignment]
+    engine: str = "spark"
     table: str = ""
     schema: Schema = field(default_factory=lambda: Schema(columns=()))
     kind: ClassVar[str] = "scan"
@@ -93,7 +94,7 @@ class PhysicalScan(PhysicalNode, EngineOp):
 
 @dataclass(frozen=True, slots=True)
 class PhysicalFilter(PhysicalNode, EngineOp):
-    engine: str = "spark"  # type: ignore[assignment]
+    engine: str = "spark"
     predicate: Expr = field(default_factory=lambda: None)  # type: ignore[assignment]
     schema: Schema = field(default_factory=lambda: Schema(columns=()))
     _children: tuple[PhysicalNode, ...] = ()
@@ -107,7 +108,7 @@ class PhysicalFilter(PhysicalNode, EngineOp):
     def bytes_in(self) -> float:
         if not self._children:
             return self.schema.bytes_estimate()
-        return self._children[0].schema.bytes_estimate()  # type: ignore[attr-defined]
+        return self._children[0].schema.bytes_estimate()
 
     @property
     def bytes_out(self) -> float:
@@ -137,7 +138,7 @@ class PhysicalFilter(PhysicalNode, EngineOp):
 
 @dataclass(frozen=True, slots=True)
 class PhysicalAggregate(PhysicalNode, EngineOp):
-    engine: str = "spark"  # type: ignore[assignment]
+    engine: str = "spark"
     group_by: tuple[ColumnRef, ...] = ()
     aggregates: tuple[AggFunc, ...] = ()
     child_schema: Schema = field(default_factory=lambda: Schema(columns=()))
@@ -168,8 +169,9 @@ class PhysicalAggregate(PhysicalNode, EngineOp):
 
     @property
     def delivered_properties(self) -> PhysicalProperties:
-        return PhysicalProperties(engine=self.engine,
-                                  partitioning=tuple(g.name for g in self.group_by))
+        return PhysicalProperties(
+            engine=self.engine, partitioning=tuple(g.name for g in self.group_by)
+        )
 
     def with_children(self, children: tuple[PhysicalNode, ...]) -> PhysicalAggregate:
         return replace(self, _children=children)
@@ -187,7 +189,7 @@ class PhysicalAggregate(PhysicalNode, EngineOp):
 
 @dataclass(frozen=True, slots=True)
 class PhysicalHashJoin(PhysicalNode, EngineOp):
-    engine: str = "spark"  # type: ignore[assignment]
+    engine: str = "spark"
     on: Expr = field(default_factory=lambda: None)  # type: ignore[assignment]
     join_type: str = "INNER"
     left_schema: Schema = field(default_factory=lambda: Schema(columns=()))
@@ -248,7 +250,7 @@ class PhysicalConversion(PhysicalNode):
 
     @property
     def schema(self) -> Schema:
-        return self.child.schema  # type: ignore[attr-defined]
+        return self.child.schema
 
     @property
     def bytes_out(self) -> float:

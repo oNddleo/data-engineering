@@ -20,7 +20,7 @@ class ReconciliationResult:
     delta: float
     details: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "check_name": self.check_name,
             "passed": self.passed,
@@ -30,7 +30,7 @@ class ReconciliationResult:
 
 
 class ReconciliationEngine:
-    def __init__(self):
+    def __init__(self) -> None:
         self.tolerance = get_config()["thresholds"]["reconciliation_tolerance"]
 
     # ------------------------------------------------------------------

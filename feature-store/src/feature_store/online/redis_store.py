@@ -5,12 +5,13 @@ Key schema:  fs:{group}:{entity_id}
 Value:       MessagePack-encoded dict of feature_name -> value
 TTL:         Per-group from feature registry
 """
+
 from __future__ import annotations
 
 import time
 from typing import Any
 
-import msgpack  # type: ignore[import-untyped]
+import msgpack
 import redis  # type: ignore[import-not-found]
 import redis.asyncio as aioredis  # type: ignore[import-not-found]
 import structlog
@@ -19,23 +20,25 @@ log = structlog.get_logger(__name__)
 
 # msgpack doesn't ship with feature_store, fallback to json bytes
 try:
-    import msgpack  # type: ignore[import-untyped]
+    import msgpack
+
     _USE_MSGPACK = True
 except ImportError:
     import json as _json
+
     _USE_MSGPACK = False
 
 
-def _encode(obj: dict) -> bytes:
+def _encode(obj: dict[str, Any]) -> bytes:
     if _USE_MSGPACK:
-        return msgpack.packb(obj, use_bin_type=True)
+        return bytes(msgpack.packb(obj, use_bin_type=True))
     return _json.dumps(obj).encode()
 
 
-def _decode(raw: bytes) -> dict:
+def _decode(raw: bytes) -> dict[str, Any]:
     if _USE_MSGPACK:
-        return msgpack.unpackb(raw, raw=False)
-    return _json.loads(raw)
+        return dict(msgpack.unpackb(raw, raw=False))
+    return dict(_json.loads(raw))
 
 
 def _make_key(group: str, entity_id: str) -> str:
@@ -50,7 +53,7 @@ class OnlineStore:
             redis_url,
             decode_responses=False,
             socket_connect_timeout=0.5,
-            socket_timeout=0.01,         # 10ms hard cap
+            socket_timeout=0.01,  # 10ms hard cap
             **kwargs,
         )
         self._pipeline_batch_size = 100
@@ -96,15 +99,13 @@ class OnlineStore:
         if raw is None:
             return None
         record = _decode(raw)
-        return record["v"]
+        return dict(record["v"])
 
-    def get_batch(
-        self, group: str, entity_ids: list[str]
-    ) -> dict[str, dict[str, Any] | None]:
+    def get_batch(self, group: str, entity_ids: list[str]) -> dict[str, dict[str, Any] | None]:
         """Single MGET round-trip — critical for <10ms multi-entity retrieval."""
         keys = [_make_key(group, eid) for eid in entity_ids]
         raws = self._client.mget(keys)
-        result: dict[str, dict | None] = {}
+        result: dict[str, dict[str, Any] | None] = {}
         for entity_id, raw in zip(entity_ids, raws):
             result[entity_id] = _decode(raw)["v"] if raw else None
         return result
@@ -119,10 +120,7 @@ class OnlineStore:
         """
         keys = [_make_key(g, e) for g, e in requests]
         raws = self._client.mget(keys)
-        return {
-            req: (_decode(raw)["v"] if raw else None)
-            for req, raw in zip(requests, raws)
-        }
+        return {req: (_decode(raw)["v"] if raw else None) for req, raw in zip(requests, raws)}
 
     # ------------------------------------------------------------------ #
     # Delete / TTL management                                              #
@@ -132,11 +130,11 @@ class OnlineStore:
         return bool(self._client.delete(_make_key(group, entity_id)))
 
     def get_ttl(self, group: str, entity_id: str) -> int:
-        return self._client.ttl(_make_key(group, entity_id))
+        return int(self._client.ttl(_make_key(group, entity_id)))
 
     def healthcheck(self) -> bool:
         try:
-            return self._client.ping()
+            return bool(self._client.ping())
         except Exception:
             return False
 
@@ -157,7 +155,7 @@ class AsyncOnlineStore:
         raw = await self._client.get(_make_key(group, entity_id))
         if raw is None:
             return None
-        return _decode(raw)["v"]
+        return dict(_decode(raw)["v"])
 
     async def get_multi_group(
         self, requests: list[tuple[str, str]]
@@ -167,10 +165,7 @@ class AsyncOnlineStore:
             for g, e in requests:
                 pipe.get(_make_key(g, e))
             raws = await pipe.execute()
-        return {
-            req: (_decode(raw)["v"] if raw else None)
-            for req, raw in zip(requests, raws)
-        }
+        return {req: (_decode(raw)["v"] if raw else None) for req, raw in zip(requests, raws)}
 
     async def put(
         self,
@@ -185,7 +180,7 @@ class AsyncOnlineStore:
 
     async def healthcheck(self) -> bool:
         try:
-            return await self._client.ping()
+            return bool(await self._client.ping())
         except Exception:
             return False
 

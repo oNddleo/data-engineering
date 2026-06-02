@@ -8,6 +8,7 @@ Point-in-time correctness: each row carries event_timestamp so training
 joins can retrieve the feature value that was valid at prediction time,
 preventing label leakage.
 """
+
 from __future__ import annotations
 
 import threading
@@ -52,7 +53,7 @@ class OfflineStore:
         self._row_group_size = row_group_size
         self._compression = compression
         # In-memory buffer: group -> list of row dicts
-        self._buffers: dict[str, list[dict]] = defaultdict(list)
+        self._buffers: dict[str, list[dict[str, Any]]] = defaultdict(list)
         self._lock = threading.Lock()
 
     # ------------------------------------------------------------------ #
@@ -118,7 +119,7 @@ class OfflineStore:
             return
         self._buffers[group] = []
         # Partition rows by date so cross-day batches land in the right directories
-        by_date: dict[str, list[dict]] = {}
+        by_date: dict[str, list[dict[str, Any]]] = {}
         for row in rows:
             by_date.setdefault(row[_COL_DATE], []).append(row)
         for date_str, date_rows in by_date.items():
@@ -133,7 +134,9 @@ class OfflineStore:
                 row_group_size=self._row_group_size,
                 compression=self._compression,
             )
-            log.info("flushed offline partition", group=group, rows=len(date_rows), path=str(out_path))
+            log.info(
+                "flushed offline partition", group=group, rows=len(date_rows), path=str(out_path)
+            )
 
     # ------------------------------------------------------------------ #
     # Read — point-in-time correct retrieval                               #
@@ -228,7 +231,7 @@ class OfflineStore:
             return []
         return sorted(p.name for p in group_path.iterdir() if p.is_dir())
 
-    def get_stats(self, group: str) -> dict:
+    def get_stats(self, group: str) -> dict[str, Any]:
         df = self.read(group)
         if df.empty:
             return {"row_count": 0}

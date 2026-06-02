@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
@@ -26,7 +27,7 @@ router = APIRouter()
 
 
 def get_registry(request: Request) -> SchemaRegistry:
-    return request.app.state.registry
+    return request.app.state.registry  # type: ignore[no-any-return]
 
 
 # ── Subjects ──────────────────────────────────────────────────────────────────
@@ -37,7 +38,7 @@ async def list_subjects(registry: SchemaRegistry = Depends(get_registry)) -> lis
 
 
 @router.delete("/subjects/{subject}", tags=["subjects"])
-async def delete_subject(subject: str, registry: SchemaRegistry = Depends(get_registry)) -> dict:
+async def delete_subject(subject: str, registry: SchemaRegistry = Depends(get_registry)) -> dict[str, Any]:
     count = await registry.delete_subject(subject)
     return {"subject": subject, "versions_deleted": count}
 
@@ -45,7 +46,7 @@ async def delete_subject(subject: str, registry: SchemaRegistry = Depends(get_re
 # ── Config ────────────────────────────────────────────────────────────────────
 
 @router.get("/config/{subject}", tags=["config"])
-async def get_config(subject: str, registry: SchemaRegistry = Depends(get_registry)):
+async def get_config(subject: str, registry: SchemaRegistry = Depends(get_registry)) -> Any:
     return await registry.get_config(subject)
 
 
@@ -54,21 +55,21 @@ async def set_config(
     subject: str,
     body: SetConfigRequest,
     registry: SchemaRegistry = Depends(get_registry),
-):
+) -> Any:
     return await registry.set_config(subject, body.compatibility)
 
 
 # ── Schema Versions ───────────────────────────────────────────────────────────
 
 @router.get("/subjects/{subject}/versions", tags=["schemas"])
-async def list_versions(subject: str, registry: SchemaRegistry = Depends(get_registry)):
+async def list_versions(subject: str, registry: SchemaRegistry = Depends(get_registry)) -> Any:
     return await registry.list_versions(subject)
 
 
 @router.get("/subjects/{subject}/versions/{version}", tags=["schemas"])
 async def get_schema(
     subject: str, version: str, registry: SchemaRegistry = Depends(get_registry)
-):
+) -> Any:
     sv = await registry.get_schema(subject, version)
     if sv is None:
         raise HTTPException(status_code=404, detail=f"Schema v{version} not found")
@@ -80,7 +81,7 @@ async def register_schema(
     subject: str,
     body: RegisterSchemaRequest,
     registry: SchemaRegistry = Depends(get_registry),
-):
+) -> Any:
     try:
         sv = await registry.register_schema(
             subject=subject,
@@ -96,7 +97,7 @@ async def register_schema(
 @router.delete("/subjects/{subject}/versions/{version}", tags=["schemas"])
 async def delete_version(
     subject: str, version: int, registry: SchemaRegistry = Depends(get_registry)
-):
+) -> dict[str, Any]:
     ok = await registry.delete_version(subject, version)
     if not ok:
         raise HTTPException(status_code=404, detail="Version not found")
@@ -110,7 +111,7 @@ async def check_compatibility(
     subject: str,
     body: CheckCompatibilityRequest,
     registry: SchemaRegistry = Depends(get_registry),
-):
+) -> Any:
     result = await registry.check_compatibility(subject, body.schema_definition, body.mode)
     return result
 
@@ -118,7 +119,7 @@ async def check_compatibility(
 # ── Migrations ────────────────────────────────────────────────────────────────
 
 @router.get("/subjects/{subject}/migrations", tags=["migrations"])
-async def list_migrations(subject: str, registry: SchemaRegistry = Depends(get_registry)):
+async def list_migrations(subject: str, registry: SchemaRegistry = Depends(get_registry)) -> Any:
     return await registry.list_migrations(subject)
 
 
@@ -128,7 +129,7 @@ async def get_migration(
     from_version: int,
     to_version: int,
     registry: SchemaRegistry = Depends(get_registry),
-):
+) -> Any:
     m = await registry.get_migration(subject, from_version, to_version)
     if m is None:
         raise HTTPException(status_code=404, detail="Migration not found")
@@ -141,7 +142,7 @@ async def generate_migration(
     from_version: int,
     to_version: int,
     registry: SchemaRegistry = Depends(get_registry),
-):
+) -> Any:
     sv_from = await registry.get_schema(subject, from_version)
     sv_to = await registry.get_schema(subject, to_version)
     if sv_from is None or sv_to is None:
@@ -159,7 +160,7 @@ async def upload_dsl_migration(
     to_version: int,
     body: DSLMigrationRequest,
     registry: SchemaRegistry = Depends(get_registry),
-):
+) -> Any:
     dsl = TransformationDSL()
     try:
         steps = dsl.parse(body.dsl_source)
@@ -182,7 +183,7 @@ async def migrate_payload(
     subject: str,
     body: MigratePayloadRequest,
     registry: SchemaRegistry = Depends(get_registry),
-):
+) -> dict[str, Any]:
     chain = await registry.build_migration_chain(subject, body.from_version, body.to_version)
     if not chain:
         raise HTTPException(
@@ -201,7 +202,7 @@ async def replay_events(
     subject: str,
     body: ReplayRequest,
     registry: SchemaRegistry = Depends(get_registry),
-):
+) -> Any:
     events = [
         TransformEvent(
             event_id=e.get("event_id", str(i)),
@@ -213,7 +214,7 @@ async def replay_events(
     ]
     engine = ReplayEngine(registry)
     try:
-        result = await engine.replay(subject, events, body.target_version, body.validate)
+        result = await engine.replay(subject, events, body.target_version, body.validate_schema)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return result

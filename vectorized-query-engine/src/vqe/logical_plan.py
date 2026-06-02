@@ -1,4 +1,5 @@
 """Logical plan nodes produced by the parser and transformed by the optimizer."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -26,7 +27,7 @@ class LogicalPlan:
 @dataclass
 class Scan(LogicalPlan):
     table: str
-    columns: Optional[List[str]] = None          # None = all columns
+    columns: Optional[List[str]] = None  # None = all columns
     pushed_predicates: List[Expr] = field(default_factory=list)
 
     def schema_names(self) -> list[str]:
@@ -156,7 +157,7 @@ class Join(LogicalPlan):
     left: LogicalPlan
     right: LogicalPlan
     condition: Expr
-    join_type: str = "INNER"   # INNER | LEFT | RIGHT
+    join_type: str = "INNER"  # INNER | LEFT | RIGHT
 
     def schema_names(self) -> list[str]:
         return self.left.schema_names() + self.right.schema_names()

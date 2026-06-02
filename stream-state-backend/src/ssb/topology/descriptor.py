@@ -39,7 +39,9 @@ class OperatorDescriptor:
         )
 
     def __hash__(self) -> int:
-        return hash((self.operator_id, tuple(sorted(self.state_names)), self.parallelism))
+        return hash(
+            (self.operator_id, tuple(sorted(self.state_names)), self.parallelism)
+        )
 
     def has_changed(self, other: "OperatorDescriptor") -> bool:
         """Return True if *other* is a modified version of *self*."""

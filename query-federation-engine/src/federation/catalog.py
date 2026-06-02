@@ -25,8 +25,8 @@ class ColumnDef:
 
 @dataclass
 class TableSchema:
-    source: str          # source name, e.g. "postgres"
-    table: str           # table name, e.g. "orders"
+    source: str  # source name, e.g. "postgres"
+    table: str  # table name, e.g. "orders"
     source_type: SourceType
     columns: list[ColumnDef]
     estimated_rows: int = 100_000
@@ -53,7 +53,9 @@ class SchemaCatalog:
         self._tables: dict[str, TableSchema] = {}
         self._sources: dict[str, dict[str, Any]] = {}
 
-    def register_source(self, name: str, source_type: SourceType, connection: dict[str, Any]) -> None:
+    def register_source(
+        self, name: str, source_type: SourceType, connection: dict[str, Any]
+    ) -> None:
         self._sources[name] = {"type": source_type, "connection": connection}
 
     def register_table(self, schema: TableSchema) -> None:
@@ -67,7 +69,7 @@ class SchemaCatalog:
     def get_source_connection(self, source_name: str) -> dict[str, Any]:
         if source_name not in self._sources:
             raise KeyError(f"Unknown source: {source_name!r}")
-        return self._sources[source_name]["connection"]
+        return self._sources[source_name]["connection"]  # type: ignore[no-any-return]
 
     def list_tables(self) -> list[str]:
         return list(self._tables.keys())

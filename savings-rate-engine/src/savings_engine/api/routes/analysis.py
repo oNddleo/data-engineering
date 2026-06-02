@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -13,6 +14,7 @@ router = APIRouter()
 
 
 # ── Pydantic response models ───────────────────────────────────────────────────
+
 
 class TrendPointOut(BaseModel):
     scraped_at: datetime
@@ -52,6 +54,7 @@ class BestRatesTableOut(BaseModel):
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
 
+
 @router.get("/trends/{bank_code}", response_model=TrendOut)
 def rate_trend(
     bank_code: str,
@@ -59,7 +62,7 @@ def rate_trend(
     rate_type: str = Query("standard"),
     days_back: int = Query(90, ge=7, le=365, description="How many days of history to include"),
     db: Session = Depends(get_db),
-):
+) -> Any:
     """
     Time-series trend for a specific bank + term.
     Returns change deltas (7d / 30d / 90d) and directional signal.
@@ -104,7 +107,7 @@ def compare(
     rate_type: str = Query("standard"),
     top_n: int = Query(10, ge=1, le=50),
     db: Session = Depends(get_db),
-):
+) -> Any:
     """Rank all banks by rate for a given term."""
     repo = RateRepository(db)
     comparisons = compare_banks(repo, term_days, rate_type=rate_type, top_n=top_n)
@@ -129,7 +132,7 @@ def best_table(
         description="Comma-separated list of term_days, e.g. 30,90,180,365",
     ),
     db: Session = Depends(get_db),
-):
+) -> Any:
     """Best rates across multiple terms in one call — ideal for a dashboard overview."""
     try:
         term_list = [int(t.strip()) for t in terms.split(",")]

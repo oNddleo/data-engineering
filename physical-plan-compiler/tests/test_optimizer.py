@@ -47,6 +47,7 @@ def test_filter_pushdown_through_join(small_catalog):
         "WHERE o_totalprice > 100",
         small_catalog,
     )
+
     # After pushdown the join should see a smaller orders input.
     # The plan tree should contain a Filter under a HashJoin (rather than
     # Filter above HashJoin).

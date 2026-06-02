@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 class ConversionEdge:
     src: str
     dst: str
-    setup: float          # cost units
+    setup: float  # cost units
     per_byte: float
 
 
@@ -43,18 +43,18 @@ class ConversionRegistry:
 def default_conversion_registry() -> ConversionRegistry:
     reg = ConversionRegistry()
     for src, dst, setup, per_byte in [
-        ("spark",  "dbt",     20.0, 2.0e-9),
-        ("dbt",    "spark",   10.0, 1.5e-9),
-        ("spark",  "duckdb",   5.0, 2.0e-9),
-        ("duckdb", "spark",    3.0, 1.0e-9),
-        ("spark",  "flink",   20.0, 3.0e-9),
-        ("flink",  "spark",   20.0, 3.0e-9),
-        ("dbt",    "duckdb",   5.0, 2.0e-9),
-        ("duckdb", "dbt",      8.0, 2.5e-9),
-        ("dbt",    "flink",   25.0, 4.0e-9),
-        ("flink",  "dbt",     30.0, 4.0e-9),
-        ("duckdb", "flink",   25.0, 4.0e-9),
-        ("flink",  "duckdb",  20.0, 3.0e-9),
+        ("spark", "dbt", 20.0, 2.0e-9),
+        ("dbt", "spark", 10.0, 1.5e-9),
+        ("spark", "duckdb", 5.0, 2.0e-9),
+        ("duckdb", "spark", 3.0, 1.0e-9),
+        ("spark", "flink", 20.0, 3.0e-9),
+        ("flink", "spark", 20.0, 3.0e-9),
+        ("dbt", "duckdb", 5.0, 2.0e-9),
+        ("duckdb", "dbt", 8.0, 2.5e-9),
+        ("dbt", "flink", 25.0, 4.0e-9),
+        ("flink", "dbt", 30.0, 4.0e-9),
+        ("duckdb", "flink", 25.0, 4.0e-9),
+        ("flink", "duckdb", 20.0, 3.0e-9),
     ]:
         reg.register(ConversionEdge(src=src, dst=dst, setup=setup, per_byte=per_byte))
     return reg

@@ -54,7 +54,7 @@ class MigrationTask:
         self.status: MigrationStatus = MigrationStatus.PENDING
         self.progress: tuple[int, int] = (0, 0)
         self.error: Exception | None = None
-        self._task: asyncio.Task | None = None
+        self._task: asyncio.Task[None] | None = None
         self.started_at: float | None = None
         self.completed_at: float | None = None
 
@@ -62,7 +62,9 @@ class MigrationTask:
     # Public API
     # ------------------------------------------------------------------
 
-    def start(self, loop: asyncio.AbstractEventLoop | None = None) -> asyncio.Task:
+    def start(
+        self, loop: asyncio.AbstractEventLoop | None = None
+    ) -> asyncio.Task[None]:
         """Schedule the migration on *loop* (or the running loop)."""
         if self._task is not None:
             return self._task
@@ -218,7 +220,7 @@ class TopologyMigrator:
         self._queue: asyncio.Queue[MigrationTask] = asyncio.Queue()
         self._history: list[MigrationTask] = []
         self._active: MigrationTask | None = None
-        self._worker_task: asyncio.Task | None = None
+        self._worker_task: asyncio.Task[None] | None = None
 
     def start(self) -> None:
         """Start the serial migration worker."""

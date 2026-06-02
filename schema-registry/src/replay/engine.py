@@ -131,7 +131,7 @@ class ReplayEngine:
         subject: str,
         from_version: int,
         to_version: int,
-    ) -> list:
+    ) -> list[Any]:
         """Walk version-by-version and auto-generate missing migrations."""
 
         versions = await self.registry.list_versions(subject)

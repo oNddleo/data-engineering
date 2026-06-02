@@ -1,4 +1,5 @@
 """Parse PostgreSQL EXPLAIN (ANALYZE, FORMAT JSON) output into PlanNode trees."""
+
 from __future__ import annotations
 
 import json

@@ -10,9 +10,11 @@ Training ↔ serving consistency is enforced structurally:
   - Kafka offset is committed only after both writes succeed.
   - point_in_time_join() in OfflineStore prevents label leakage.
 """
+
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
+from typing import Any
 
 import pandas as pd
 import structlog
@@ -62,7 +64,8 @@ class ConsistencyManager:
             return 0
 
         feature_cols = [
-            c for c in df.columns
+            c
+            for c in df.columns
             if c not in ("entity_id", "feature_group", "event_timestamp", "write_timestamp", "date")
         ]
         # Latest value per entity
@@ -123,7 +126,7 @@ class ConsistencyManager:
         group: str,
         entity_ids: list[str],
         tolerance: float = 1e-4,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Compare the online (Redis) values against the latest offline (Parquet)
         values for the same entities.  Returns a drift report.
@@ -135,13 +138,12 @@ class ConsistencyManager:
             return {"status": "no_offline_data", "entities_checked": 0}
 
         feature_cols = [
-            c for c in offline_df.columns
+            c
+            for c in offline_df.columns
             if c not in ("entity_id", "feature_group", "event_timestamp", "write_timestamp", "date")
         ]
         latest_offline = (
-            offline_df.sort_values("event_timestamp")
-            .groupby("entity_id")[feature_cols]
-            .last()
+            offline_df.sort_values("event_timestamp").groupby("entity_id")[feature_cols].last()
         )
 
         drifted = []
@@ -156,20 +158,24 @@ class ConsistencyManager:
                     continue
                 try:
                     if abs(float(online_val) - float(offline_val)) > tolerance:
-                        drifted.append({
-                            "entity_id": entity_id,
-                            "feature": feat,
-                            "online": online_val,
-                            "offline": offline_val,
-                        })
+                        drifted.append(
+                            {
+                                "entity_id": entity_id,
+                                "feature": feat,
+                                "online": online_val,
+                                "offline": offline_val,
+                            }
+                        )
                 except (TypeError, ValueError):
                     if online_val != offline_val:
-                        drifted.append({
-                            "entity_id": entity_id,
-                            "feature": feat,
-                            "online": online_val,
-                            "offline": offline_val,
-                        })
+                        drifted.append(
+                            {
+                                "entity_id": entity_id,
+                                "feature": feat,
+                                "online": online_val,
+                                "offline": offline_val,
+                            }
+                        )
 
         return {
             "status": "ok" if not drifted else "drift_detected",

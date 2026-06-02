@@ -29,8 +29,8 @@ class PipelineResult:
         success: bool,
         reports: dict[str, pd.DataFrame],
         output_files: dict[str, Any],
-        reconciliation: list,
-        audit_summary: dict,
+        reconciliation: list[Any],
+        audit_summary: dict[str, Any],
         warnings: list[str],
         errors: list[str],
     ):

@@ -1,4 +1,6 @@
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,7 +11,7 @@ from .routes import analysis, banks, rates
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     init_db()
     yield
 
@@ -32,12 +34,12 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    app.include_router(banks.router,    prefix="/banks",    tags=["Banks"])
-    app.include_router(rates.router,    prefix="/rates",    tags=["Rates"])
+    app.include_router(banks.router, prefix="/banks", tags=["Banks"])
+    app.include_router(rates.router, prefix="/rates", tags=["Rates"])
     app.include_router(analysis.router, prefix="/analysis", tags=["Analysis"])
 
     @app.get("/health", tags=["Meta"])
-    def health():
+    def health() -> Any:
         return {"status": "ok"}
 
     return app

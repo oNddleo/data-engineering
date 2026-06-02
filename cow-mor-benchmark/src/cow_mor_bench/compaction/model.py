@@ -8,7 +8,7 @@ cheaper than the accumulated read-amplification cost?
 from __future__ import annotations
 
 from dataclasses import dataclass
-
+from typing import Any
 
 
 @dataclass
@@ -19,12 +19,12 @@ class CompactionCostEstimate:
     estimated_compaction_s: float
 
     # Accumulated read overhead before compaction
-    read_amplification_factor: float    # ratio of bytes read vs ideal (no delta)
-    delta_merge_overhead_s: float       # cumulative extra time spent merging deltas
+    read_amplification_factor: float  # ratio of bytes read vs ideal (no delta)
+    delta_merge_overhead_s: float  # cumulative extra time spent merging deltas
 
     # Break-even analysis
-    break_even_ops: int                 # mutations before compaction pays off
-    roi_ratio: float                    # (saved_read_time) / compaction_cost
+    break_even_ops: int  # mutations before compaction pays off
+    roi_ratio: float  # (saved_read_time) / compaction_cost
 
     # Recommendation
     should_compact_now: bool
@@ -34,9 +34,10 @@ class CompactionCostEstimate:
 @dataclass
 class ClusterConfig:
     """Hardware/cluster parameters for cost estimation."""
-    disk_read_mb_s: float = 500.0       # sequential read throughput MB/s
-    disk_write_mb_s: float = 300.0      # sequential write throughput MB/s
-    cpu_sort_mb_s: float = 800.0        # sort/merge throughput MB/s (in-memory)
+
+    disk_read_mb_s: float = 500.0  # sequential read throughput MB/s
+    disk_write_mb_s: float = 300.0  # sequential write throughput MB/s
+    cpu_sort_mb_s: float = 800.0  # sort/merge throughput MB/s (in-memory)
     merge_overhead_factor: float = 1.3  # extra CPU cost for row-level merge
 
 
@@ -145,16 +146,18 @@ def build_amplification_curve(
     bytes_per_delta_file: int,
     max_delta_files: int = 50,
     cluster: ClusterConfig = DEFAULT_CLUSTER,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """Return a series mapping delta file count → read amplification factor."""
     curve = []
     ideal = data_bytes / (cluster.disk_read_mb_s * 1024 * 1024)
     for n in range(0, max_delta_files + 1):
         delta_bytes = n * bytes_per_delta_file
         actual = model_mor_read_cost(data_bytes, delta_bytes, n, cluster)
-        curve.append({
-            "delta_files": n,
-            "amplification": actual / max(ideal, 1e-9),
-            "extra_latency_ms": (actual - ideal) * 1000,
-        })
+        curve.append(
+            {
+                "delta_files": n,
+                "amplification": actual / max(ideal, 1e-9),
+                "extra_latency_ms": (actual - ideal) * 1000,
+            }
+        )
     return curve

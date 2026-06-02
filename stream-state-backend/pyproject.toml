@@ -37,3 +37,14 @@ testpaths = ["tests"]
 
 [tool.hatch.envs.default]
 features = ["dev"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+
+[[tool.mypy.overrides]]
+module = [
+    "sortedcontainers.*",
+    "rocksdb.*",
+]
+ignore_missing_imports = true

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -83,7 +84,7 @@ class ReportWriter:
 
     # ------------------------------------------------------------------
     @staticmethod
-    def _style_sheet(ws, df: pd.DataFrame) -> None:
+    def _style_sheet(ws: Any, df: pd.DataFrame) -> None:
         """Apply basic column widths to the worksheet."""
         try:
             from openpyxl.styles import Font, PatternFill, Alignment

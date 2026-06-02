@@ -9,6 +9,7 @@ Message schema (JSON):
   "event_ts":   1714000000000   # epoch ms
 }
 """
+
 from __future__ import annotations
 
 import json
@@ -32,7 +33,7 @@ class FeatureProducer:
         conf = {
             "bootstrap.servers": bootstrap_servers,
             "acks": "1",
-            "linger.ms": "0",          # no batching delay
+            "linger.ms": "0",  # no batching delay
             "compression.type": "snappy",
             "queue.buffering.max.messages": 100_000,
             **kafka_kwargs,
@@ -61,9 +62,7 @@ class FeatureProducer:
         # poll to trigger delivery callbacks without blocking
         self._producer.poll(0)
 
-    def publish_batch(
-        self, events: list[tuple[str, str, dict[str, Any]]]
-    ) -> None:
+    def publish_batch(self, events: list[tuple[str, str, dict[str, Any]]]) -> None:
         """Publish many events; flushes at end."""
         ts_ms = int(time.time() * 1000)
         for group, entity_id, features in events:

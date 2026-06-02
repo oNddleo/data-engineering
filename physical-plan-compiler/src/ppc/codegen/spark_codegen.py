@@ -21,9 +21,19 @@ if TYPE_CHECKING:
     from ppc.ir.physical import PhysicalNode, PhysicalPlan
 
 _SPARK_OP = {
-    "=": "==", "!=": "!=", "<": "<", "<=": "<=", ">": ">", ">=": ">=",
-    "+": "+", "-": "-", "*": "*", "/": "/", "%": "%",
-    "AND": "&", "OR": "|",
+    "=": "==",
+    "!=": "!=",
+    "<": "<",
+    "<=": "<=",
+    ">": ">",
+    ">=": ">=",
+    "+": "+",
+    "-": "-",
+    "*": "*",
+    "/": "/",
+    "%": "%",
+    "AND": "&",
+    "OR": "|",
 }
 
 
@@ -82,8 +92,7 @@ def _emit_node(node: PhysicalNode, varname: str) -> tuple[list[str], str]:
         r_stmts, r_var = _emit_node(right, f"{varname}_r")
         on_expr = _expr_to_spark(node.on)
         stmt = (
-            f'{varname} = {l_var}.join({r_var}, on={on_expr}, '
-            f'how="{node.join_type.lower()}")'
+            f"{varname} = {l_var}.join({r_var}, on={on_expr}, " f'how="{node.join_type.lower()}")'
         )
         return (l_stmts + r_stmts + [stmt], varname)
 
@@ -97,7 +106,10 @@ def _emit_node(node: PhysicalNode, varname: str) -> tuple[list[str], str]:
         if node.src_engine == "spark":
             return ([*child_stmts, f"{varname} = {child_var}"], varname)
         return (
-            [*child_stmts, f'{varname} = spark.read.parquet("/tmp/conversion_{node.src_engine}_to_spark.parquet")  # converted upstream'],
+            [
+                *child_stmts,
+                f'{varname} = spark.read.parquet("/tmp/conversion_{node.src_engine}_to_spark.parquet")  # converted upstream',
+            ],
             varname,
         )
 

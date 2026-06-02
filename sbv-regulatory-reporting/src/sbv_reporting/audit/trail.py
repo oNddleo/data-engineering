@@ -19,16 +19,17 @@ from sbv_reporting.utils.config import get_config
 
 try:
     import numpy as np
-    _NP_TYPES = (np.integer, np.floating, np.bool_)
+    _NP_TYPES: tuple[type, ...] = (np.integer, np.floating, np.bool_)
 except ImportError:
     _NP_TYPES = ()
 
 
 class _SafeEncoder(json.JSONEncoder):
     """Serialise NumPy scalars and other non-standard types."""
-    def default(self, obj):
+    def default(self, obj: Any) -> Any:
         if _NP_TYPES and isinstance(obj, _NP_TYPES):
-            return obj.item()
+            np_obj: Any = obj
+            return np_obj.item()
         return super().default(obj)
 
 
@@ -57,7 +58,7 @@ class AuditTrail:
         details: dict[str, Any],
         operator: str = "SYSTEM",
         level: str = "INFO",
-    ) -> dict:
+    ) -> dict[str, Any]:
         entry: dict[str, Any] = {
             "run_id": self.run_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -106,7 +107,7 @@ class AuditTrail:
         return len(errors) == 0, errors
 
     # ------------------------------------------------------------------
-    def summary(self) -> dict:
+    def summary(self) -> dict[str, Any]:
         lines = self.log_path.read_text(encoding="utf-8").strip().splitlines()
         events: dict[str, int] = {}
         for raw in lines:

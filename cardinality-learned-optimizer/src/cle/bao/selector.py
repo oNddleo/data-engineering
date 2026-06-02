@@ -7,11 +7,12 @@ For each incoming query:
   4. Feed actual latency back to both the bandit and the trainer
   5. If adaptive recompile fires, record the speedup separately
 """
+
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 from ..adaptive.recompiler import AdaptiveRecompiler, RecompileResult
 from ..db.connector import ConnectionPool
@@ -28,7 +29,7 @@ logger = logging.getLogger(__name__)
 class BaoResult:
     sql: str
     chosen_arm: int
-    hint_set: dict
+    hint_set: dict[str, Any]
     record: ExecutionRecord
     recompile_result: Optional[RecompileResult]
     latency_ms: float
@@ -58,6 +59,7 @@ class BaoSelector:
         self.recompiler = AdaptiveRecompiler(pool, threshold=adaptive_threshold)
 
         model = trainer.model
+        self.bandit: NeuralBandit | ThompsonSamplingBandit
         if use_neural_bandit:
             self.bandit = NeuralBandit(model, num_arms=len(BAO_HINT_SETS))
         else:
@@ -90,7 +92,9 @@ class BaoSelector:
         # Execute (with adaptive recompile if enabled)
         if self.adaptive:
             recompile_result = self.recompiler.run(
-                sql, hint_id=chosen_arm, base_hints=hints or None,
+                sql,
+                hint_id=chosen_arm,
+                base_hints=hints or None,
                 timeout_ms=self.default_timeout_ms,
             )
             record = recompile_result.recompiled_record or recompile_result.original_record
@@ -103,8 +107,12 @@ class BaoSelector:
                     self.default_timeout_ms,
                 )
                 record = ExecutionRecord(
-                    sql=sql, hint_sql=None, plan_dry=default_plan,
-                    plan_analyzed=plan, latency_ms=latency_ms, hint_id=chosen_arm,
+                    sql=sql,
+                    hint_sql=None,
+                    plan_dry=default_plan,
+                    plan_analyzed=plan,
+                    latency_ms=latency_ms,
+                    hint_id=chosen_arm,
                 )
                 recompile_result = None
                 adaptive_speedup = 1.0
@@ -162,7 +170,10 @@ class BaoSelector:
                 results.append(r)
                 logger.info(
                     "  arm=%d latency=%.1fms speedup=%.2f× adaptive=%.2f×",
-                    r.chosen_arm, r.latency_ms, r.speedup_vs_default, r.adaptive_speedup,
+                    r.chosen_arm,
+                    r.latency_ms,
+                    r.speedup_vs_default,
+                    r.adaptive_speedup,
                 )
             except Exception as e:
                 logger.error("Query %d failed: %s", i + 1, e)
