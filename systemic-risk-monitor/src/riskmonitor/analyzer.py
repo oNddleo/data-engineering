@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from riskmonitor.algorithms import (
+from .algorithms import (
     CascadeResult,
     Cycle,
     betweenness_centrality,
@@ -18,7 +18,7 @@ from riskmonitor.algorithms import (
 )
 
 if TYPE_CHECKING:
-    from riskmonitor.graph import ExposureGraph
+    from .graph import ExposureGraph
 
 
 @dataclass
@@ -60,7 +60,7 @@ class RiskReport:
         """Maximum notional across all detected cycles."""
         if not self.cycles:
             return 0.0
-        return max(c.notional for c in self.cycles)
+        return float(max(c.notional for c in self.cycles))
 
     def to_dict(self) -> dict[str, object]:
         """Return a JSON-serialisable representation."""

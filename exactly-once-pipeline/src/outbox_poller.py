@@ -19,7 +19,6 @@ from typing import Any
 
 import structlog
 from confluent_kafka import KafkaException, Producer
-
 from src.config import settings
 from src.db import get_conn
 from src.recovery.failure_injector import FailureInjector
@@ -76,7 +75,7 @@ class OutboxPoller:
             try:
                 # Advisory lock prevents concurrent pollers from duplicating work
                 cur.execute("SELECT pg_try_advisory_xact_lock(42)")
-                (locked,) = cur.fetchone()  # type: ignore[misc]
+                (locked,) = cur.fetchone()
                 if not locked:
                     conn.rollback()
                     return 0
@@ -110,7 +109,7 @@ class OutboxPoller:
             finally:
                 cur.close()
 
-    def _publish_batch(self, rows: list, cur: Any) -> None:
+    def _publish_batch(self, rows: list[Any], cur: Any) -> None:
         self._producer.begin_transaction()
         published_ids: list[int] = []
 

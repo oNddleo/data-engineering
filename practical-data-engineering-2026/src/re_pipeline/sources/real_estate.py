@@ -11,6 +11,7 @@ Two modes:
 
 Both yield identical schemas so downstream Iceberg tables don't care.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -18,6 +19,7 @@ import random
 from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import dlt
 from bs4 import BeautifulSoup
@@ -34,17 +36,17 @@ SWISS_CITIES = [
 PROPERTY_TYPES = ["apartment", "house", "loft", "studio", "chalet"]
 
 
-def _fingerprint(row: dict) -> str:
+def _fingerprint(row: dict[str, Any]) -> str:
     key = f"{row['id']}|{row['price']}"
     return hashlib.sha1(key.encode()).hexdigest()
 
 
-@dlt.source(name="real_estate")
-def real_estate_source(seed: int = 42, n_listings: int = 500, churn_pct: float = 0.15):
+@dlt.source(name="real_estate")  # type: ignore[misc]
+def real_estate_source(seed: int = 42, n_listings: int = 500, churn_pct: float = 0.15) -> Any:
     return synthetic_listings(seed=seed, n_listings=n_listings, churn_pct=churn_pct)
 
 
-@dlt.resource(
+@dlt.resource(  # type: ignore[misc]
     name="listings",
     write_disposition="merge",
     primary_key="id",
@@ -54,7 +56,7 @@ def synthetic_listings(
     seed: int = 42,
     n_listings: int = 500,
     churn_pct: float = 0.15,
-) -> Iterator[dict]:
+) -> Iterator[dict[str, Any]]:
     """
     Simulate a daily 'scrape'. On each run:
       - All listings are yielded.
@@ -97,12 +99,12 @@ def synthetic_listings(
         yield row
 
 
-@dlt.resource(
+@dlt.resource(  # type: ignore[misc]
     name="listings",
     write_disposition="merge",
     primary_key="id",
 )
-def scrape_listings_from_html(html_path: str | Path) -> Iterator[dict]:
+def scrape_listings_from_html(html_path: str | Path) -> Iterator[dict[str, Any]]:
     """
     BeautifulSoup pattern against a local HTML fixture. Matches
     `<div class="listing" data-id="..." data-price="...">` plus child tags.
@@ -112,13 +114,18 @@ def scrape_listings_from_html(html_path: str | Path) -> Iterator[dict]:
     soup = BeautifulSoup(html, "html.parser")
     scraped_at = datetime.now(UTC)
     for node in soup.select("div.listing"):
-        row = {
+        title_tag = node.select_one(".title")
+        city_tag = node.select_one(".city")
+        size_tag = node.select_one(".size")
+        rooms_tag = node.select_one(".rooms")
+        data_price = node.get("data-price")
+        row: dict[str, Any] = {
             "id": node.get("data-id"),
-            "title": node.select_one(".title").get_text(strip=True),
-            "city": node.select_one(".city").get_text(strip=True),
-            "price": int(node.get("data-price")),
-            "size_m2": int(node.select_one(".size").get_text(strip=True)),
-            "rooms": float(node.select_one(".rooms").get_text(strip=True)),
+            "title": title_tag.get_text(strip=True) if title_tag is not None else "",
+            "city": city_tag.get_text(strip=True) if city_tag is not None else "",
+            "price": int(str(data_price)) if data_price is not None else 0,
+            "size_m2": int(size_tag.get_text(strip=True)) if size_tag is not None else 0,
+            "rooms": float(rooms_tag.get_text(strip=True)) if rooms_tag is not None else 0.0,
             "property_type": node.get("data-type", "apartment"),
             "currency": "CHF",
             "listing_type": "buy",

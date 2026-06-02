@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from exactlyonce.coordinator import SagaState, TransactionCoordinator
-from exactlyonce.dlq import DeadLetterQueue, DLQEntry
-from exactlyonce.idempotency import IdempotencyLog
-from exactlyonce.outbox import OutboxEntry, OutboxStore
-from exactlyonce.pipeline import ExactlyOncePipeline, SagaResult
-from exactlyonce.recovery import RecoveryAgent
+from .coordinator import SagaState, TransactionCoordinator
+from .dlq import DeadLetterQueue, DLQEntry
+from .idempotency import IdempotencyLog
+from .outbox import OutboxEntry, OutboxStore
+from .pipeline import ExactlyOncePipeline, SagaResult
+from .recovery import RecoveryAgent
 
 __all__ = [
     "DeadLetterQueue",

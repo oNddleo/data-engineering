@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-import extruct  # type: ignore[import-not-found]
+import extruct
 from price_parser import Price
 from selectolax.parser import HTMLParser
 

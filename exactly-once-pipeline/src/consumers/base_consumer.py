@@ -15,12 +15,11 @@ from typing import TYPE_CHECKING, Any
 
 import structlog
 from confluent_kafka import Consumer, KafkaError, KafkaException, Producer
-from tenacity import retry, stop_after_attempt, wait_exponential
-
 from src.config import settings
 from src.coordinator.transaction_coordinator import TransactionCoordinator
 from src.db import transaction
 from src.recovery.failure_injector import FailureInjector, PermanentFailure
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 if TYPE_CHECKING:
     from src.models import TransactionStep
@@ -127,7 +126,7 @@ class BaseConsumer(ABC):
             )
             # Do NOT commit — message will be re-delivered
 
-    @retry(
+    @retry(  # type: ignore[misc]
         reraise=True,
         stop=stop_after_attempt(5),
         wait=wait_exponential(multiplier=0.5, min=0.5, max=30),

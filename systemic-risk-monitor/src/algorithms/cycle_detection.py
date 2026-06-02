@@ -26,7 +26,7 @@ class Cycle:
     risk_score: float  # normalized [0, 1]
 
 
-def build_digraph(edges: list[dict]) -> nx.DiGraph:
+def build_digraph(edges: list[dict[str, object]]) -> nx.DiGraph:
     """Build a weighted directed graph from NET_EXPOSURE edge records."""
     G = nx.DiGraph()
     for e in edges:
@@ -40,8 +40,8 @@ def build_digraph(edges: list[dict]) -> nx.DiGraph:
 
 
 def detect_cycles(
-    edges: list[dict],
-    min_cycle_length: int = None,
+    edges: list[dict[str, object]],
+    min_cycle_length: int | None = None,
     min_total_exposure: float = 100.0,  # $M
 ) -> list[Cycle]:
     """

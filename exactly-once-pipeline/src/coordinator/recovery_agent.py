@@ -11,7 +11,6 @@ from __future__ import annotations
 import time
 
 import structlog
-
 from src.coordinator.transaction_coordinator import TransactionCoordinator
 from src.db import transaction
 

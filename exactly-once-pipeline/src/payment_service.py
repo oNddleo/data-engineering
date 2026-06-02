@@ -10,7 +10,6 @@ from __future__ import annotations
 import json
 
 import structlog
-
 from src.db import transaction
 from src.models import PaymentEvent, TransactionState
 
@@ -68,7 +67,7 @@ class PaymentService:
                     (event.idempotency_key,),
                 )
                 state_row = cur.fetchone()
-                return TransactionState(**dict(state_row))  # type: ignore[arg-type]
+                return TransactionState(**dict(state_row))
 
             # ── 2. Outbox ──────────────────────────────────────────────
             cur.execute(
@@ -92,7 +91,7 @@ class PaymentService:
             )
             state_row = cur.fetchone()
 
-        state = TransactionState(**dict(state_row))  # type: ignore[arg-type]
+        state = TransactionState(**dict(state_row))
         log.info(
             "payment.created", payment_id=event.payment_id, transaction_id=state.transaction_id
         )

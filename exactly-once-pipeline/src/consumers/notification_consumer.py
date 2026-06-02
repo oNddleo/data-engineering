@@ -16,7 +16,6 @@ from typing import TYPE_CHECKING, Any
 
 import redis
 import structlog
-
 from src.config import settings
 from src.consumers.base_consumer import BaseConsumer
 from src.db import transaction

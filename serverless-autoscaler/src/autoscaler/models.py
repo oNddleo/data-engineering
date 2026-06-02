@@ -23,7 +23,7 @@ class JobDefinition:
     job_id: str
     name: str
     job_type: JobType
-    hpa_target: str          # name of the HPA object in k8s
+    hpa_target: str  # name of the HPA object in k8s
     cron_expression: str
     namespace: str = "default"
     tags: dict[str, str] = field(default_factory=dict)

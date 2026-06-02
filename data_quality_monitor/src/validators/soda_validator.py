@@ -126,7 +126,7 @@ def _parse_soda_results(scan) -> list[CheckResult]:
             status = status_map.get(str(outcome).lower(), ValidationStatus.FAILED)
             results.append(CheckResult(
                 check_name=str(getattr(check_result, "name", "unknown")),
-                expectation_type=str(getattr(check_result, "check_cfg", {.__class__.__name__ if hasattr(check_result, "check_cfg") else "unknown"})),
+                expectation_type=type(getattr(check_result, "check_cfg", None)).__name__ if hasattr(check_result, "check_cfg") else "unknown",
                 status=status,
                 details={},
             ))

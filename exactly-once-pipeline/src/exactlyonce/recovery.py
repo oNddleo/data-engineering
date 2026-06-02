@@ -5,10 +5,10 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from exactlyonce.coordinator import SagaState, TransactionCoordinator
+from .coordinator import SagaState, TransactionCoordinator
 
 if TYPE_CHECKING:
-    from exactlyonce.dlq import DeadLetterQueue
+    from .dlq import DeadLetterQueue
 
 # States that are considered "terminal" (no recovery needed)
 _TERMINAL_STATES = {

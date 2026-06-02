@@ -52,7 +52,7 @@ PRUNE_INTERVAL = 300.0  # seconds between TRANSFERS edge pruning
 async def ingest_loop(
     generator: TransactionGenerator,
     mg: MemgraphClient,
-    state: dict,
+    state: dict[str, Any],
 ) -> None:
     """Continuously pull transactions from the generator and write to Memgraph."""
     tx_count = 0
@@ -67,7 +67,7 @@ async def ingest_loop(
 async def analysis_loop(
     mg: MemgraphClient,
     alert_engine: AlertEngine,
-    state: dict,
+    state: dict[str, Any],
 ) -> None:
     """Periodically run graph algorithms and emit alerts."""
     while True:
@@ -154,7 +154,7 @@ async def prune_loop(mg: MemgraphClient) -> None:
             log.warning("Prune error: %s", exc)
 
 
-def _log_summary(metrics: dict, cycles: list) -> None:
+def _log_summary(metrics: dict[str, Any], cycles: list[Any]) -> None:
     n_cycles = len(cycles)
     conc = metrics["concentration"]
     cascade = metrics["worst_cascade"]

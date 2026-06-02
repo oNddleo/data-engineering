@@ -42,7 +42,7 @@ class ConcentrationMetrics:
     is_concentrated: bool = False
 
 
-def compute_node_metrics(edges: list[dict]) -> list[NodeMetrics]:
+def compute_node_metrics(edges: list[dict[str, object]]) -> list[NodeMetrics]:
     G = build_digraph(edges)
     if G.number_of_nodes() == 0:
         return []
@@ -79,7 +79,7 @@ def compute_node_metrics(edges: list[dict]) -> list[NodeMetrics]:
     return metrics
 
 
-def compute_concentration(edges: list[dict]) -> ConcentrationMetrics:
+def compute_concentration(edges: list[dict[str, object]]) -> ConcentrationMetrics:
     """
     Compute HHI and Gini coefficient across the lending exposure distribution.
     Uses total outbound exposure per institution as market share.

@@ -103,7 +103,7 @@ class MemgraphClient:
                 ts=tx.timestamp,
             )
 
-    async def get_all_nodes(self) -> list[dict]:
+    async def get_all_nodes(self) -> list[dict[str, object]]:
         async with self._driver.session() as session:
             result = await session.run(
                 "MATCH (i:Institution) RETURN i.id AS id, i.name AS name, "
@@ -111,7 +111,7 @@ class MemgraphClient:
             )
             return [dict(r) async for r in result]
 
-    async def get_all_edges(self) -> list[dict]:
+    async def get_all_edges(self) -> list[dict[str, object]]:
         """Return aggregated NET_EXPOSURE edges."""
         async with self._driver.session() as session:
             result = await session.run(
@@ -123,7 +123,7 @@ class MemgraphClient:
             )
             return [dict(r) async for r in result]
 
-    async def get_recent_transactions(self, limit: int = 50) -> list[dict]:
+    async def get_recent_transactions(self, limit: int = 50) -> list[dict[str, object]]:
         async with self._driver.session() as session:
             result = await session.run(
                 """
@@ -138,7 +138,7 @@ class MemgraphClient:
             )
             return [dict(r) async for r in result]
 
-    async def get_node_exposures(self, node_id: str) -> dict:
+    async def get_node_exposures(self, node_id: str) -> dict[str, object]:
         """Total outbound and inbound for a single institution."""
         async with self._driver.session() as session:
             out_res = await session.run(

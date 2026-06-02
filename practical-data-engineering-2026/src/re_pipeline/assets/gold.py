@@ -1,5 +1,8 @@
 """Gold: BI-ready aggregates powering the dashboard."""
+
 from __future__ import annotations
+
+from typing import Any
 
 import duckdb
 from dagster import MaterializeResult, asset
@@ -7,13 +10,13 @@ from dagster import MaterializeResult, asset
 from ..iceberg_utils import overwrite_table, scan
 
 
-@asset(
+@asset(  # type: ignore[misc]
     group_name="gold",
     compute_kind="duckdb",
     deps=["silver_listings"],
     description="Per-city listing counts, median price, median CHF/m².",
 )
-def gold_city_stats(context) -> MaterializeResult:
+def gold_city_stats(context: Any) -> MaterializeResult:
     df = scan("silver_listings")
     con = duckdb.connect()
     con.register("s", df)
@@ -35,13 +38,13 @@ def gold_city_stats(context) -> MaterializeResult:
     return MaterializeResult(metadata={"rows": out.num_rows, "iceberg_table": full})
 
 
-@asset(
+@asset(  # type: ignore[misc]
     group_name="gold",
     compute_kind="duckdb",
     deps=["silver_listings"],
     description="Price-band distribution by city — drives the dashboard histogram.",
 )
-def gold_price_bands(context) -> MaterializeResult:
+def gold_price_bands(context: Any) -> MaterializeResult:
     df = scan("silver_listings")
     con = duckdb.connect()
     con.register("s", df)

@@ -29,10 +29,10 @@ class ContagionResult:
 
 
 def simulate_cascade(
-    edges: list[dict],
+    edges: list[dict[str, object]],
     seed_node: str,
-    shock_fraction: float = None,
-    cascade_threshold: float = None,
+    shock_fraction: float | None = None,
+    cascade_threshold: float | None = None,
 ) -> ContagionResult:
     """
     BFS cascade from seed_node.
@@ -103,7 +103,7 @@ def simulate_cascade(
     )
 
 
-def worst_case_cascade(edges: list[dict]) -> ContagionResult:
+def worst_case_cascade(edges: list[dict[str, object]]) -> ContagionResult:
     """Run cascade simulation for every node and return the worst outcome."""
     G = build_digraph(edges)
     if not G.nodes():

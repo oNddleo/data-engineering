@@ -24,7 +24,6 @@ from __future__ import annotations
 from typing import Any
 
 import structlog
-
 from src.db import transaction
 from src.models import TransactionStep
 

@@ -43,6 +43,7 @@ packages = ["src", "cli"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
+explicit_package_bases = true
 
 [[tool.mypy.overrides]]
 module = ["yaml.*", "jsonschema.*"]

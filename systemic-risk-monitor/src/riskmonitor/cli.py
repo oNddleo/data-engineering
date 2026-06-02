@@ -13,10 +13,10 @@ import argparse
 import json
 import sys
 
-from riskmonitor.alerts import AlertEngine
-from riskmonitor.analyzer import RiskAnalyzer
-from riskmonitor.graph import ExposureGraph
-from riskmonitor.simulator import TransactionSimulator, Transfer
+from .alerts import AlertEngine
+from .analyzer import RiskAnalyzer
+from .graph import ExposureGraph
+from .simulator import TransactionSimulator, Transfer
 
 # ---------------------------------------------------------------------------
 # Helpers

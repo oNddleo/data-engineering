@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from sortedcontainers import SortedList  # type: ignore[import-untyped]
+from sortedcontainers import SortedList
 
 
 class BTreeIndex:

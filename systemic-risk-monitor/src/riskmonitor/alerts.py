@@ -7,7 +7,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from riskmonitor.analyzer import RiskReport
+    from .analyzer import RiskReport
 
 
 class Severity(str, Enum):

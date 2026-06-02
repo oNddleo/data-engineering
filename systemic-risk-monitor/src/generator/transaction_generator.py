@@ -13,6 +13,7 @@ import time
 import uuid
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
+from typing import Any, cast
 
 import numpy as np
 
@@ -60,7 +61,7 @@ class Transaction:
     amount: float  # $M
     tx_type: str
     timestamp: float
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class InstitutionRegistry:
@@ -71,12 +72,13 @@ class InstitutionRegistry:
     def _build(self, n: int) -> None:
         idx = 0
         for tier, spec in INSTITUTION_TIERS.items():
-            count = min(spec["count"], n - idx)
+            count = min(cast(int, spec["count"]), n - idx)
             if count <= 0:
                 break
             for i in range(count):
                 inst_id = f"{spec['prefix']}-{i+1:02d}"
-                balance = random.uniform(*spec["balance_range"])
+                balance_range = cast(tuple[float, float], spec["balance_range"])
+                balance = random.uniform(*balance_range)
                 self.institutions[inst_id] = Institution(
                     id=inst_id,
                     name=f"{spec['prefix']} Institution {i+1}",
@@ -132,7 +134,7 @@ class TransactionGenerator:
         inst = self.registry.get(sender_id)
         # Amount as fraction of lending capacity, log-normal spread
         base = inst.lending_capacity * random.uniform(0.05, 0.40)
-        noise = np.random.lognormal(mean=0, sigma=0.5)
+        noise: float = float(np.random.lognormal(mean=0, sigma=0.5))
         return round(base * noise, 2)
 
     def next_transaction(self) -> Transaction:

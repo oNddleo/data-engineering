@@ -14,7 +14,6 @@ import random
 from typing import Any
 
 import structlog
-
 from src.config import settings
 
 log = structlog.get_logger(__name__)

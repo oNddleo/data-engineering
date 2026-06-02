@@ -1,4 +1,5 @@
 """One-shot seed outside Dagster. `python -m re_pipeline.seed`."""
+
 from __future__ import annotations
 
 from dagster import materialize

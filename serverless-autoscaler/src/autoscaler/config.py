@@ -17,14 +17,14 @@ class PredictorConfig:
 
 @dataclass
 class SchedulerConfig:
-    prewarm_lead_time_seconds: int = 300   # 5 min before scheduled start
+    prewarm_lead_time_seconds: int = 300  # 5 min before scheduled start
     poll_interval_seconds: int = 30
     job_registry_path: str = "/etc/autoscaler/jobs.yaml"
 
 
 @dataclass
 class HPAConfig:
-    kubeconfig_path: str | None = None   # None = in-cluster
+    kubeconfig_path: str | None = None  # None = in-cluster
     namespace: str = "default"
     scale_down_cooldown_seconds: int = 300
     scale_up_cooldown_seconds: int = 60
@@ -40,9 +40,9 @@ class MetricsStoreConfig:
 
 @dataclass
 class CostConfig:
-    cold_start_seconds: float = 120.0        # avg worker cold-start time
-    worker_cost_per_hour: float = 0.096      # USD, e.g. m5.xlarge spot
-    idle_prewarm_cost_factor: float = 0.25   # fraction of time workers idle during prewarm
+    cold_start_seconds: float = 120.0  # avg worker cold-start time
+    worker_cost_per_hour: float = 0.096  # USD, e.g. m5.xlarge spot
+    idle_prewarm_cost_factor: float = 0.25  # fraction of time workers idle during prewarm
 
 
 @dataclass

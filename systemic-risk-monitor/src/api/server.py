@@ -55,7 +55,7 @@ class ConnectionManager:
         self.active.remove(ws)
         log.info("WS client disconnected (%d total)", len(self.active))
 
-    async def broadcast(self, message: dict) -> None:
+    async def broadcast(self, message: dict[str, Any]) -> None:
         data = json.dumps(message)
         dead = []
         for ws in self.active:
@@ -70,7 +70,7 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-async def push_update(payload: dict) -> None:
+async def push_update(payload: dict[str, Any]) -> None:
     """Called by the monitor loop to broadcast state to WS clients."""
     await manager.broadcast(payload)
 
@@ -80,13 +80,13 @@ async def push_update(payload: dict) -> None:
 # ------------------------------------------------------------------ #
 
 
-@app.get("/api/health")
-async def health() -> dict:
+@app.get("/api/health")  # type: ignore[misc]
+async def health() -> dict[str, Any]:
     return {"status": "ok", "timestamp": time.time()}
 
 
-@app.get("/api/graph")
-async def get_graph() -> dict:
+@app.get("/api/graph")  # type: ignore[misc]
+async def get_graph() -> dict[str, Any]:
     mg = _state.get("memgraph")
     if not mg:
         raise HTTPException(503, "Graph DB not ready")
@@ -95,21 +95,21 @@ async def get_graph() -> dict:
     return {"nodes": nodes, "edges": edges}
 
 
-@app.get("/api/metrics")
-async def get_metrics() -> dict:
-    return _state.get("latest_metrics", {})
+@app.get("/api/metrics")  # type: ignore[misc]
+async def get_metrics() -> dict[str, Any]:
+    return dict(_state.get("latest_metrics", {}))
 
 
-@app.get("/api/alerts")
-async def get_alerts(limit: int = 50) -> dict:
+@app.get("/api/alerts")  # type: ignore[misc]
+async def get_alerts(limit: int = 50) -> dict[str, Any]:
     engine = _state.get("alert_engine")
     if not engine:
         return {"alerts": []}
     return {"alerts": engine.recent(limit)}
 
 
-@app.get("/api/institutions/{inst_id}")
-async def get_institution(inst_id: str) -> dict:
+@app.get("/api/institutions/{inst_id}")  # type: ignore[misc]
+async def get_institution(inst_id: str) -> dict[str, Any]:
     mg = _state.get("memgraph")
     registry = _state.get("registry")
     if not mg or not registry:
@@ -128,8 +128,8 @@ async def get_institution(inst_id: str) -> dict:
     }
 
 
-@app.post("/api/simulate/{inst_id}")
-async def simulate_contagion(inst_id: str, shock_pct: float = 0.30) -> dict:
+@app.post("/api/simulate/{inst_id}")  # type: ignore[misc]
+async def simulate_contagion(inst_id: str, shock_pct: float = 0.30) -> dict[str, Any]:
     from src.algorithms.contagion import simulate_cascade
 
     mg = _state.get("memgraph")
@@ -154,7 +154,7 @@ async def simulate_contagion(inst_id: str, shock_pct: float = 0.30) -> dict:
 # ------------------------------------------------------------------ #
 
 
-@app.websocket("/ws")
+@app.websocket("/ws")  # type: ignore[misc]
 async def websocket_endpoint(ws: WebSocket) -> None:
     await manager.connect(ws)
     # Send current state immediately on connect
@@ -173,7 +173,7 @@ async def websocket_endpoint(ws: WebSocket) -> None:
 # ------------------------------------------------------------------ #
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)  # type: ignore[misc]
 async def dashboard() -> HTMLResponse:
     import pathlib
 
@@ -183,7 +183,7 @@ async def dashboard() -> HTMLResponse:
     return HTMLResponse("<h1>Dashboard not found</h1>", status_code=404)
 
 
-def start(state: dict) -> None:
+def start(state: dict[str, Any]) -> None:
     global _state
     _state = state
     uvicorn.run(

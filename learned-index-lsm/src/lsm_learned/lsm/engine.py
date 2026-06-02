@@ -50,6 +50,7 @@ class LSMEngine:
         memtable_capacity: int = 100_000,
         index_strategy: IndexStrategy = "rmi",
     ) -> None:
+        self._tmpdir: tempfile.TemporaryDirectory[str] | None
         if data_dir is None:
             self._tmpdir = tempfile.TemporaryDirectory()
             self._dir = Path(self._tmpdir.name)
@@ -150,7 +151,7 @@ class LSMEngine:
         items = sorted(merged.items())
         use_rmi = self._strategy in ("rmi", "adaptive")
         builder = SSTableBuilder(path)
-        tbl = builder.build(items)  # type: ignore[arg-type]
+        tbl = builder.build(items)
         tbl.close()
         tbl = SSTable.open(path, use_rmi=use_rmi)
 

@@ -21,7 +21,7 @@ from .models import ColdStartSavingRecord, JobRun, JobStatus, ScalingAction
 logger = logging.getLogger(__name__)
 
 
-class Base(DeclarativeBase):
+class Base(DeclarativeBase):  # type: ignore[misc]
     pass
 
 
@@ -164,7 +164,7 @@ class MetricsStore:
                     "FROM cold_start_savings"
                 )
             ).scalar()
-        return float(result)
+        return float(result if result is not None else 0)
 
     def savings_by_job(self) -> dict[str, float]:
         with Session(self._engine) as s:
@@ -183,11 +183,7 @@ class MetricsStore:
     def purge_old_records(self) -> int:
         cutoff = datetime.utcnow() - timedelta(days=self._retention_days)
         with Session(self._engine) as s:
-            deleted = (
-                s.query(JobRunRow)
-                .filter(JobRunRow.finished_at < cutoff)
-                .delete()
-            )
+            deleted = int(s.query(JobRunRow).filter(JobRunRow.finished_at < cutoff).delete())
             s.commit()
         logger.info("Purged %d old job run records", deleted)
         return deleted

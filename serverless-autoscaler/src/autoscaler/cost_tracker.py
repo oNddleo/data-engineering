@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
+from typing import Any
 
 from .config import CostConfig
 from .metrics_store import MetricsStore
@@ -33,9 +34,7 @@ class CostTracker:
         worker_cost_per_second = self._cfg.worker_cost_per_hour / 3600.0
 
         cold_start_avoided_cost = (
-            workers_prewarmed
-            * self._cfg.cold_start_seconds
-            * worker_cost_per_second
+            workers_prewarmed * self._cfg.cold_start_seconds * worker_cost_per_second
         )
         prewarm_idle_cost = (
             workers_prewarmed
@@ -63,7 +62,7 @@ class CostTracker:
         )
         return record
 
-    def report(self) -> dict:
+    def report(self) -> dict[str, Any]:
         total = self._store.total_net_savings_usd()
         by_job = self._store.savings_by_job()
         return {

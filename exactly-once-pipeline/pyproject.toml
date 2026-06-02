@@ -30,7 +30,13 @@ ignore = ["ANN101", "ANN102", "ANN401"]
 
 [tool.mypy]
 strict = true
-files = ["src/exactlyonce"]
+mypy_path = "src"
+explicit_package_bases = true
+no_site_packages = true
+
+[[tool.mypy.overrides]]
+module = ["structlog.*", "confluent_kafka.*", "redis.*", "pydantic.*", "pydantic_settings.*", "psycopg2.*", "tenacity.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -30,3 +30,14 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B"]
 ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+mypy_path = "src"
+explicit_package_bases = true
+no_site_packages = true
+
+[[tool.mypy.overrides]]
+module = ["dlt.*", "faker.*", "pyarrow.*", "pyiceberg.*", "dagster.*", "bs4.*", "streamlit.*", "duckdb.*"]
+ignore_missing_imports = true

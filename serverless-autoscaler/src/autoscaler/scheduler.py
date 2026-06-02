@@ -48,8 +48,8 @@ class PredictiveScheduler:
         self._store = store
         self._cost = cost
         self._telemetry = telemetry
-        self._active_runs: dict[str, JobRun] = {}   # run_id → JobRun
-        self._prewarmed_jobs: set[str] = set()       # job_ids already prewarmed
+        self._active_runs: dict[str, JobRun] = {}  # run_id → JobRun
+        self._prewarmed_jobs: set[str] = set()  # job_ids already prewarmed
 
     # ------------------------------------------------------------------ #
     #  Entry point                                                         #
@@ -90,9 +90,7 @@ class PredictiveScheduler:
             self._prewarm(job, next_run_dt)
 
         # --- Start tracking if run window just opened ---------------------
-        if seconds_until <= 0 and job.job_id not in {
-            r.job_id for r in self._active_runs.values()
-        }:
+        if seconds_until <= 0 and job.job_id not in {r.job_id for r in self._active_runs.values()}:
             self._start_run(job, next_run_dt)
 
         # --- Mid-run adjustment -------------------------------------------
@@ -123,7 +121,9 @@ class PredictiveScheduler:
             )
             logger.info(
                 "Prewarmed job=%s workers=%d target_start=%s",
-                job.job_id, forecast.predicted_peak_workers, target_start.isoformat(),
+                job.job_id,
+                forecast.predicted_peak_workers,
+                target_start.isoformat(),
             )
 
     def _start_run(self, job: JobDefinition, scheduled_at: datetime) -> None:
@@ -200,12 +200,12 @@ class PredictiveScheduler:
 
         self._prewarmed_jobs.discard(job.job_id)
         self._telemetry.active_jobs.labels(job_id=job.job_id).set(0)
-        self._telemetry.job_duration.labels(job_id=job.job_id).observe(
-            run.duration_seconds or 0
-        )
+        self._telemetry.job_duration.labels(job_id=job.job_id).observe(run.duration_seconds or 0)
         logger.info(
             "Completed run=%s job=%s duration=%.1fs",
-            run_id, job.job_id, run.duration_seconds or 0,
+            run_id,
+            job.job_id,
+            run.duration_seconds or 0,
         )
 
     # ------------------------------------------------------------------ #
@@ -237,4 +237,4 @@ class PredictiveScheduler:
 
     @staticmethod
     def _next_run(cron_expr: str, after: datetime) -> datetime:
-        return croniter(cron_expr, after).get_next(datetime)
+        return croniter(cron_expr, after).get_next(datetime)  # type: ignore[no-any-return]

@@ -27,7 +27,7 @@ class TransactionStep(str, Enum):
     COMPENSATING = "COMPENSATING"
 
 
-class PaymentEvent(BaseModel):
+class PaymentEvent(BaseModel):  # type: ignore[misc]
     payment_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     idempotency_key: str = Field(default_factory=lambda: str(uuid.uuid4()))
     sender_account: str
@@ -42,7 +42,7 @@ class PaymentEvent(BaseModel):
     model_config = {"json_encoders": {Decimal: str, datetime: lambda v: v.isoformat()}}
 
 
-class OutboxEntry(BaseModel):
+class OutboxEntry(BaseModel):  # type: ignore[misc]
     id: int | None = None
     idempotency_key: str
     aggregate_type: str = "payment"
@@ -55,7 +55,7 @@ class OutboxEntry(BaseModel):
     last_error: str | None = None
 
 
-class TransactionState(BaseModel):
+class TransactionState(BaseModel):  # type: ignore[misc]
     transaction_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     idempotency_key: str
     payment_id: str

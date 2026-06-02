@@ -5,9 +5,9 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 
-from exactlyonce.coordinator import SagaState, TransactionCoordinator
-from exactlyonce.idempotency import IdempotencyLog
-from exactlyonce.outbox import OutboxEntry, OutboxStore
+from .coordinator import SagaState, TransactionCoordinator
+from .idempotency import IdempotencyLog
+from .outbox import OutboxEntry, OutboxStore
 
 
 @dataclass

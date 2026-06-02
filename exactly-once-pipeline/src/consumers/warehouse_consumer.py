@@ -15,7 +15,6 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
 import structlog
-
 from src.config import settings
 from src.consumers.base_consumer import BaseConsumer
 from src.db import transaction

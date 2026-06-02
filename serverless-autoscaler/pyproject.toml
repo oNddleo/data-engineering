@@ -41,5 +41,11 @@ ignore = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"
-strict = false
+strict = true
+mypy_path = "src"
+explicit_package_bases = true
+no_site_packages = true
+
+[[tool.mypy.overrides]]
+module = ["yaml.*", "croniter.*", "numpy.*", "pandas.*", "statsmodels.*", "kubernetes.*", "prometheus_client.*", "scipy.*", "sqlalchemy.*"]
 ignore_missing_imports = true

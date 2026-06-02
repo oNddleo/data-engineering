@@ -2,7 +2,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
-class Settings(BaseSettings):
+class Settings(BaseSettings):  # type: ignore[misc]
     memgraph_host: str = Field(default="localhost", alias="MEMGRAPH_HOST")
     memgraph_port: int = Field(default=7687, alias="MEMGRAPH_PORT")
 

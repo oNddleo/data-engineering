@@ -29,7 +29,12 @@ ignore = ["ANN101", "ANN102", "ANN401"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
-packages = ["riskmonitor"]
+explicit_package_bases = true
+no_site_packages = true
+
+[[tool.mypy.overrides]]
+module = ["networkx.*", "neo4j.*", "memgraph.*", "pydantic.*", "pydantic_settings.*", "numpy.*", "uvicorn.*", "fastapi.*", "rich.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

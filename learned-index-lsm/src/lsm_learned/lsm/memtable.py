@@ -7,7 +7,7 @@ Keys and values are both int64.  When ``size >= capacity`` the caller
 
 from __future__ import annotations
 
-from sortedcontainers import SortedDict  # type: ignore[import-untyped]
+from sortedcontainers import SortedDict
 
 _TOMBSTONE = object()  # sentinel for deleted keys
 

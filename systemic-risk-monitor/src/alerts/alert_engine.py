@@ -13,6 +13,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 from src.algorithms.centrality import ConcentrationMetrics, NodeMetrics
 from src.algorithms.contagion import ContagionResult
@@ -36,10 +37,10 @@ class Alert:
     title: str
     description: str
     affected_nodes: list[str]
-    metrics: dict
+    metrics: dict[str, Any]
     timestamp: float = field(default_factory=time.time)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "alert_id": self.alert_id,
             "severity": self.severity.value,
@@ -82,7 +83,7 @@ class AlertEngine:
             except Exception as exc:
                 log.error("Alert callback error: %s", exc)
 
-    def recent(self, limit: int = 50) -> list[dict]:
+    def recent(self, limit: int = 50) -> list[dict[str, Any]]:
         return [a.to_dict() for a in self._recent[-limit:]]
 
     # ------------------------------------------------------------------ #

@@ -144,9 +144,7 @@ class HPAClient:
                     "maxReplicas": new_max,
                 }
             }
-            autoscaling.patch_namespaced_horizontal_pod_autoscaler(
-                hpa_name, ns, patch_body
-            )
+            autoscaling.patch_namespaced_horizontal_pod_autoscaler(hpa_name, ns, patch_body)
             tracker[hpa_name] = now
             action = ScalingAction(
                 job_id=job_id,
@@ -161,9 +159,12 @@ class HPAClient:
             )
             logger.info(
                 "Patched HPA job=%s hpa=%s min %d→%d max %d→%d reason=%s",
-                job_id, hpa_name,
-                action.min_replicas_before, new_min,
-                action.max_replicas_before, new_max,
+                job_id,
+                hpa_name,
+                action.min_replicas_before,
+                new_min,
+                action.max_replicas_before,
+                new_max,
                 reason,
             )
             return action
@@ -199,6 +200,7 @@ class _StubK8sClient:
     class _FakeAPI:
         def read_namespaced_horizontal_pod_autoscaler(self, name: str, ns: str) -> Any:
             from types import SimpleNamespace
+
             return SimpleNamespace(
                 metadata=SimpleNamespace(name=name, namespace=ns),
                 spec=SimpleNamespace(min_replicas=1, max_replicas=10),

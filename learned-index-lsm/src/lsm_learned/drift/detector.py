@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
-from scipy import stats as scipy_stats  # type: ignore[import-untyped]
+from scipy import stats as scipy_stats
 
 
 @dataclass

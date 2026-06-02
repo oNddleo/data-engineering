@@ -8,12 +8,12 @@ import sys
 import uuid
 from pathlib import Path
 
-from exactlyonce.coordinator import TransactionCoordinator
-from exactlyonce.dlq import DeadLetterQueue
-from exactlyonce.idempotency import IdempotencyLog
-from exactlyonce.outbox import OutboxStore
-from exactlyonce.pipeline import ExactlyOncePipeline
-from exactlyonce.recovery import RecoveryAgent
+from .coordinator import TransactionCoordinator
+from .dlq import DeadLetterQueue
+from .idempotency import IdempotencyLog
+from .outbox import OutboxStore
+from .pipeline import ExactlyOncePipeline
+from .recovery import RecoveryAgent
 
 # Default persistence directory
 _DEFAULT_DIR = Path.home() / ".exactlyonce"

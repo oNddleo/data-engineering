@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 from pathlib import Path
+from typing import Any
 
 import click
 import duckdb
@@ -54,7 +55,7 @@ def cli_fetch(index: Path) -> None:
 
     async def _run() -> int:
         extracted = 0
-        batch: list = []
+        batch: list[Any] = []
         async for rec in fetch.fetch_records(index_rows):
             product = extract_product(rec.html, rec.url, rec.fetch_time)
             if product:
