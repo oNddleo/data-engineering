@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from selfheal.schema.drift import DriftDetector, DriftEvent, DriftType
-from selfheal.schema.registry import SchemaRegistry
+from .drift import DriftDetector, DriftEvent, DriftType
+from .registry import SchemaRegistry
 
 __all__ = ["DriftDetector", "DriftEvent", "DriftType", "SchemaRegistry"]

@@ -19,9 +19,9 @@ import json
 import secrets
 from typing import Any
 
-from colenc.cipher import HmacCtrCipher
-from colenc.kms import LocalKMS
-from colenc.storage import EncryptedRecord, RecordStore, b64_decode, b64_encode, new_record_id
+from .cipher import HmacCtrCipher
+from .kms import LocalKMS
+from .storage import EncryptedRecord, RecordStore, b64_decode, b64_encode, new_record_id
 
 DEFAULT_PII_COLUMNS: frozenset[str] = frozenset(
     ["ssn", "email", "phone", "dob", "full_name", "address", "ip_address"]

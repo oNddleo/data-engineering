@@ -2,6 +2,6 @@
 
 from __future__ import annotations
 
-from selfheal.quarantine.store import QuarantineStore
+from .store import QuarantineStore
 
 __all__ = ["QuarantineStore"]

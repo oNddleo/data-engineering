@@ -31,9 +31,21 @@ ignore = ["ANN101", "ANN102", "ANN401"]
 [tool.mypy]
 strict = true
 python_version = "3.11"
-mypy_path = "src"
 explicit_package_bases = true
 no_site_packages = true
+# Only check the distributed dqmonitor package; application scripts in src/
+# use relative imports that assume a parent package and are not distributed.
+exclude = [
+    "src/config\\.py",
+    "src/blocking/",
+    "src/dashboard/",
+    "src/metrics/",
+    "src/models/",
+    "src/pipeline/",
+    "src/storage/",
+    "src/stream/",
+    "src/validators/",
+]
 
 [[tool.mypy.overrides]]
 module = ["structlog.*", "confluent_kafka.*", "redis.*", "pandas.*", "great_expectations.*"]

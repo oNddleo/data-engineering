@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from dqmonitor.rules import (
+from .rules import (
     CustomPredicateRule,
     NotNullRule,
     RangeCheckRule,

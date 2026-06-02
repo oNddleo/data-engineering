@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from selfheal.schema.drift import DriftEvent
-    from selfheal.schema.registry import SchemaRegistry
+    from ..schema.drift import DriftEvent
+    from ..schema.registry import SchemaRegistry
 
 # ---------------------------------------------------------------------------
 # Type coercion helpers
@@ -84,7 +84,7 @@ class HealingEngine:
 
         Returns a :class:`HealResult` describing success or failure.
         """
-        from selfheal.schema.drift import DriftType  # noqa: PLC0415
+        from ..schema.drift import DriftType  # noqa: PLC0415
 
         working = dict(record)
         strategies_used: list[str] = []

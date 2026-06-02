@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from colenc.cipher import HmacCtrCipher
-from colenc.engine import EncryptionEngine
-from colenc.kms import LocalKMS
-from colenc.rtbf import CryptoShredder
-from colenc.storage import EncryptedRecord, RecordStore
+from .cipher import HmacCtrCipher
+from .engine import EncryptionEngine
+from .kms import LocalKMS
+from .rtbf import CryptoShredder
+from .storage import EncryptedRecord, RecordStore
 
 __all__ = [
     "HmacCtrCipher",

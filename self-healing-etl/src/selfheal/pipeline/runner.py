@@ -7,10 +7,10 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from selfheal.alerts.alerter import ConsoleAlerter
-    from selfheal.quarantine.store import QuarantineStore
-    from selfheal.schema.drift import DriftEvent
-    from selfheal.schema.registry import SchemaRegistry
+    from ..alerts.alerter import ConsoleAlerter
+    from ..quarantine.store import QuarantineStore
+    from ..schema.drift import DriftEvent
+    from ..schema.registry import SchemaRegistry
 
 
 @dataclass
@@ -63,8 +63,8 @@ class PipelineRunner:
         3. If drift: apply healing per record; unrecoverable → quarantine.
         4. Return summary.
         """
-        from selfheal.healing.strategies import HealingEngine  # noqa: PLC0415
-        from selfheal.schema.drift import DriftDetector  # noqa: PLC0415
+        from ..healing.strategies import HealingEngine  # noqa: PLC0415
+        from ..schema.drift import DriftDetector  # noqa: PLC0415
 
         run_id = str(uuid.uuid4())
         active_entry = self._registry.get_active(self._source_name)

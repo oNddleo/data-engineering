@@ -24,10 +24,10 @@ import json
 import sys
 from argparse import ArgumentParser, Namespace
 
-from colenc.engine import EncryptionEngine
-from colenc.kms import LocalKMS
-from colenc.rtbf import CryptoShredder
-from colenc.storage import RecordStore
+from .engine import EncryptionEngine
+from .kms import LocalKMS
+from .rtbf import CryptoShredder
+from .storage import RecordStore
 
 
 def _build_parser() -> ArgumentParser:
@@ -110,7 +110,7 @@ def _cmd_encrypt(args: Namespace) -> int:
 
 def _cmd_decrypt(args: Namespace) -> int:
     raw = args.record_json or sys.stdin.read()
-    from colenc.storage import EncryptedRecord
+    from .storage import EncryptedRecord
 
     enc = EncryptedRecord.from_json(raw)
     columns = [c.strip() for c in args.columns.split(",")] if args.columns else None

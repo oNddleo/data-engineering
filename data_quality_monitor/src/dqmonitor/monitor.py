@@ -5,12 +5,12 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from dqmonitor.audit import AuditLog, ValidationRun
-from dqmonitor.gate import QualityGate
-from dqmonitor.validator import ValidationResult, Validator
+from .audit import AuditLog, ValidationRun
+from .gate import QualityGate
+from .validator import ValidationResult, Validator
 
 if TYPE_CHECKING:
-    from dqmonitor.expectations import ExpectationSuite
+    from .expectations import ExpectationSuite
 
 
 class QualityMonitor:

@@ -14,8 +14,8 @@ Crypto shredding:
 
 from __future__ import annotations
 
-from colenc.kms import KeyDeletedError, KeyNotFoundError, LocalKMS
-from colenc.storage import RecordStore
+from .kms import KeyDeletedError, KeyNotFoundError, LocalKMS
+from .storage import RecordStore
 
 
 class CryptoShredder:

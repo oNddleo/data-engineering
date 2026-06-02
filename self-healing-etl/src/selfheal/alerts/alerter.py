@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import io
 
-    from selfheal.pipeline.runner import RunResult
-    from selfheal.schema.drift import DriftEvent
+    from ..pipeline.runner import RunResult
+    from ..schema.drift import DriftEvent
 
 # Severity → ANSI colour codes (works in any ANSI-capable terminal).
 _COLOURS: dict[str, str] = {

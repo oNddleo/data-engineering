@@ -13,10 +13,10 @@ import sys
 
 def cmd_run(args: argparse.Namespace) -> int:
     """Process JSONL records from stdin (or a file)."""
-    from selfheal.alerts.alerter import ConsoleAlerter  # noqa: PLC0415
-    from selfheal.pipeline.runner import PipelineRunner  # noqa: PLC0415
-    from selfheal.quarantine.store import QuarantineStore  # noqa: PLC0415
-    from selfheal.schema.registry import SchemaRegistry  # noqa: PLC0415
+    from .alerts.alerter import ConsoleAlerter  # noqa: PLC0415
+    from .pipeline.runner import PipelineRunner  # noqa: PLC0415
+    from .quarantine.store import QuarantineStore  # noqa: PLC0415
+    from .schema.registry import SchemaRegistry  # noqa: PLC0415
 
     source: str = args.source
     input_stream = sys.stdin if args.input == "-" else open(args.input)  # noqa: WPS515
@@ -66,10 +66,10 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 def cmd_demo(_args: argparse.Namespace) -> int:
     """Run a built-in 3-batch demo that showcases drift detection and healing."""
-    from selfheal.alerts.alerter import ConsoleAlerter  # noqa: PLC0415
-    from selfheal.pipeline.runner import PipelineRunner  # noqa: PLC0415
-    from selfheal.quarantine.store import QuarantineStore  # noqa: PLC0415
-    from selfheal.schema.registry import SchemaRegistry  # noqa: PLC0415
+    from .alerts.alerter import ConsoleAlerter  # noqa: PLC0415
+    from .pipeline.runner import PipelineRunner  # noqa: PLC0415
+    from .quarantine.store import QuarantineStore  # noqa: PLC0415
+    from .schema.registry import SchemaRegistry  # noqa: PLC0415
 
     print("=" * 60)
     print("  Self-Healing ETL — built-in demo")
@@ -126,7 +126,7 @@ def cmd_status(args: argparse.Namespace) -> int:
     """Show schema versions for sources in a registry JSON file."""
     import pathlib  # noqa: PLC0415
 
-    from selfheal.schema.registry import SchemaRegistry  # noqa: PLC0415
+    from .schema.registry import SchemaRegistry  # noqa: PLC0415
 
     path = pathlib.Path(args.registry_file)
     if not path.exists():

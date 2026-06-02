@@ -31,10 +31,10 @@ def _get_audit_path(args: argparse.Namespace) -> Path:
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
-    from dqmonitor.audit import AuditLog
-    from dqmonitor.expectations import ExpectationSuite
-    from dqmonitor.gate import QualityGate
-    from dqmonitor.monitor import QualityMonitor
+    from .audit import AuditLog
+    from .expectations import ExpectationSuite
+    from .gate import QualityGate
+    from .monitor import QualityMonitor
 
     input_path = Path(args.input)
     suite_path = Path(args.suite)
@@ -76,7 +76,7 @@ def cmd_validate(args: argparse.Namespace) -> int:
 
 
 def cmd_status(args: argparse.Namespace) -> int:
-    from dqmonitor.audit import AuditLog
+    from .audit import AuditLog
 
     audit_log = AuditLog(_get_audit_path(args))
     runs = audit_log.query(last_n=1)
@@ -92,7 +92,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 
 
 def cmd_audit(args: argparse.Namespace) -> int:
-    from dqmonitor.audit import AuditLog
+    from .audit import AuditLog
 
     last_n: int = getattr(args, "last", 10)
     audit_log = AuditLog(_get_audit_path(args))
@@ -110,7 +110,7 @@ def cmd_audit(args: argparse.Namespace) -> int:
 
 
 def cmd_reset(args: argparse.Namespace) -> int:
-    from dqmonitor.audit import AuditLog
+    from .audit import AuditLog
 
     audit_log = AuditLog(_get_audit_path(args))
     audit_log.clear()

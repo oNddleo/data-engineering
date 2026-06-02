@@ -2,6 +2,6 @@
 
 from __future__ import annotations
 
-from selfheal.healing.strategies import HealingEngine, HealResult
+from .strategies import HealingEngine, HealResult
 
 __all__ = ["HealingEngine", "HealResult"]

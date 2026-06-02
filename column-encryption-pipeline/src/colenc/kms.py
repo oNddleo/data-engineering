@@ -139,7 +139,7 @@ class LocalKMS:
         (wrong key or corrupted blob).
         Raises :class:`KeyDeletedError` if the CMK has been deleted.
         """
-        from colenc.cipher import AuthenticationError
+        from .cipher import AuthenticationError
 
         cmk = self._get_cmk_bytes(cmk_id)
         if len(wrapped_dek) != 64:

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from dqmonitor.audit import AuditLog, ValidationRun
-from dqmonitor.expectations import ExpectationSuite
-from dqmonitor.gate import QualityGate
-from dqmonitor.monitor import QualityMonitor
-from dqmonitor.rules import (
+from .audit import AuditLog, ValidationRun
+from .expectations import ExpectationSuite
+from .gate import QualityGate
+from .monitor import QualityMonitor
+from .rules import (
     CustomPredicateRule,
     NotNullRule,
     RangeCheckRule,
@@ -15,7 +15,7 @@ from dqmonitor.rules import (
     Rule,
     UniqueRule,
 )
-from dqmonitor.validator import ValidationResult, Validator, Violation
+from .validator import ValidationResult, Validator, Violation
 
 __all__ = [
     "AuditLog",

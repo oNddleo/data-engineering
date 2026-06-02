@@ -32,9 +32,11 @@ ignore = ["ANN101", "ANN102", "ANN401"]
 [tool.mypy]
 strict = true
 python_version = "3.10"
-mypy_path = "src"
 explicit_package_bases = true
 no_site_packages = true
+# Only check the distributed package; application scripts in src/ use
+# relative imports that assume a parent package and are not distributed.
+exclude = ["src/config\\.py", "src/encryption/", "src/kms/", "src/pipeline/", "src/rtbf/", "src/storage/"]
 
 [[tool.mypy.overrides]]
 module = ["boto3.*", "botocore.*", "tqdm.*", "cryptography.*"]

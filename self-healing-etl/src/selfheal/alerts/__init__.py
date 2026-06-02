@@ -2,6 +2,6 @@
 
 from __future__ import annotations
 
-from selfheal.alerts.alerter import ConsoleAlerter
+from .alerter import ConsoleAlerter
 
 __all__ = ["ConsoleAlerter"]
