@@ -8,6 +8,7 @@ Algorithm overview (based on the SIGMOD 2023 paper)
 4. Non-round-tripping values are stored as exceptions (position + raw float64).
 5. The int64 array is then frame-of-reference + bit-packed.
 """
+
 from __future__ import annotations
 
 import struct
@@ -76,7 +77,9 @@ def _bitpack(values: np.ndarray[Any, np.dtype[Any]], width: int, ref: int) -> by
     return bytes(out)
 
 
-def _bitunpack(data: bytes, n: int, width: int, ref: int) -> np.ndarray[Any, np.dtype[Any]]:
+def _bitunpack(
+    data: bytes, n: int, width: int, ref: int
+) -> np.ndarray[Any, np.dtype[Any]]:
     if width == 0:
         return np.full(n, ref, dtype=np.int64)
     out = np.empty(n, dtype=np.int64)
@@ -135,7 +138,9 @@ class ALPCodec(Codec):
         exc_bytes = struct.pack(f"<{len(exc_positions)}i", *exc_positions)
         exc_bytes += struct.pack(f"<{len(exc_values)}d", *exc_values)
 
-        header = struct.pack("<HiiBBI", e, ref, len(data), width, len(exc_positions), len(exc_bytes))
+        header = struct.pack(
+            "<HiiBBI", e, ref, len(data), width, len(exc_positions), len(exc_bytes)
+        )
         payload = header + packed + exc_bytes
 
         return EncodedColumn(

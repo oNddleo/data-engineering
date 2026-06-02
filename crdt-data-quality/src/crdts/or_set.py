@@ -10,6 +10,7 @@ Properties:
   - Concurrent add+remove of the same element: add wins (new token survives)
   - Merge is commutative, associative, idempotent
 """
+
 from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
@@ -48,7 +49,7 @@ class ORSet:
 
         all_elements = set(self.entries) | set(other.entries)
         for elem in all_elements:
-            tokens = (self.entries.get(elem, set()) | other.entries.get(elem, set()))
+            tokens = self.entries.get(elem, set()) | other.entries.get(elem, set())
             live = tokens - result.tombstones
             if live:
                 result.entries[elem] = live

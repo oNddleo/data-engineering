@@ -26,7 +26,9 @@ Relation = dict[tuple[Any, ...], Any]
 
 
 def annotate(
-    rows: Iterable[Tuple], token_fn: Callable[..., Any], K: Semiring[Any],
+    rows: Iterable[Tuple],
+    token_fn: Callable[..., Any],
+    K: Semiring[Any],
 ) -> Relation:
     """Build `Relation` from raw rows.
 
@@ -63,7 +65,11 @@ def union(a: Relation, b: Relation, K: Semiring[Any]) -> Relation:
 
 
 def join(
-    a: Relation, b: Relation, key_a: tuple[int, ...], key_b: tuple[int, ...], K: Semiring[Any],
+    a: Relation,
+    b: Relation,
+    key_a: tuple[int, ...],
+    key_b: tuple[int, ...],
+    K: Semiring[Any],
 ) -> Relation:
     """R ⋈ S : equality join on the given key columns.
 

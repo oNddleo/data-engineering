@@ -15,6 +15,7 @@ from .base import BaseAdapter
 
 try:
     import snowflake.connector
+
     _SF_AVAILABLE = True
 except ImportError:
     _SF_AVAILABLE = False
@@ -146,10 +147,7 @@ class SnowflakeAdapter(BaseAdapter):
         db = parts[0] if len(parts) > 1 else self.database
         schema = parts[-1]
         fqn = f"{db}.{schema}.{candidate.name.upper()}"
-        ddl = (
-            f"CREATE OR REPLACE MATERIALIZED VIEW {fqn} AS\n"
-            f"{candidate.sql}"
-        )
+        ddl = f"CREATE OR REPLACE MATERIALIZED VIEW {fqn} AS\n" f"{candidate.sql}"
         self._execute(ddl)
         return MaterializedView(
             candidate=candidate,
@@ -180,8 +178,7 @@ class SnowflakeAdapter(BaseAdapter):
         since: datetime,
     ) -> float:
         table_conditions = " OR ".join(
-            f"LOWER(QUERY_TEXT) LIKE '%{t.lower()}%'"
-            for t in view.candidate.referenced_tables
+            f"LOWER(QUERY_TEXT) LIKE '%{t.lower()}%'" for t in view.candidate.referenced_tables
         )
         created_str = view.created_at.strftime("%Y-%m-%d %H:%M:%S")
         since_str = since.strftime("%Y-%m-%d %H:%M:%S")

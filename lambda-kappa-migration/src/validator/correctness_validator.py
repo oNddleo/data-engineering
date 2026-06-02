@@ -128,9 +128,7 @@ class CorrectnessValidator:
                     )
                 )
             else:
-                comparisons.extend(
-                    self.tolerance.compare_dicts(f"user_totals/{key}", lv, kv)
-                )
+                comparisons.extend(self.tolerance.compare_dicts(f"user_totals/{key}", lv, kv))
 
         # event_type_summary: {event_type: {count, total_amount, avg_amount}}
         for key in sorted(

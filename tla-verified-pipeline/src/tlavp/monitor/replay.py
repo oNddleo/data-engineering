@@ -32,11 +32,11 @@ class Incident:
 
 
 ACTION_MAP: dict[str, Callable[[StateMachine, dict[str, Any]], bool | None]] = {
-    "pg_insert":        lambda sm, e: pg_insert(sm.state, e["record"]),
+    "pg_insert": lambda sm, e: pg_insert(sm.state, e["record"]),
     "debezium_publish": lambda sm, e: debezium_publish(sm.state, e["record"]),
-    "flink_consume":    lambda sm, e: flink_consume(sm.state),
-    "warehouse_load":   lambda sm, e: warehouse_load(sm.state, e["record"]),
-    "reverse_etl":      lambda sm, e: reverse_etl(sm.state, e["record"]),
+    "flink_consume": lambda sm, e: flink_consume(sm.state),
+    "warehouse_load": lambda sm, e: warehouse_load(sm.state, e["record"]),
+    "reverse_etl": lambda sm, e: reverse_etl(sm.state, e["record"]),
 }
 
 
@@ -62,9 +62,7 @@ class Monitor:
             fn(self.machine, e)
             # Check invariants regardless of whether the action applied
             result = check_all(self.machine.state, max_lag=self.max_lag)
-            live_violations = self.liveness.observe(
-                self.machine.state, self.machine.step_count
-            )
+            live_violations = self.liveness.observe(self.machine.state, self.machine.step_count)
             all_violations = tuple(result.violations) + tuple(live_violations)
             if all_violations:
                 incident = Incident(
@@ -74,11 +72,13 @@ class Monitor:
                     state_snapshot=self.machine.snapshot(),
                 )
                 self.incidents.append(incident)
-                self.alert_sink.emit({
-                    "step": incident.step,
-                    "action": incident.action,
-                    "violations": list(incident.violations),
-                })
+                self.alert_sink.emit(
+                    {
+                        "step": incident.step,
+                        "action": incident.action,
+                        "violations": list(incident.violations),
+                    }
+                )
         return self.incidents
 
 

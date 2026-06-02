@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import asyncio
 import json
 from collections.abc import AsyncIterator
@@ -8,7 +9,7 @@ import structlog
 from confluent_kafka import Consumer, KafkaError, KafkaException
 
 from ..config import settings
-from ..models import MicroBatch, BatchMetadata
+from ..models import MicroBatch
 
 log = structlog.get_logger(__name__)
 

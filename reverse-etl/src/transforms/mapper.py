@@ -34,7 +34,9 @@ class FieldMapper:
                         try:
                             value = fn(value)
                         except Exception as e:
-                            logger.warning(f"FieldMapper: transform '{m.transform}' failed on {value!r}: {e}")
+                            logger.warning(
+                                f"FieldMapper: transform '{m.transform}' failed on {value!r}: {e}"
+                            )
                 mapped[m.destination] = value
             # carry over unmapped fields
             for k, v in record.items():

@@ -56,8 +56,12 @@ class UDFDetector:
     fn: Callable[[Event], Any]
     num_runs: int = 2
     # Records keyed by event_id -> list of UDFRecord (one per run)
-    _records: dict[str, list[UDFRecord]] = field(default_factory=dict, init=False, repr=False)
-    _violations: list[NonDeterminismError] = field(default_factory=list, init=False, repr=False)
+    _records: dict[str, list[UDFRecord]] = field(
+        default_factory=dict, init=False, repr=False
+    )
+    _violations: list[NonDeterminismError] = field(
+        default_factory=list, init=False, repr=False
+    )
 
     def __call__(self, event: Event) -> Any:
         input_hash = self._hash_input(event)
@@ -100,7 +104,9 @@ class UDFDetector:
         total_violations = len(self._violations)
         avg_latency: float | None = None
         if self._records:
-            all_latencies = [r.latency_ms for runs in self._records.values() for r in runs]
+            all_latencies = [
+                r.latency_ms for runs in self._records.values() for r in runs
+            ]
             avg_latency = sum(all_latencies) / len(all_latencies)
 
         return {

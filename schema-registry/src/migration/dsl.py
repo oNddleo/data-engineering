@@ -48,6 +48,7 @@ YAML/JSON format example:
         params:
           expression: "street + ', ' + city"
 """
+
 from __future__ import annotations
 
 import json
@@ -102,7 +103,9 @@ class TransformationDSL:
             if not op:
                 raise DSLParseError(f"Step {i} missing 'op'.")
             if op not in SUPPORTED_OPS:
-                raise DSLParseError(f"Step {i}: unknown op '{op}'. Supported: {sorted(SUPPORTED_OPS)}")
+                raise DSLParseError(
+                    f"Step {i}: unknown op '{op}'. Supported: {sorted(SUPPORTED_OPS)}"
+                )
             path = raw.get("path", "$")
             params = raw.get("params", {})
             steps.append(MigrationStep(op=op, path=path, params=params or {}))

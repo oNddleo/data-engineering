@@ -22,7 +22,7 @@ PointStamp = tuple[str, Timestamp]
 @dataclass
 class TrackerStats:
     updates: int = 0
-    completions: int = 0      # times count hit 0
+    completions: int = 0  # times count hit 0
 
 
 @dataclass
@@ -43,9 +43,7 @@ class ProgressTracker:
                 self.stats.completions += 1
             elif self.counts[ps] < 0:
                 # Invariant violation: should never happen
-                raise InvariantViolation(
-                    f"count at {ps} went negative ({self.counts[ps]})"
-                )
+                raise InvariantViolation(f"count at {ps} went negative ({self.counts[ps]})")
 
     def count(self, op: str, ts: Timestamp) -> int:
         with self._lock:
@@ -62,9 +60,7 @@ class ProgressTracker:
     def is_complete_at(self, op: str, t: Timestamp) -> bool:
         """No pointstamp ≤ t is active at `op`."""
         with self._lock:
-            return not any(
-                ts <= t for (o, ts) in self.counts if o == op
-            )
+            return not any(ts <= t for (o, ts) in self.counts if o == op)
 
 
 class InvariantViolation(Exception):

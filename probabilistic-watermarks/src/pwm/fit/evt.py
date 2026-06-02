@@ -19,13 +19,13 @@ from dataclasses import dataclass, field
 class POTFitter:
     """Peaks-Over-Threshold fitter using method of moments."""
 
-    threshold: float = 0.0           # set automatically once n > burn_in
+    threshold: float = 0.0  # set automatically once n > burn_in
     burn_in: int = 200
     _exceedances: list[float] = field(default_factory=list)
     _seen: list[float] = field(default_factory=list)
     _lock: threading.RLock = field(default_factory=threading.RLock)
-    _xi: float = 0.0                 # shape
-    _sigma: float = 1.0              # scale
+    _xi: float = 0.0  # shape
+    _sigma: float = 1.0  # scale
 
     def observe(self, value: float) -> None:
         with self._lock:
@@ -79,8 +79,7 @@ class POTFitter:
             sorted_seen = sorted(self._seen)
             n = len(sorted_seen)
             q_threshold = (
-                _empirical_rank(sorted_seen, self.threshold)
-                if self.threshold > 0.0 else 0.0
+                _empirical_rank(sorted_seen, self.threshold) if self.threshold > 0.0 else 0.0
             )
             if q < q_threshold:
                 # Empirical
@@ -92,8 +91,9 @@ class POTFitter:
             qp = (q - q_threshold) / (1.0 - q_threshold)
             if abs(self._xi) < 1e-9:
                 return float(self.threshold + self._sigma * (-math.log(1.0 - qp)))
-            return float(self.threshold + (self._sigma / self._xi) *
-                         (((1.0 - qp) ** (-self._xi)) - 1.0))
+            return float(
+                self.threshold + (self._sigma / self._xi) * (((1.0 - qp) ** (-self._xi)) - 1.0)
+            )
 
 
 def _percentile(sorted_values: list[float], p: float) -> float:
@@ -110,4 +110,5 @@ def _empirical_rank(sorted_values: list[float], target: float) -> float:
     if n == 0:
         return 0.0
     from bisect import bisect_right
+
     return bisect_right(sorted_values, target) / n

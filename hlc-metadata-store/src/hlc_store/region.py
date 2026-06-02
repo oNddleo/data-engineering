@@ -22,11 +22,12 @@ class ReplicationMessage:
 @dataclass
 class CausalEvent:
     """Records a (event, cause) pair for anomaly detection."""
+
     event_id: str
     node_id: str
     ts: HLCTimestamp
     wall_ms_at_event: int
-    caused_by: str | None = None   # event_id of the causal predecessor
+    caused_by: str | None = None  # event_id of the causal predecessor
 
 
 class Region:

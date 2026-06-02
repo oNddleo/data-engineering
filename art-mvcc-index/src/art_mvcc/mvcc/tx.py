@@ -46,7 +46,7 @@ class Transaction:
         self.start_ts = db.now()
         with _TXN_ID_LOCK:
             self.txn_id = next(_TXN_ID_COUNTER)
-        self._writes: dict[bytes, tuple[Any, bool]] = {}   # key -> (value, deleted)
+        self._writes: dict[bytes, tuple[Any, bool]] = {}  # key -> (value, deleted)
         self._committed = False
         self._aborted = False
 
@@ -95,14 +95,11 @@ class Transaction:
                     # Conflict: another txn already committed AFTER our start
                     if chain.has_committed_after_ts(self.start_ts):
                         raise TxConflict(
-                            f"write-write conflict on {key!r} "
-                            f"(our start_ts={self.start_ts})"
+                            f"write-write conflict on {key!r} " f"(our start_ts={self.start_ts})"
                         )
                     # Conflict: another txn's tentative pending
                     if chain.has_uncommitted_other(self.txn_id):
-                        raise TxConflict(
-                            f"concurrent tentative write on {key!r}"
-                        )
+                        raise TxConflict(f"concurrent tentative write on {key!r}")
                     chain.tentative_write(self.txn_id, value, deleted)
                     prepared.append(chain)
         except TxConflict:

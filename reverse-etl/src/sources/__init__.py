@@ -15,6 +15,7 @@ class _LazyRegistry(dict[str, type[BaseSource]]):
         if entry is None:
             return None
         import importlib
+
         module = importlib.import_module(entry[0])
         cls: type[BaseSource] = getattr(module, entry[1])
         self[key] = cls

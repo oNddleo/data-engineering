@@ -87,9 +87,7 @@ class ViewScheduler:
         log.info("=== Starting optimization cycle ===")
 
         # 1. Collect history
-        collected = WorklogCollector(
-            self.adapter, self.store, self.cfg.lookback_days
-        ).collect()
+        collected = WorklogCollector(self.adapter, self.store, self.cfg.lookback_days).collect()
         log.info("Collected %d new query records", collected)
 
         # 2. Analyse
@@ -102,9 +100,7 @@ class ViewScheduler:
         log.info("Found %d candidate views", len(candidates))
 
         # 3. Refresh cost estimates
-        candidates = self.cost_model.refresh_estimates(
-            candidates, self.adapter.warehouse
-        )
+        candidates = self.cost_model.refresh_estimates(candidates, self.adapter.warehouse)
 
         # 4. Optimize
         result = self._optimize(candidates)
@@ -133,9 +129,7 @@ class ViewScheduler:
                     "fqn": v.fqn,
                     "created_at": v.created_at.isoformat(),
                     "actual_savings_usd": round(v.actual_savings_usd, 4),
-                    "predicted_savings_usd": round(
-                        v.candidate.estimated_benefit_usd, 4
-                    ),
+                    "predicted_savings_usd": round(v.candidate.estimated_benefit_usd, 4),
                     "refresh_count": v.refresh_count,
                 }
                 for v in self._live_views.values()
@@ -172,7 +166,11 @@ class ViewScheduler:
             view = self._live_views[vid]
             # Keep if still profitable (calibration may make a view worth keeping)
             if view.actual_savings_usd > self.cfg.min_net_benefit_usd:
-                log.info("Keeping %s despite deselection (actual savings $%.2f)", view.fqn, view.actual_savings_usd)
+                log.info(
+                    "Keeping %s despite deselection (actual savings $%.2f)",
+                    view.fqn,
+                    view.actual_savings_usd,
+                )
                 continue
             log.info("Dropping view %s", view.fqn)
             try:
@@ -185,9 +183,7 @@ class ViewScheduler:
         for candidate in to_create:
             log.info("Creating view %s", candidate.name)
             try:
-                mv = self.adapter.create_view(
-                    candidate, self.cfg.target_dataset_or_schema
-                )
+                mv = self.adapter.create_view(candidate, self.cfg.target_dataset_or_schema)
                 self._live_views[candidate.view_id] = mv
             except Exception as exc:
                 log.warning("Failed to create %s: %s", candidate.name, exc)
@@ -228,9 +224,7 @@ class ViewScheduler:
                 d["warehouse"] = d["warehouse"]
                 d["created_at"] = datetime.fromisoformat(d["created_at"])
                 if d.get("last_refreshed_at"):
-                    d["last_refreshed_at"] = datetime.fromisoformat(
-                        d["last_refreshed_at"]
-                    )
+                    d["last_refreshed_at"] = datetime.fromisoformat(d["last_refreshed_at"])
                 result[vid] = MaterializedView(**d)
             return result
         except Exception as exc:
@@ -265,6 +259,4 @@ class ViewScheduler:
                 "is_active": v.is_active,
             }
             data[vid] = entry
-        self.cfg.state_path.write_text(
-            json.dumps(data, default=_serialise, indent=2)
-        )
+        self.cfg.state_path.write_text(json.dumps(data, default=_serialise, indent=2))

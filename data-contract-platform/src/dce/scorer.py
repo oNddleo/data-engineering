@@ -18,7 +18,7 @@ class ProducerScore:
     contract_id: str
     total_runs: int
     passed_runs: int
-    reliability_score: float   # 0.0 – 1.0
+    reliability_score: float  # 0.0 – 1.0
     last_validated_at: str
     last_passed: bool
 
@@ -81,8 +81,14 @@ class ReliabilityStore:
                     len(result.warnings()),
                     json.dumps(result.stats, default=str),
                     json.dumps(
-                        [{"rule": i.rule, "severity": i.severity, "message": i.message}
-                         for i in result.issues]
+                        [
+                            {
+                                "rule": i.rule,
+                                "severity": i.severity,
+                                "message": i.message,
+                            }
+                            for i in result.issues
+                        ]
                     ),
                 ),
             )

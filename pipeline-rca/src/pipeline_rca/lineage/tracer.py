@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 _SQLLINEAGE_AVAILABLE = False
 try:
     import sqllineage  # noqa: F401
+
     _SQLLINEAGE_AVAILABLE = True
 except ImportError:
     pass
@@ -28,8 +29,8 @@ except ImportError:
 
 @dataclass
 class LineageNode:
-    name: str                               # fully qualified: "schema.table" or "schema.table.column"
-    kind: str = "table"                     # "table" | "column"
+    name: str  # fully qualified: "schema.table" or "schema.table.column"
+    kind: str = "table"  # "table" | "column"
     upstream: list["LineageNode"] = field(default_factory=list)
 
 
@@ -74,9 +75,7 @@ class LineageTracer:
     def graph(self) -> LineageGraph:
         return self._graph
 
-    def register_metric(
-        self, metric_name: str, upstream_tables: list[str]
-    ) -> None:
+    def register_metric(self, metric_name: str, upstream_tables: list[str]) -> None:
         self._graph.metric_to_tables[metric_name] = list(upstream_tables)
         logger.debug("Registered lineage for metric %s → %s", metric_name, upstream_tables)
 

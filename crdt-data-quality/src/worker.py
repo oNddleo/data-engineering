@@ -2,6 +2,7 @@
 Pipeline worker: processes a data partition and accumulates quality metrics.
 Workers are completely independent — no shared state, no coordinator.
 """
+
 from __future__ import annotations
 import random
 import time

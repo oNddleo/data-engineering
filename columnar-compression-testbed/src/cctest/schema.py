@@ -4,6 +4,7 @@ A Schema is a snapshot of {column_name: dtype_str} for a table.
 SchemaEvolutionTracker detects changes between successive schemas and
 notifies an EncodingSelector so it can evict stale cache entries.
 """
+
 from __future__ import annotations
 
 import logging
@@ -55,7 +56,9 @@ class SchemaDiff:
         return "\n".join(lines) if lines else "  (no changes)"
 
 
-def schema_from_arrays(columns: dict[str, np.ndarray[Any, np.dtype[Any]]]) -> dict[str, str]:
+def schema_from_arrays(
+    columns: dict[str, np.ndarray[Any, np.dtype[Any]]],
+) -> dict[str, str]:
     return {name: str(arr.dtype) for name, arr in columns.items()}
 
 
@@ -87,7 +90,9 @@ class SchemaEvolutionTracker:
     def current(self) -> dict[str, str]:
         return dict(self._current)
 
-    def observe(self, columns: dict[str, np.ndarray[Any, np.dtype[Any]]], selector: Any = None) -> SchemaDiff:
+    def observe(
+        self, columns: dict[str, np.ndarray[Any, np.dtype[Any]]], selector: Any = None
+    ) -> SchemaDiff:
         """
         Register a new batch of columns.  If the schema changed, notify
         *selector* (an EncodingSelector) to evict stale codec choices.

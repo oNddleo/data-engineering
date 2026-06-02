@@ -1,4 +1,5 @@
 """Load and expose pipeline configuration."""
+
 import os
 from pathlib import Path
 from typing import Any

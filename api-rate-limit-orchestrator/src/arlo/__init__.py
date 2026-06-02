@@ -4,6 +4,7 @@ from __future__ import annotations
 
 __version__ = "0.1.0"
 
+
 def __getattr__(name: str) -> object:
     _LAZY = {
         "Quota": ("arlo.quota", "Quota"),
@@ -22,6 +23,7 @@ def __getattr__(name: str) -> object:
         m, attr = _LAZY[name]
         return getattr(import_module(m), attr)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = [
     "REDIS_TOKEN_BUCKET_LUA",

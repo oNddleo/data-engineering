@@ -21,8 +21,8 @@ EmitFn = Callable[[str, Timestamp, Any], None]
 class Operator:
     name: str
     fn: Callable[[Timestamp, Any, EmitFn], None]
-    inputs: list[str] = field(default_factory=list)   # upstream op names
-    feedback: bool = False                            # iterate-scope loop edge
+    inputs: list[str] = field(default_factory=list)  # upstream op names
+    feedback: bool = False  # iterate-scope loop edge
 
     def __repr__(self) -> str:
         suffix = " [feedback]" if self.feedback else ""

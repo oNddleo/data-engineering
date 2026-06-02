@@ -4,6 +4,7 @@ Usage:
     from sbv_reporting.pipeline import Pipeline
     result = Pipeline().run("data/sample/transactions.csv")
 """
+
 from __future__ import annotations
 
 import uuid
@@ -106,47 +107,78 @@ class Pipeline:
         write_excel: bool = True,
         write_csv: bool = True,
     ) -> PipelineResult:
-        run_id = run_id or datetime.now().strftime("%Y%m%d%H%M%S") + "_" + uuid.uuid4().hex[:6].upper()
+        run_id = (
+            run_id
+            or datetime.now().strftime("%Y%m%d%H%M%S")
+            + "_"
+            + uuid.uuid4().hex[:6].upper()
+        )
         audit = AuditTrail(run_id)
         warnings: list[str] = []
         errors: list[str] = []
 
         # 1. START
-        audit.log("PIPELINE_START", {
-            "input": str(input_path),
-            "report_date": report_date,
-            "operator": operator,
-        }, operator=operator)
+        audit.log(
+            "PIPELINE_START",
+            {
+                "input": str(input_path),
+                "report_date": report_date,
+                "operator": operator,
+            },
+            operator=operator,
+        )
 
         # 2. LOAD & VALIDATE
         try:
             raw_df, load_warnings = self.loader.load(input_path)
             warnings.extend(load_warnings)
-            audit.log("DATA_LOADED", {
-                "rows": len(raw_df),
-                "columns": list(raw_df.columns),
-                "warnings": load_warnings,
-            }, operator=operator)
+            audit.log(
+                "DATA_LOADED",
+                {
+                    "rows": len(raw_df),
+                    "columns": list(raw_df.columns),
+                    "warnings": load_warnings,
+                },
+                operator=operator,
+            )
         except ValidationError as exc:
             errors.append(str(exc))
-            audit.log("VALIDATION_FAILED", {"error": str(exc)}, operator=operator, level="ERROR")
-            return PipelineResult(run_id, False, {}, {}, [], audit.summary(), warnings, errors)
+            audit.log(
+                "VALIDATION_FAILED",
+                {"error": str(exc)},
+                operator=operator,
+                level="ERROR",
+            )
+            return PipelineResult(
+                run_id, False, {}, {}, [], audit.summary(), warnings, errors
+            )
 
         # 3. TRANSFORM
         reports: dict[str, pd.DataFrame] = {}
         try:
             reports["BCGD"] = self.transformer.build_transaction_report(raw_df)
-            reports["B01-TCTD"] = self.transformer.build_balance_report(raw_df, report_date)
+            reports["B01-TCTD"] = self.transformer.build_balance_report(
+                raw_df, report_date
+            )
             reports["BCGDLN"] = self.transformer.build_large_value_report(raw_df)
             reports["BCGDNS"] = self.transformer.build_str_report(raw_df)
 
-            audit.log("REPORTS_BUILT", {
-                code: len(df) for code, df in reports.items()
-            }, operator=operator)
+            audit.log(
+                "REPORTS_BUILT",
+                {code: len(df) for code, df in reports.items()},
+                operator=operator,
+            )
         except Exception as exc:
             errors.append(f"Transform error: {exc}")
-            audit.log("TRANSFORM_FAILED", {"error": str(exc)}, operator=operator, level="ERROR")
-            return PipelineResult(run_id, False, reports, {}, [], audit.summary(), warnings, errors)
+            audit.log(
+                "TRANSFORM_FAILED",
+                {"error": str(exc)},
+                operator=operator,
+                level="ERROR",
+            )
+            return PipelineResult(
+                run_id, False, reports, {}, [], audit.summary(), warnings, errors
+            )
 
         # 4. RECONCILIATION
         recon_results = self.reconciler.run_all(
@@ -155,16 +187,23 @@ class Pipeline:
             large_value_report=reports["BCGDLN"],
         )
         failed_checks = [r for r in recon_results if not r.passed]
-        audit.log("RECONCILIATION_COMPLETE", {
-            "total": len(recon_results),
-            "passed": len(recon_results) - len(failed_checks),
-            "failed": len(failed_checks),
-            "results": [r.to_dict() for r in recon_results],
-        }, operator=operator, level="WARNING" if failed_checks else "INFO")
+        audit.log(
+            "RECONCILIATION_COMPLETE",
+            {
+                "total": len(recon_results),
+                "passed": len(recon_results) - len(failed_checks),
+                "failed": len(failed_checks),
+                "results": [r.to_dict() for r in recon_results],
+            },
+            operator=operator,
+            level="WARNING" if failed_checks else "INFO",
+        )
 
         if failed_checks:
             for r in failed_checks:
-                warnings.append(f"Reconciliation FAILED: {r.check_name} (delta={r.delta})")
+                warnings.append(
+                    f"Reconciliation FAILED: {r.check_name} (delta={r.delta})"
+                )
 
         # 5. WRITE OUTPUTS
         output_files: dict[str, Any] = {}
@@ -175,24 +214,42 @@ class Pipeline:
                 audit.log("EXCEL_WRITTEN", {"path": str(xlsx_path)}, operator=operator)
             except Exception as exc:
                 warnings.append(f"Excel write failed: {exc}")
-                audit.log("EXCEL_WRITE_FAILED", {"error": str(exc)}, operator=operator, level="WARNING")
+                audit.log(
+                    "EXCEL_WRITE_FAILED",
+                    {"error": str(exc)},
+                    operator=operator,
+                    level="WARNING",
+                )
 
         if write_csv:
             csv_paths = self.writer.write_csv(reports, run_id, report_date)
             output_files["csv"] = csv_paths
-            audit.log("CSV_WRITTEN", {k: str(v) for k, v in csv_paths.items()}, operator=operator)
+            audit.log(
+                "CSV_WRITTEN",
+                {k: str(v) for k, v in csv_paths.items()},
+                operator=operator,
+            )
 
         # 6. AUDIT CHAIN VERIFICATION
         chain_ok, chain_errors = audit.verify()
         if not chain_ok:
             errors.extend(chain_errors)
-            audit.log("AUDIT_CHAIN_BROKEN", {"errors": chain_errors}, operator=operator, level="ERROR")
+            audit.log(
+                "AUDIT_CHAIN_BROKEN",
+                {"errors": chain_errors},
+                operator=operator,
+                level="ERROR",
+            )
 
-        audit.log("PIPELINE_COMPLETE", {
-            "success": len(errors) == 0,
-            "warnings": len(warnings),
-            "errors": len(errors),
-        }, operator=operator)
+        audit.log(
+            "PIPELINE_COMPLETE",
+            {
+                "success": len(errors) == 0,
+                "warnings": len(warnings),
+                "errors": len(errors),
+            },
+            operator=operator,
+        )
 
         return PipelineResult(
             run_id=run_id,

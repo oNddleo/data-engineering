@@ -5,7 +5,14 @@ from datetime import datetime
 
 import aiosqlite  # type: ignore[import-not-found]
 
-from .models import CompatibilityMode, MigrationScript, MigrationStep, SchemaType, SchemaVersion, SubjectConfig
+from .models import (
+    CompatibilityMode,
+    MigrationScript,
+    MigrationStep,
+    SchemaType,
+    SchemaVersion,
+    SubjectConfig,
+)
 
 
 DB_SCHEMA = """
@@ -208,7 +215,9 @@ class Storage:
         script.id = cursor.lastrowid
         return script
 
-    async def get_migration(self, subject: str, from_version: int, to_version: int) -> MigrationScript | None:
+    async def get_migration(
+        self, subject: str, from_version: int, to_version: int
+    ) -> MigrationScript | None:
         async with self.db.execute(
             "SELECT * FROM migration_scripts WHERE subject=? AND from_version=? AND to_version=?",
             (subject, from_version, to_version),

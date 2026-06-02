@@ -44,9 +44,7 @@ def exact_probability(poly: Polynomial, probs: dict[Any, float]) -> float:
     """
     variables = sorted(poly.variables, key=repr)
     if len(variables) > 18:
-        raise ValueError(
-            f"too many variables ({len(variables)}) for truth-table evaluation"
-        )
+        raise ValueError(f"too many variables ({len(variables)}) for truth-table evaluation")
     p_total = 0.0
     n = len(variables)
     for assign in range(1 << n):
@@ -58,10 +56,7 @@ def exact_probability(poly: Polynomial, probs: dict[Any, float]) -> float:
             p = probs.get(v, 0.5)
             prob *= p if on else (1 - p)
         # Polynomial evaluates to nonzero iff query holds under this assign
-        val = sum(
-            coeff * _eval_monomial(mono, env)
-            for mono, coeff in poly.coeffs.items()
-        )
+        val = sum(coeff * _eval_monomial(mono, env) for mono, coeff in poly.coeffs.items())
         if val != 0:
             p_total += prob
     return p_total

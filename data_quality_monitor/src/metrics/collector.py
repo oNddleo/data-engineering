@@ -1,8 +1,8 @@
 from __future__ import annotations
+
 from collections import defaultdict, deque
 from datetime import datetime, timedelta
 from threading import Lock
-from typing import Deque
 
 from prometheus_client import Counter, Gauge, Histogram
 
@@ -60,9 +60,7 @@ class MetricsCollector:
     def __init__(self) -> None:
         self._lock = Lock()
         # table → deque of (timestamp, ValidationResult)
-        self._window: dict[str, Deque[tuple[datetime, ValidationResult]]] = defaultdict(
-            deque
-        )
+        self._window: dict[str, deque[tuple[datetime, ValidationResult]]] = defaultdict(deque)
 
     def record(self, result: ValidationResult) -> None:
         now = datetime.utcnow()
@@ -72,19 +70,13 @@ class MetricsCollector:
             self._evict(dq)
 
         # Prometheus
-        BATCHES_TOTAL.labels(
-            table=result.table_name, status=result.status.value
-        ).inc()
+        BATCHES_TOTAL.labels(table=result.table_name, status=result.status.value).inc()
         PASS_RATE_GAUGE.labels(table=result.table_name).set(result.pass_rate)
-        CHECKS_TOTAL.labels(table=result.table_name, status="passed").inc(
-            result.passed_checks
+        CHECKS_TOTAL.labels(table=result.table_name, status="passed").inc(result.passed_checks)
+        CHECKS_TOTAL.labels(table=result.table_name, status="failed").inc(result.failed_checks)
+        VALIDATION_DURATION.labels(table=result.table_name, backend=result.backend.value).observe(
+            result.duration_ms
         )
-        CHECKS_TOTAL.labels(table=result.table_name, status="failed").inc(
-            result.failed_checks
-        )
-        VALIDATION_DURATION.labels(
-            table=result.table_name, backend=result.backend.value
-        ).observe(result.duration_ms)
         ROWS_PROCESSED.labels(table=result.table_name).inc(result.row_count)
 
     def update_active_blocks(self, count: int) -> None:
@@ -106,9 +98,7 @@ class MetricsCollector:
         if total == 0:
             return {"total": 0, "failed": 0, "overall_pass_rate": 1.0, "per_table": {}}
 
-        failed = sum(
-            1 for r in all_results if r.status == ValidationStatus.FAILED
-        )
+        failed = sum(1 for r in all_results if r.status == ValidationStatus.FAILED)
         overall_pass_rate = 1.0 - (failed / total)
 
         table_stats = {}
@@ -135,7 +125,7 @@ class MetricsCollector:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _evict(dq: Deque[tuple[datetime, ValidationResult]]) -> None:
+    def _evict(dq: deque[tuple[datetime, ValidationResult]]) -> None:
         cutoff = datetime.utcnow() - _WINDOW
         while dq and dq[0][0] < cutoff:
             dq.popleft()

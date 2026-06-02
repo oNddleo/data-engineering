@@ -21,6 +21,7 @@ the strictly better AS OF match.  For each such pair it emits:
     JoinResult(L_i, R_old, retraction=True)   # withdraw old result
     JoinResult(L_i, R',    retraction=False)   # new corrected result
 """
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -35,6 +36,7 @@ from .watermark import WatermarkTracker
 @dataclass
 class _EmittedEntry:
     """Mutable record stored alongside each emitted left event for future correction."""
+
     left_event: Event
     matched_right: Optional[Event]  # the right event we matched (None = no match)
 
@@ -200,7 +202,10 @@ class AsOfJoinEngine:
                 old_right_time = entry.matched_right_time
 
                 # Is late_right a strictly better AS OF match?
-                if old_right_time is not None and late_right.event_time <= old_right_time:
+                if (
+                    old_right_time is not None
+                    and late_right.event_time <= old_right_time
+                ):
                     continue  # existing match is at least as good
 
                 # Double-check bounds (range_query already enforces these, but be explicit).

@@ -1,14 +1,14 @@
 from __future__ import annotations
+
 import asyncio
-import json
 
 import redis.asyncio as aioredis
 import structlog
 
-from ..config import settings
-from ..models import ValidationResult, MetricSnapshot, QualityMetric
-from .collector import MetricsCollector
 from ..blocking.job_controller import JobController
+from ..config import settings
+from ..models import MetricSnapshot, QualityMetric, ValidationResult
+from .collector import MetricsCollector
 
 log = structlog.get_logger(__name__)
 
@@ -111,10 +111,8 @@ class MetricsPublisher:
                 failed_batches=stats["failed"],
                 avg_row_count=stats["avg_row_count"],
                 avg_duration_ms=stats["avg_duration_ms"],
-                active_blocks=sum(
-                    1 for b in active_blocks_raw if b.get("table_name") == table
-                ),
-                checks_passed=0,   # enriched from DB if needed
+                active_blocks=sum(1 for b in active_blocks_raw if b.get("table_name") == table),
+                checks_passed=0,  # enriched from DB if needed
                 checks_failed=0,
             )
             for table, stats in summary.get("per_table", {}).items()

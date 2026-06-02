@@ -8,11 +8,11 @@ optimizer always works with aggregate statistics rather than raw rows.
 from __future__ import annotations
 
 import sqlite3
-from typing import Any
 from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from ..models import QueryRecord, Warehouse
 from ..query_analyzer import fingerprint
@@ -124,13 +124,10 @@ class WorklogStore:
             ).fetchall()
         return [_row_to_record(r) for r in rows]
 
-    def record_ingestion(
-        self, warehouse: Warehouse, row_count: int
-    ) -> None:
+    def record_ingestion(self, warehouse: Warehouse, row_count: int) -> None:
         with self._db() as con:
             con.execute(
-                "INSERT INTO ingestion_log (warehouse, fetched_at, row_count) "
-                "VALUES (?,?,?)",
+                "INSERT INTO ingestion_log (warehouse, fetched_at, row_count) " "VALUES (?,?,?)",
                 (warehouse.value, datetime.utcnow().isoformat(), row_count),
             )
 

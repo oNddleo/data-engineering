@@ -146,14 +146,14 @@ class ART:
         # sibling child.
         new_parent = Node4(prefix=node.prefix[:plen])
         old_first_byte = node.prefix[plen]
-        node.prefix = node.prefix[plen + 1:]
+        node.prefix = node.prefix[plen + 1 :]
         new_parent_node = new_parent.add_child(old_first_byte, node)
 
         if plen == len(key):
             new_parent_node.value = value
         else:
             new_byte = key[plen]
-            new_leaf = Node4(prefix=key[plen + 1:], value=value)
+            new_leaf = Node4(prefix=key[plen + 1 :], value=value)
             new_parent_node = new_parent_node.add_child(new_byte, new_leaf)
 
         return new_parent_node, True
@@ -161,7 +161,7 @@ class ART:
     def _lookup(self, node: Node, key: bytes) -> Any:
         if not key.startswith(node.prefix):
             return None
-        rest = key[len(node.prefix):]
+        rest = key[len(node.prefix) :]
         if not rest:
             return None if node.value is MISSING else node.value
         child = node.find_child(rest[0])
@@ -172,7 +172,7 @@ class ART:
     def _delete(self, node: Node, key: bytes) -> tuple[Node | None, bool]:
         if not key.startswith(node.prefix):
             return node, False
-        rest = key[len(node.prefix):]
+        rest = key[len(node.prefix) :]
         if not rest:
             if node.value is MISSING:
                 return node, False
@@ -245,6 +245,7 @@ class ART:
     def node_count_by_kind(self) -> dict[str, int]:
         """{Node4: N, Node16: M, ...} for memory-shape introspection."""
         from collections import Counter
+
         c: Counter[str] = Counter()
         if self._root is None:
             return dict(c)

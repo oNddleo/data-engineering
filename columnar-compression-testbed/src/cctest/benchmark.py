@@ -1,4 +1,5 @@
 """Benchmark harness: run all codecs against a column and print a comparison table."""
+
 from __future__ import annotations
 
 import logging
@@ -10,7 +11,9 @@ from .codecs import ALL_CODECS, BenchmarkResult, Codec
 
 logger = logging.getLogger(__name__)
 
-_HDR = f"{'Codec':<20} {'Ratio':>7} {'Saving':>8} {'Enc ms':>8} {'Dec ms':>8} {'OK?':>5}"
+_HDR = (
+    f"{'Codec':<20} {'Ratio':>7} {'Saving':>8} {'Enc ms':>8} {'Dec ms':>8} {'OK?':>5}"
+)
 _SEP = "-" * len(_HDR)
 
 

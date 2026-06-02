@@ -106,7 +106,9 @@ class ConsoleReporter:
                     )
                 )
         else:
-            console.print("[green]No structural recommendations — tables look well-optimised.[/green]")
+            console.print(
+                "[green]No structural recommendations — tables look well-optimised.[/green]"
+            )
 
         console.print()
 
@@ -127,7 +129,8 @@ class ConsoleReporter:
                 if pat.example_queries:
                     console.print(
                         Panel(
-                            pat.example_queries[0][:300] + ("…" if len(pat.example_queries[0]) > 300 else ""),
+                            pat.example_queries[0][:300]
+                            + ("…" if len(pat.example_queries[0]) > 300 else ""),
                             title="Example query",
                             border_style="dim",
                             padding=(0, 1),

@@ -1,4 +1,5 @@
 """Abstract engine base class and shared engine types."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

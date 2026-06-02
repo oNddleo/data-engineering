@@ -38,7 +38,7 @@ class CandidateView:
     benefiting_query_ids: list[str]
     estimated_storage_bytes: int
     estimated_maintenance_cost_usd: float  # per month
-    estimated_benefit_usd: float           # per month
+    estimated_benefit_usd: float  # per month
     view_id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
     @property

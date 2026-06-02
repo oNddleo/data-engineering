@@ -1,4 +1,5 @@
 """Logical query plan nodes."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

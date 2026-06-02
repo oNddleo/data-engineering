@@ -24,6 +24,7 @@ from .models import CandidateView, OptimizationResult
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _objective(selection: frozenset[CandidateView]) -> float:
     return sum(v.net_benefit_usd for v in selection)
 
@@ -39,6 +40,7 @@ def _feasible(selection: frozenset[CandidateView], budget: int) -> bool:
 # ---------------------------------------------------------------------------
 # Greedy
 # ---------------------------------------------------------------------------
+
 
 class GreedySelector:
     """
@@ -71,13 +73,9 @@ class GreedySelector:
         sel_set = frozenset(selected)
         return OptimizationResult(
             selected=selected,
-            total_estimated_benefit_usd=sum(
-                v.estimated_benefit_usd for v in selected
-            ),
+            total_estimated_benefit_usd=sum(v.estimated_benefit_usd for v in selected),
             total_storage_bytes=_storage(sel_set),
-            total_maintenance_cost_usd=sum(
-                v.estimated_maintenance_cost_usd for v in selected
-            ),
+            total_maintenance_cost_usd=sum(v.estimated_maintenance_cost_usd for v in selected),
             algorithm="greedy",
             iterations=len(candidates),
             elapsed_seconds=elapsed,
@@ -88,6 +86,7 @@ class GreedySelector:
 # ---------------------------------------------------------------------------
 # Simulated Annealing
 # ---------------------------------------------------------------------------
+
 
 class AnnealingSelector:
     """
@@ -152,9 +151,7 @@ class AnnealingSelector:
         i = 0
 
         for _ in range(self.max_iterations):
-            candidate_state = self._neighbour(
-                current, not_selected, budget_bytes
-            )
+            candidate_state = self._neighbour(current, not_selected, budget_bytes)
             if candidate_state is None:
                 break
 
@@ -178,13 +175,9 @@ class AnnealingSelector:
         selected = list(best)
         return OptimizationResult(
             selected=selected,
-            total_estimated_benefit_usd=sum(
-                v.estimated_benefit_usd for v in selected
-            ),
+            total_estimated_benefit_usd=sum(v.estimated_benefit_usd for v in selected),
             total_storage_bytes=_storage(best),
-            total_maintenance_cost_usd=sum(
-                v.estimated_maintenance_cost_usd for v in selected
-            ),
+            total_maintenance_cost_usd=sum(v.estimated_maintenance_cost_usd for v in selected),
             algorithm="annealing",
             iterations=i + 1,
             elapsed_seconds=elapsed,

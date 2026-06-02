@@ -1,4 +1,5 @@
 """Parquet engine: translates predicates to PyArrow dataset filter expressions."""
+
 from __future__ import annotations
 
 from typing import Any, List, Optional, Set

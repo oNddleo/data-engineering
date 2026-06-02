@@ -25,8 +25,13 @@ class TumblingWindowState:
     def _window_of(self, event_time: float) -> float:
         return (event_time // self.window_size) * self.window_size
 
-    def add(self, key: object, event_time: float, value: object,
-            agg_fn: Callable[[object, object], object]) -> tuple[float, object]:
+    def add(
+        self,
+        key: object,
+        event_time: float,
+        value: object,
+        agg_fn: Callable[[object, object], object],
+    ) -> tuple[float, object]:
         """Add a record; return (window_start, updated_value)."""
         ws = self._window_of(event_time)
         with self._lock:

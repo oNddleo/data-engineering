@@ -18,7 +18,7 @@ PAGE_SIZE: int = 4096
 class PageId:
     """Globally unique page identifier."""
 
-    tenant: int       # 0 for single-tenant
+    tenant: int  # 0 for single-tenant
     page_no: int
 
     def __repr__(self) -> str:
@@ -38,9 +38,7 @@ class Page:
 
     def __post_init__(self) -> None:
         if len(self.data) != PAGE_SIZE:
-            raise ValueError(
-                f"Page data must be exactly {PAGE_SIZE} bytes (got {len(self.data)})"
-            )
+            raise ValueError(f"Page data must be exactly {PAGE_SIZE} bytes (got {len(self.data)})")
 
     def update(self, new_data: bytes) -> None:
         if len(new_data) != PAGE_SIZE:

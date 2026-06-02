@@ -9,6 +9,7 @@ For each column the selector:
   5. On ``schema_changed`` the affected column entries are evicted so the
      next encode triggers a fresh evaluation.
 """
+
 from __future__ import annotations
 
 import logging
@@ -34,12 +35,18 @@ class SelectionRecord:
 @dataclass
 class SelectorConfig:
     sample_size: int = 8_192
-    min_ratio_improvement: float = 1.05  # new codec must be >= 5% better to unseat cached choice
+    min_ratio_improvement: float = (
+        1.05  # new codec must be >= 5% better to unseat cached choice
+    )
     benchmark_rounds: int = 3
 
 
 class EncodingSelector:
-    def __init__(self, codecs: Optional[list[Codec]] = None, config: Optional[SelectorConfig] = None) -> None:
+    def __init__(
+        self,
+        codecs: Optional[list[Codec]] = None,
+        config: Optional[SelectorConfig] = None,
+    ) -> None:
         self._codecs = codecs if codecs is not None else list(ALL_CODECS)
         self._cfg = config or SelectorConfig()
         self._cache: dict[tuple[str, str], SelectionRecord] = {}
@@ -57,13 +64,17 @@ class EncodingSelector:
         self._cache[key] = record
         return record.codec
 
-    def force_reevaluate(self, name: str, column: np.ndarray[Any, np.dtype[Any]]) -> Codec:
+    def force_reevaluate(
+        self, name: str, column: np.ndarray[Any, np.dtype[Any]]
+    ) -> Codec:
         """Discard cached choice and re-run benchmark."""
         key = (name, str(column.dtype))
         self._cache.pop(key, None)
         return self.select(name, column)
 
-    def schema_changed(self, old_columns: dict[str, str], new_columns: dict[str, str]) -> list[str]:
+    def schema_changed(
+        self, old_columns: dict[str, str], new_columns: dict[str, str]
+    ) -> list[str]:
         """
         Compare old vs new {name: dtype} schema maps.  Evict cache for any
         column whose dtype changed or that is new.  Returns affected names.
@@ -76,7 +87,12 @@ class EncodingSelector:
                 self._cache.pop(key, None)
                 self._cache.pop((name, new_dtype), None)
                 affected.append(name)
-                logger.info("Schema change: column %r %s → %s; cache evicted", name, old_dtype, new_dtype)
+                logger.info(
+                    "Schema change: column %r %s → %s; cache evicted",
+                    name,
+                    old_dtype,
+                    new_dtype,
+                )
         return affected
 
     def cache_summary(self) -> list[SelectionRecord]:
@@ -89,7 +105,9 @@ class EncodingSelector:
     def _candidates(self, dtype: np.dtype[Any]) -> list[Codec]:
         return [c for c in self._codecs if c.supports_dtype(dtype)]
 
-    def _sample(self, column: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
+    def _sample(
+        self, column: np.ndarray[Any, np.dtype[Any]]
+    ) -> np.ndarray[Any, np.dtype[Any]]:
         n = min(self._cfg.sample_size, len(column))
         if n == len(column):
             return column
@@ -98,10 +116,14 @@ class EncodingSelector:
         idx.sort()
         return column[idx]
 
-    def _evaluate(self, name: str, column: np.ndarray[Any, np.dtype[Any]]) -> SelectionRecord:
+    def _evaluate(
+        self, name: str, column: np.ndarray[Any, np.dtype[Any]]
+    ) -> SelectionRecord:
         candidates = self._candidates(column.dtype)
         if not candidates:
-            raise ValueError(f"No codec supports dtype {column.dtype} for column {name!r}")
+            raise ValueError(
+                f"No codec supports dtype {column.dtype} for column {name!r}"
+            )
 
         sample = self._sample(column)
         results: list[tuple[BenchmarkResult, Codec]] = []
@@ -115,14 +137,19 @@ class EncodingSelector:
                 logger.debug("Codec %s failed on column %r: %s", codec.name, name, exc)
 
         if not results:
-            raise RuntimeError(f"All codecs failed for column {name!r} (dtype={column.dtype})")
+            raise RuntimeError(
+                f"All codecs failed for column {name!r} (dtype={column.dtype})"
+            )
 
         # Best = highest ratio; ties broken by fastest encode
         best_bm, best_codec = max(results, key=lambda t: (t[0].ratio, -t[0].encode_ms))
 
         logger.info(
             "Selected %s for column %r (ratio=%.2fx, saving=%.1f%%)",
-            best_codec.name, name, best_bm.ratio, best_bm.space_saving * 100,
+            best_codec.name,
+            name,
+            best_bm.ratio,
+            best_bm.space_saving * 100,
         )
         return SelectionRecord(
             column=name,

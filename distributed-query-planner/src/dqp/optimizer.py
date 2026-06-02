@@ -1,4 +1,5 @@
 """Federated query optimizer: picks the cheapest predicate pushdown configuration."""
+
 from __future__ import annotations
 
 import itertools
@@ -76,7 +77,7 @@ class FederatedOptimizer:
 
         # Full pushdown and no pushdown
         candidate_pushed_sets.append(list(range(n)))  # push all
-        candidate_pushed_sets.append([])              # push none
+        candidate_pushed_sets.append([])  # push none
 
         # Partial subsets (for small n, enumerate all; for large n, greedy)
         if 0 < n <= 10:

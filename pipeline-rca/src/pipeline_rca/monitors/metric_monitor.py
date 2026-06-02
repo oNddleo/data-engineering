@@ -40,9 +40,7 @@ class MetricMonitor:
         self.evaluation_window_days = evaluation_window_days
         self.z_threshold = z_threshold
 
-    def check(
-        self, series: Sequence[MetricPoint]
-    ) -> MetricDegradation | None:
+    def check(self, series: Sequence[MetricPoint]) -> MetricDegradation | None:
         """Return a MetricDegradation if the series tail looks degraded, else None."""
         if len(series) < self.baseline_window_days + self.evaluation_window_days:
             logger.warning(
@@ -53,9 +51,11 @@ class MetricMonitor:
             )
             return None
 
-        df = pd.DataFrame(
-            {"ts": [p.timestamp for p in series], "v": [p.value for p in series]}
-        ).sort_values("ts").reset_index(drop=True)
+        df = (
+            pd.DataFrame({"ts": [p.timestamp for p in series], "v": [p.value for p in series]})
+            .sort_values("ts")
+            .reset_index(drop=True)
+        )
 
         baseline = df.iloc[: -self.evaluation_window_days]
         evaluation = df.iloc[-self.evaluation_window_days :]

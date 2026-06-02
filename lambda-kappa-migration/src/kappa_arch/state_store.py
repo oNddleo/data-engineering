@@ -63,10 +63,7 @@ class StateStore:
     def get_hourly_event_counts(self) -> dict[str, dict[str, int]]:
         """Return a snapshot of hourly event counts."""
         with self._lock:
-            return {
-                hour: dict(counts)
-                for hour, counts in self._hourly_event_counts.data.items()
-            }
+            return {hour: dict(counts) for hour, counts in self._hourly_event_counts.data.items()}
 
     def get_user_totals(self) -> dict[str, dict[str, Any]]:
         """Return a snapshot of per-user totals."""

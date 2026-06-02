@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 import uuid
 from datetime import datetime
 from typing import Any
+
 import pandas as pd
 from pydantic import BaseModel, Field
 
@@ -24,7 +26,7 @@ class MicroBatch(BaseModel):
     records: list[dict[str, Any]] = Field(default_factory=list)
 
     @classmethod
-    def from_dataframe(cls, df: pd.DataFrame, metadata: BatchMetadata) -> "MicroBatch":
+    def from_dataframe(cls, df: pd.DataFrame, metadata: BatchMetadata) -> MicroBatch:
         return cls(metadata=metadata, records=df.to_dict(orient="records"))
 
     def to_dataframe(self) -> pd.DataFrame:

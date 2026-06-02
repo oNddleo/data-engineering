@@ -102,8 +102,11 @@ def _extract_jsonld(html: str) -> dict[str, Any] | None:
         return None
     return {
         "title": str(product.get("name") or "").strip(),
-        "brand": (product.get("brand", {}).get("name")
-                  if isinstance(product.get("brand"), dict) else product.get("brand")),
+        "brand": (
+            product.get("brand", {}).get("name")
+            if isinstance(product.get("brand"), dict)
+            else product.get("brand")
+        ),
         "price": priced[0],
         "currency": priced[1],
         "category": product.get("category"),
@@ -133,6 +136,7 @@ def _extract_microdata(html: str) -> dict[str, Any] | None:
 
 def _extract_opengraph(html: str) -> dict[str, Any] | None:
     tree = HTMLParser(html)
+
     def meta(prop: str) -> str | None:
         node = tree.css_first(f'meta[property="{prop}"]')
         return node.attributes.get("content") if node else None
@@ -166,7 +170,7 @@ def _extract_heuristic(html: str) -> dict[str, Any] | None:
     title = title_node.text(strip=True)
 
     # Scan elements that look like prices (common itemprop or class hints first).
-    for selector in ('[itemprop="price"]', '[class*="price"]', '[data-price]'):
+    for selector in ('[itemprop="price"]', '[class*="price"]', "[data-price]"):
         node = tree.css_first(selector)
         if not node:
             continue

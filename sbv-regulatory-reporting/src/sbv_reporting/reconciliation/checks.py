@@ -3,6 +3,7 @@
 Each check returns a ReconciliationResult with:
   - check_name, passed, delta, details
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -34,7 +35,9 @@ class ReconciliationEngine:
         self.tolerance = get_config()["thresholds"]["reconciliation_tolerance"]
 
     # ------------------------------------------------------------------
-    def check_row_count(self, raw: pd.DataFrame, transformed: pd.DataFrame) -> ReconciliationResult:
+    def check_row_count(
+        self, raw: pd.DataFrame, transformed: pd.DataFrame
+    ) -> ReconciliationResult:
         raw_n = len(raw)
         tfm_n = len(transformed)
         delta = abs(raw_n - tfm_n)
@@ -45,19 +48,28 @@ class ReconciliationEngine:
             details={"raw_rows": raw_n, "transformed_rows": tfm_n},
         )
 
-    def check_vnd_total(self, raw: pd.DataFrame, transformed: pd.DataFrame) -> ReconciliationResult:
+    def check_vnd_total(
+        self, raw: pd.DataFrame, transformed: pd.DataFrame
+    ) -> ReconciliationResult:
         """Total VND equivalent must match between raw input and transformed output."""
         raw_total = raw.loc[raw["status"] == "SUCCESS", "vnd_equivalent"].sum()
-        tfm_total = transformed.loc[transformed["status"] == "SUCCESS", "vnd_equivalent"].sum()
+        tfm_total = transformed.loc[
+            transformed["status"] == "SUCCESS", "vnd_equivalent"
+        ].sum()
         delta = abs(raw_total - tfm_total)
         return ReconciliationResult(
             check_name="vnd_total",
             passed=(delta <= self.tolerance),
             delta=float(delta),
-            details={"raw_total_vnd": float(raw_total), "transformed_total_vnd": float(tfm_total)},
+            details={
+                "raw_total_vnd": float(raw_total),
+                "transformed_total_vnd": float(tfm_total),
+            },
         )
 
-    def check_transaction_ids(self, raw: pd.DataFrame, transformed: pd.DataFrame) -> ReconciliationResult:
+    def check_transaction_ids(
+        self, raw: pd.DataFrame, transformed: pd.DataFrame
+    ) -> ReconciliationResult:
         raw_ids = set(raw["transaction_id"])
         tfm_ids = set(transformed["transaction_id"])
         missing = raw_ids - tfm_ids
@@ -73,7 +85,9 @@ class ReconciliationEngine:
             },
         )
 
-    def check_currency_totals(self, raw: pd.DataFrame, transformed: pd.DataFrame) -> ReconciliationResult:
+    def check_currency_totals(
+        self, raw: pd.DataFrame, transformed: pd.DataFrame
+    ) -> ReconciliationResult:
         """Per-currency sums must match (successful transactions only)."""
         raw_ok = raw[raw["status"] == "SUCCESS"]
         tfm_ok = transformed[transformed["status"] == "SUCCESS"]
@@ -94,7 +108,9 @@ class ReconciliationEngine:
             details={"mismatches": mismatches},
         )
 
-    def check_branch_counts(self, raw: pd.DataFrame, transformed: pd.DataFrame) -> ReconciliationResult:
+    def check_branch_counts(
+        self, raw: pd.DataFrame, transformed: pd.DataFrame
+    ) -> ReconciliationResult:
         raw_bc = raw.groupby("branch_code").size().to_dict()
         tfm_bc = transformed.groupby("branch_code").size().to_dict()
         mismatches = {
@@ -118,18 +134,28 @@ class ReconciliationEngine:
         cfg = get_config()
         threshold = cfg["thresholds"]["large_value_vnd"]
         eligible = transformed[
-            (transformed["status"] == "SUCCESS") &
-            (transformed["vnd_equivalent"] >= threshold)
+            (transformed["status"] == "SUCCESS")
+            & (transformed["vnd_equivalent"] >= threshold)
         ]["transaction_id"]
         # BCGDLN report uses SBV column name MA_GIAO_DICH
-        id_col = "MA_GIAO_DICH" if "MA_GIAO_DICH" in large_value_report.columns else "transaction_id"
-        reported = set(large_value_report[id_col]) if not large_value_report.empty else set()
+        id_col = (
+            "MA_GIAO_DICH"
+            if "MA_GIAO_DICH" in large_value_report.columns
+            else "transaction_id"
+        )
+        reported = (
+            set(large_value_report[id_col]) if not large_value_report.empty else set()
+        )
         missing = set(eligible) - reported
         return ReconciliationResult(
             check_name="large_value_coverage",
             passed=(len(missing) == 0),
             delta=float(len(missing)),
-            details={"eligible": len(eligible), "reported": len(reported), "missing": sorted(missing)[:20]},
+            details={
+                "eligible": len(eligible),
+                "reported": len(reported),
+                "missing": sorted(missing)[:20],
+            },
         )
 
     # ------------------------------------------------------------------
@@ -147,5 +173,7 @@ class ReconciliationEngine:
             self.check_branch_counts(raw, transformed),
         ]
         if large_value_report is not None:
-            results.append(self.check_large_value_coverage(transformed, large_value_report))
+            results.append(
+                self.check_large_value_coverage(transformed, large_value_report)
+            )
         return results

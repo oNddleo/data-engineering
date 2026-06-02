@@ -16,6 +16,7 @@ from typing import Any
 @dataclass(slots=True)
 class Version:
     """One immutable version of a value."""
+
     commit_ts: int
     value: Any
     deleted: bool = False
@@ -80,8 +81,7 @@ class VersionChain:
     def has_uncommitted_other(self, txn_id: int) -> bool:
         """True if some *other* transaction has an uncommitted version."""
         with self._lock:
-            return any(v.txn_id is not None and v.txn_id != txn_id
-                       for v in self._versions)
+            return any(v.txn_id is not None and v.txn_id != txn_id for v in self._versions)
 
     def commit(self, txn_id: int, commit_ts: int) -> None:
         """Finalise the tentative version owned by `txn_id`."""
@@ -91,19 +91,22 @@ class VersionChain:
                     v.txn_id = None
                     v.commit_ts = commit_ts
                     # Re-sort: tentative was at head; ensure descending order
-                    self._versions.sort(key=lambda x: (x.txn_id is None, -x.commit_ts),
-                                        reverse=False)
+                    self._versions.sort(
+                        key=lambda x: (x.txn_id is None, -x.commit_ts), reverse=False
+                    )
                     # Actually we want committed in descending commit_ts;
                     # uncommitted should remain at head with txn_id != None.
                     # Re-do correctly:
                     break
-            self._versions = sorted(self._versions,
-                                    key=lambda x: (
-                                        0 if x.txn_id is not None else 1,
-                                        # uncommitted first (sort key 0)
-                                        # then committed by -commit_ts ascending
-                                        -x.commit_ts if x.txn_id is None else 0,
-                                    ))
+            self._versions = sorted(
+                self._versions,
+                key=lambda x: (
+                    0 if x.txn_id is not None else 1,
+                    # uncommitted first (sort key 0)
+                    # then committed by -commit_ts ascending
+                    -x.commit_ts if x.txn_id is None else 0,
+                ),
+            )
 
     def rollback(self, txn_id: int) -> None:
         """Drop the tentative version owned by `txn_id`."""

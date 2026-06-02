@@ -1,4 +1,5 @@
 """MongoDB engine: translates predicates to aggregation pipeline $match stages."""
+
 from __future__ import annotations
 
 import re

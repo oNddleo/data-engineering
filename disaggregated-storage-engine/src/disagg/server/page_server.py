@@ -36,7 +36,7 @@ class PageServer:
         self._evictor = LRUEvictor(capacity=capacity_pages)
         self.dir = CoherenceDirectory(n_shards=n_shards)
         self.stats = PageServerStats()
-        self._lock = threading.RLock()    # protects self._pages
+        self._lock = threading.RLock()  # protects self._pages
 
     # ---- Transport dispatch ----------------------------------------------
 

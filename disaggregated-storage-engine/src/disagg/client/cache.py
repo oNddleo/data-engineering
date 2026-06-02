@@ -68,7 +68,10 @@ class ClientCache:
     def write(self, page_id: PageId, data: bytes) -> None:
         self.stats.writes += 1
         resp = self.transport.call(
-            "write", client_id=self.client_id, page_id=page_id, data=data,
+            "write",
+            client_id=self.client_id,
+            page_id=page_id,
+            data=data,
         )
         invalidate_ids: list[int] = resp.get("invalidate", []) if isinstance(resp, dict) else []
         # Update our own cache to the new page (we just wrote it)

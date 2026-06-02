@@ -1,4 +1,5 @@
 """Engine samplers and stats builder for calibrating the cost model."""
+
 from __future__ import annotations
 
 import random
@@ -98,9 +99,7 @@ class PostgresSampler(SamplerBase):
         conn = psycopg2.connect(self._conn_string)
         try:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                cur.execute(
-                    f'SELECT * FROM "{table_name}" TABLESAMPLE BERNOULLI (%s)', (pct,)
-                )
+                cur.execute(f'SELECT * FROM "{table_name}" TABLESAMPLE BERNOULLI (%s)', (pct,))
                 rows = [dict(row) for row in cur.fetchall()]
         finally:
             conn.close()

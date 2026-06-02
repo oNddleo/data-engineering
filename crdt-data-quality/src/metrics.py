@@ -9,6 +9,7 @@ Each worker tracks:
   - distinct_values   : HyperLogLogCRDT — approx count of distinct values
   - value_histogram   : Dict[str, GCounter] — per-bucket value distribution
 """
+
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
@@ -109,5 +110,7 @@ class WorkerMetrics:
             "anomaly_types": sorted(self.anomaly_types.elements()),
             "distinct_values_approx": self.distinct_values.count(),
             "distinct_values_error": f"±{self.distinct_values.error_rate():.2%}",
-            "value_histogram": {b: self.value_histogram[b].value() for b in HISTOGRAM_BUCKETS},
+            "value_histogram": {
+                b: self.value_histogram[b].value() for b in HISTOGRAM_BUCKETS
+            },
         }

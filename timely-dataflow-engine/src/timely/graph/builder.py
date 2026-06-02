@@ -50,9 +50,11 @@ class GraphBuilder:
         self.initial_inputs[name] = recs
 
         if downstream is None:
+
             def _fn(ts: Timestamp, value: Any, emit: EmitFn) -> None:
                 pass  # leaf source — records stay in queue
         else:
+
             def _fn(ts: Timestamp, value: Any, emit: EmitFn) -> None:
                 emit(downstream, ts, value)
 

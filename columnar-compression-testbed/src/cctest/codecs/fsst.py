@@ -10,6 +10,7 @@ Algorithm overview
 5. Encode left-to-right with longest-match-first.
 6. Each encoded string is prefixed with its 2-byte length (max 64 KiB/string).
 """
+
 from __future__ import annotations
 
 import struct
@@ -25,7 +26,9 @@ _MAX_SYMBOL_LEN = 8
 _MAX_SYMBOLS = 254
 
 
-def _build_symbol_table(strings: Sequence[bytes], max_symbols: int = _MAX_SYMBOLS) -> list[bytes]:
+def _build_symbol_table(
+    strings: Sequence[bytes], max_symbols: int = _MAX_SYMBOLS
+) -> list[bytes]:
     freq: dict[bytes, int] = defaultdict(int)
     for s in strings:
         n = len(s)
@@ -33,7 +36,9 @@ def _build_symbol_table(strings: Sequence[bytes], max_symbols: int = _MAX_SYMBOL
             for i in range(n - length + 1):
                 freq[s[i : i + length]] += 1
 
-    candidates = sorted(freq.items(), key=lambda kv: (len(kv[0]) - 1) * kv[1], reverse=True)
+    candidates = sorted(
+        freq.items(), key=lambda kv: (len(kv[0]) - 1) * kv[1], reverse=True
+    )
     return [sym for sym, _ in candidates[:max_symbols]]
 
 

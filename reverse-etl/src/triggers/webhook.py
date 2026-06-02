@@ -13,7 +13,9 @@ logger = get_logger(__name__)
 def _verify_signature(body: bytes, signature: str | None) -> bool:
     if not signature:
         return False
-    expected = hmac.new(settings.webhook_secret.encode(), body, hashlib.sha256).hexdigest()
+    expected = hmac.new(
+        settings.webhook_secret.encode(), body, hashlib.sha256
+    ).hexdigest()
     return hmac.compare_digest(f"sha256={expected}", signature)
 
 
@@ -47,9 +49,13 @@ def create_webhook_app(pipelines: list[PipelineConfig]) -> FastAPI:
 
         config = pipeline_map.get(pipeline_name)
         if not config:
-            raise HTTPException(status_code=404, detail=f"Pipeline '{pipeline_name}' not found")
+            raise HTTPException(
+                status_code=404, detail=f"Pipeline '{pipeline_name}' not found"
+            )
         if not config.enabled:
-            raise HTTPException(status_code=400, detail=f"Pipeline '{pipeline_name}' is disabled")
+            raise HTTPException(
+                status_code=400, detail=f"Pipeline '{pipeline_name}' is disabled"
+            )
 
         logger.info(f"Webhook trigger: {pipeline_name}")
         return run_pipeline(config)

@@ -37,7 +37,9 @@ class MetadataStore:
     # Write path
     # ------------------------------------------------------------------
 
-    def put(self, key: str, value: Any, remote_ts: HLCTimestamp | None = None) -> HLCTimestamp:
+    def put(
+        self, key: str, value: Any, remote_ts: HLCTimestamp | None = None
+    ) -> HLCTimestamp:
         """
         Write *key=value*.  If *remote_ts* is provided (replication), update
         the clock via `update` before stamping; otherwise tick locally.

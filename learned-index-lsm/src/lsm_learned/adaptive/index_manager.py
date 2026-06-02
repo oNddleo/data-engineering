@@ -89,7 +89,9 @@ class AdaptiveIndexManager:
     # Query
     # ------------------------------------------------------------------
 
-    def lookup(self, key: int, sorted_keys: Optional[np.ndarray[Any, np.dtype[Any]]] = None) -> Optional[int]:
+    def lookup(
+        self, key: int, sorted_keys: Optional[np.ndarray[Any, np.dtype[Any]]] = None
+    ) -> Optional[int]:
         """
         Return the array index of *key* (or None if absent).
 
@@ -107,7 +109,10 @@ class AdaptiveIndexManager:
         else:
             self._fallback_query_count += 1
             result = self._btree.lookup(key)
-            if sorted_keys is not None and self._fallback_query_count >= self._fallback_window:
+            if (
+                sorted_keys is not None
+                and self._fallback_query_count >= self._fallback_window
+            ):
                 self._maybe_retrain(sorted_keys)
             return result
 
@@ -164,5 +169,7 @@ class AdaptiveIndexManager:
             "fallback_queries": self._total_queries - self._total_rmi_queries,
             "drift_events": len(self._drift_events),
             "rmi_usage_rate": round(self.rmi_usage_rate, 4),
-            "mean_error": round(float(np.mean(self._error_history)) if self._error_history else 0, 2),
+            "mean_error": round(
+                float(np.mean(self._error_history)) if self._error_history else 0, 2
+            ),
         }

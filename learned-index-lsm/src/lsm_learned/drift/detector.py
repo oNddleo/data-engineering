@@ -33,7 +33,7 @@ class DriftSignal:
 
     detector: str
     step: int
-    statistic: float          # detector-specific test statistic
+    statistic: float  # detector-specific test statistic
     threshold: float
     message: str = ""
 
@@ -130,8 +130,7 @@ class ADWINDetector:
             m0 = s0 / n0
             m1 = (self._total_sum - s0) / n1
             epsilon = math.sqrt(
-                (1.0 / (2 * n0) + 1.0 / (2 * n1))
-                * math.log(4 * n / self._delta)
+                (1.0 / (2 * n0) + 1.0 / (2 * n1)) * math.log(4 * n / self._delta)
             )
             diff = abs(m0 - m1)
             if diff > epsilon:

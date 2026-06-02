@@ -7,6 +7,7 @@ Each log entry contains:
 This produces a tamper-evident chain: altering any past entry breaks all
 subsequent hashes, detectable on verification.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -19,6 +20,7 @@ from sbv_reporting.utils.config import get_config
 
 try:
     import numpy as np
+
     _NP_TYPES: tuple[type, ...] = (np.integer, np.floating, np.bool_)
 except ImportError:
     _NP_TYPES = ()
@@ -26,6 +28,7 @@ except ImportError:
 
 class _SafeEncoder(json.JSONEncoder):
     """Serialise NumPy scalars and other non-standard types."""
+
     def default(self, obj: Any) -> Any:
         if _NP_TYPES and isinstance(obj, _NP_TYPES):
             np_obj: Any = obj
@@ -67,7 +70,9 @@ class AuditTrail:
             "operator": operator,
             "details": details,
         }
-        canonical = json.dumps(entry, sort_keys=True, ensure_ascii=False, cls=_SafeEncoder)
+        canonical = json.dumps(
+            entry, sort_keys=True, ensure_ascii=False, cls=_SafeEncoder
+        )
         entry["prev_hash"] = self._chain_hash
         entry["entry_hash"] = hashlib.sha256(
             (self._chain_hash + canonical).encode()
@@ -97,7 +102,9 @@ class AuditTrail:
             if stored_prev != prev_hash:
                 errors.append(f"Line {i+1}: prev_hash mismatch (chain broken)")
 
-            canonical = json.dumps(entry, sort_keys=True, ensure_ascii=False, cls=_SafeEncoder)
+            canonical = json.dumps(
+                entry, sort_keys=True, ensure_ascii=False, cls=_SafeEncoder
+            )
             computed = hashlib.sha256((prev_hash + canonical).encode()).hexdigest()
             if computed != stored_hash:
                 errors.append(f"Line {i+1}: entry_hash mismatch (entry tampered)")

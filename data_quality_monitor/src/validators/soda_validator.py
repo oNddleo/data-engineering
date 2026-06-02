@@ -1,15 +1,15 @@
 from __future__ import annotations
-import io
+
 import time
 import uuid
+
 import structlog
-import pandas as pd
 
 from ..config import settings
 from ..models import (
+    CheckResult,
     MicroBatch,
     ValidationResult,
-    CheckResult,
     ValidationStatus,
     ValidatorBackend,
 )
@@ -41,7 +41,9 @@ class SodaValidator(BaseValidator):
             scan = Scan()
             scan.set_scan_definition_name(f"dq_monitor_{table}")
             scan.set_data_source_name("in_memory")
-            scan.add_pandas_dataframe(data_source_name="in_memory", dataset_name=table, pandas_df=df)
+            scan.add_pandas_dataframe(
+                data_source_name="in_memory", dataset_name=table, pandas_df=df
+            )
             scan.add_sodacl_yaml_file(checks_file)
             scan.execute()
 
@@ -51,7 +53,11 @@ class SodaValidator(BaseValidator):
             warnings = sum(1 for c in check_results if c.status == ValidationStatus.WARNING)
             total = len(check_results)
             pass_rate = passed / total if total else 0.0
-            status = ValidationStatus.PASSED if pass_rate >= settings.failure_threshold else ValidationStatus.FAILED
+            status = (
+                ValidationStatus.PASSED
+                if pass_rate >= settings.failure_threshold
+                else ValidationStatus.FAILED
+            )
 
             return ValidationResult(
                 result_id=result_id,
@@ -92,6 +98,7 @@ class SodaValidator(BaseValidator):
     async def health_check(self) -> bool:
         try:
             from soda.scan import Scan  # type: ignore  # noqa: F401
+
             return True
         except ImportError:
             return False
@@ -99,7 +106,11 @@ class SodaValidator(BaseValidator):
 
 def _parse_soda_results(scan) -> list[CheckResult]:
     results = []
-    for check in scan.get_checks_dataframe().to_dict(orient="records") if hasattr(scan, "get_checks_dataframe") else []:
+    for check in (
+        scan.get_checks_dataframe().to_dict(orient="records")
+        if hasattr(scan, "get_checks_dataframe")
+        else []
+    ):
         outcome = str(check.get("outcome", "")).lower()
         if outcome == "pass":
             status = ValidationStatus.PASSED
@@ -108,13 +119,15 @@ def _parse_soda_results(scan) -> list[CheckResult]:
         else:
             status = ValidationStatus.FAILED
 
-        results.append(CheckResult(
-            check_name=str(check.get("name", "unknown")),
-            expectation_type=str(check.get("type", "unknown")),
-            status=status,
-            observed_value=check.get("value"),
-            details={k: v for k, v in check.items()},
-        ))
+        results.append(
+            CheckResult(
+                check_name=str(check.get("name", "unknown")),
+                expectation_type=str(check.get("type", "unknown")),
+                status=status,
+                observed_value=check.get("value"),
+                details={k: v for k, v in check.items()},
+            )
+        )
 
     # Fallback: use scan logs when structured check data is unavailable
     if not results:
@@ -124,10 +137,14 @@ def _parse_soda_results(scan) -> list[CheckResult]:
                 continue
             status_map = {"pass": ValidationStatus.PASSED, "warn": ValidationStatus.WARNING}
             status = status_map.get(str(outcome).lower(), ValidationStatus.FAILED)
-            results.append(CheckResult(
-                check_name=str(getattr(check_result, "name", "unknown")),
-                expectation_type=type(getattr(check_result, "check_cfg", None)).__name__ if hasattr(check_result, "check_cfg") else "unknown",
-                status=status,
-                details={},
-            ))
+            results.append(
+                CheckResult(
+                    check_name=str(getattr(check_result, "name", "unknown")),
+                    expectation_type=type(getattr(check_result, "check_cfg", None)).__name__
+                    if hasattr(check_result, "check_cfg")
+                    else "unknown",
+                    status=status,
+                    details={},
+                )
+            )
     return results

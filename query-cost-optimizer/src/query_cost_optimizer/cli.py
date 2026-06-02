@@ -23,6 +23,7 @@ def _setup_logging(verbose: bool) -> None:
 
 # ─── Root group ──────────────────────────────────────────────────────────────
 
+
 @click.group()
 @click.version_option(package_name="query-cost-optimizer")
 def main() -> None:
@@ -42,10 +43,32 @@ def main() -> None:
 
 _output_options = [
     click.option("--days", default=30, show_default=True, help="Days of query history to analyse."),
-    click.option("--min-savings", default=10.0, show_default=True, help="Min monthly USD savings to surface a recommendation."),
-    click.option("--min-queries", default=5, show_default=True, help="Min query count to flag a table or pattern."),
-    click.option("--output", "-o", type=click.Choice(["console", "json", "html", "all"]), default="console", show_default=True, help="Output format."),
-    click.option("--out-dir", default="./reports", show_default=True, help="Directory for json/html output files."),
+    click.option(
+        "--min-savings",
+        default=10.0,
+        show_default=True,
+        help="Min monthly USD savings to surface a recommendation.",
+    ),
+    click.option(
+        "--min-queries",
+        default=5,
+        show_default=True,
+        help="Min query count to flag a table or pattern.",
+    ),
+    click.option(
+        "--output",
+        "-o",
+        type=click.Choice(["console", "json", "html", "all"]),
+        default="console",
+        show_default=True,
+        help="Output format.",
+    ),
+    click.option(
+        "--out-dir",
+        default="./reports",
+        show_default=True,
+        help="Directory for json/html output files.",
+    ),
     click.option("--verbose", "-v", is_flag=True, help="Enable debug logging."),
 ]
 
@@ -55,20 +78,36 @@ def add_options(options: list[Any]) -> Callable[[Any], Any]:
         for option in reversed(options):
             func = option(func)
         return func
+
     return _add_options
 
 
 # ─── BigQuery command ─────────────────────────────────────────────────────────
 
+
 @main.command()
-@click.option("--project", envvar="BQ_PROJECT_ID", required=True, help="GCP project ID (or set BQ_PROJECT_ID).")
+@click.option(
+    "--project",
+    envvar="BQ_PROJECT_ID",
+    required=True,
+    help="GCP project ID (or set BQ_PROJECT_ID).",
+)
 @add_options(_output_options)
-def bigquery(project: str, days: int, min_savings: float, min_queries: int, output: str, out_dir: str, verbose: bool) -> None:
+def bigquery(
+    project: str,
+    days: int,
+    min_savings: float,
+    min_queries: int,
+    output: str,
+    out_dir: str,
+    verbose: bool,
+) -> None:
     """Analyse BigQuery query history and surface optimisation recommendations."""
     _setup_logging(verbose)
     console.print(f"[cyan]Connecting to BigQuery project:[/cyan] [bold]{project}[/bold]")
     try:
         from .engine import run_bigquery
+
         report = run_bigquery(
             project_id=project,
             history_days=days,
@@ -90,18 +129,48 @@ def bigquery(project: str, days: int, min_savings: float, min_queries: int, outp
 
 # ─── Snowflake command ────────────────────────────────────────────────────────
 
+
 @main.command()
-@click.option("--account", envvar="SNOWFLAKE_ACCOUNT", required=True, help="Snowflake account identifier (or set SNOWFLAKE_ACCOUNT).")
-@click.option("--user", envvar="SNOWFLAKE_USER", required=True, help="Snowflake username (or set SNOWFLAKE_USER).")
-@click.option("--password", envvar="SNOWFLAKE_PASSWORD", default=None, help="Snowflake password (or set SNOWFLAKE_PASSWORD).")
-@click.option("--warehouse", envvar="SNOWFLAKE_WAREHOUSE", default=None, help="Snowflake warehouse to use.")
+@click.option(
+    "--account",
+    envvar="SNOWFLAKE_ACCOUNT",
+    required=True,
+    help="Snowflake account identifier (or set SNOWFLAKE_ACCOUNT).",
+)
+@click.option(
+    "--user",
+    envvar="SNOWFLAKE_USER",
+    required=True,
+    help="Snowflake username (or set SNOWFLAKE_USER).",
+)
+@click.option(
+    "--password",
+    envvar="SNOWFLAKE_PASSWORD",
+    default=None,
+    help="Snowflake password (or set SNOWFLAKE_PASSWORD).",
+)
+@click.option(
+    "--warehouse", envvar="SNOWFLAKE_WAREHOUSE", default=None, help="Snowflake warehouse to use."
+)
 @add_options(_output_options)
-def snowflake(account: str, user: str, password: str | None, warehouse: str | None, days: int, min_savings: float, min_queries: int, output: str, out_dir: str, verbose: bool) -> None:
+def snowflake(
+    account: str,
+    user: str,
+    password: str | None,
+    warehouse: str | None,
+    days: int,
+    min_savings: float,
+    min_queries: int,
+    output: str,
+    out_dir: str,
+    verbose: bool,
+) -> None:
     """Analyse Snowflake query history and surface optimisation recommendations."""
     _setup_logging(verbose)
     console.print(f"[cyan]Connecting to Snowflake account:[/cyan] [bold]{account}[/bold]")
     try:
         from .engine import run_snowflake
+
         report = run_snowflake(
             account=account,
             user=user,
@@ -126,18 +195,32 @@ def snowflake(account: str, user: str, password: str | None, warehouse: str | No
 
 # ─── Demo command (no real warehouse needed) ──────────────────────────────────
 
+
 @main.command()
-@click.option("--platform", type=click.Choice(["bigquery", "snowflake"]), default="bigquery", show_default=True)
-@click.option("--output", "-o", type=click.Choice(["console", "json", "html", "all"]), default="console", show_default=True)
+@click.option(
+    "--platform",
+    type=click.Choice(["bigquery", "snowflake"]),
+    default="bigquery",
+    show_default=True,
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["console", "json", "html", "all"]),
+    default="console",
+    show_default=True,
+)
 @click.option("--out-dir", default="./reports", show_default=True)
 def demo(platform: str, output: str, out_dir: str) -> None:
     """Run the optimizer against synthetic demo data (no credentials needed)."""
     from .demo import build_demo_report
+
     report = build_demo_report(platform)
     _emit(report, output, out_dir, "demo")
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
+
 
 def _emit(report: Any, output: str, out_dir: str, prefix: str) -> None:
     from .reporters.report import ConsoleReporter, JsonReporter, HtmlReporter

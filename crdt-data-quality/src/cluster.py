@@ -8,6 +8,7 @@ Topology options:
 
 No central coordinator. Workers communicate state vectors directly.
 """
+
 from __future__ import annotations
 import random
 import time

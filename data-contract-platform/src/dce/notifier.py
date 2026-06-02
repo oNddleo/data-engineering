@@ -34,7 +34,9 @@ class WebhookNotifier:
                     results.append({"url": url, "status": status, "ok": status < 400})
                     logger.info("Notified %s → HTTP %d", url, status)
             except Exception as exc:
-                results.append({"url": url, "status": None, "ok": False, "error": str(exc)})
+                results.append(
+                    {"url": url, "status": None, "ok": False, "error": str(exc)}
+                )
                 logger.warning("Failed to notify %s: %s", url, exc)
         return results
 

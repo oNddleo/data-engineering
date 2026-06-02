@@ -48,6 +48,7 @@ class RankIVM:
             # First index where rows[i] == t  (RANK semantics).
             # We treat duplicates: rank = position of first occurrence + 1.
             from bisect import bisect_left
+
             return bisect_left(rows, t) + 1
 
 

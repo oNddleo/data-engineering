@@ -38,7 +38,7 @@ class MetricDegradation:
     kind: DegradationKind
     observed_value: float
     baseline_value: float
-    relative_change: float           # negative = drop, positive = spike
+    relative_change: float  # negative = drop, positive = spike
     series: list[MetricPoint] = field(default_factory=list)
 
 
@@ -55,9 +55,9 @@ class SchemaChange:
 class CausalEstimate:
     """Result of an interrupted time series analysis for one candidate cause."""
 
-    candidate: str                   # "table.column" or "pipeline_run" etc.
+    candidate: str  # "table.column" or "pipeline_run" etc.
     change: SchemaChange | None
-    effect_size: float               # relative effect on metric (0-1)
+    effect_size: float  # relative effect on metric (0-1)
     absolute_effect: float
     p_value: float
     confidence_interval: tuple[float, float]

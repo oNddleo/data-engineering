@@ -40,7 +40,7 @@ class MVCCArt:
 
     def __init__(self) -> None:
         self._index = ART()
-        self._index_lock = threading.RLock()    # protects ART structure
+        self._index_lock = threading.RLock()  # protects ART structure
         self._ts_lock = threading.Lock()
         self._next_ts: int = 0
         self.epoch_mgr = EpochManager()

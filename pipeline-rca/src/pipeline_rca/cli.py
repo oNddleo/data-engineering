@@ -46,13 +46,10 @@ def cli(ctx: click.Context, verbose: bool) -> None:
 # demo subcommand
 # ------------------------------------------------------------------
 
+
 @cli.command()
-@click.option(
-    "--drop-pct", default=0.30, show_default=True, help="Simulated metric drop (0-1)."
-)
-@click.option(
-    "--baseline-days", default=14, show_default=True, help="Days in the baseline window."
-)
+@click.option("--drop-pct", default=0.30, show_default=True, help="Simulated metric drop (0-1).")
+@click.option("--baseline-days", default=14, show_default=True, help="Days in the baseline window.")
 @click.option("--output-dir", default="reports", show_default=True)
 @click.option("--save", is_flag=True, help="Write the report to disk.")
 def demo(drop_pct: float, baseline_days: int, output_dir: str, save: bool) -> None:
@@ -150,6 +147,7 @@ def demo(drop_pct: float, baseline_days: int, output_dir: str, save: bool) -> No
 # run subcommand (config-driven)
 # ------------------------------------------------------------------
 
+
 @cli.command()
 @click.argument("config_path", type=click.Path(exists=True))
 @click.option("--metric", "-m", multiple=True, help="Metric(s) to evaluate (default: all).")
@@ -183,7 +181,9 @@ def run(config_path: str, metric: tuple[str, ...], output_dir: str, save: bool) 
 
         series_file = Path(m_cfg.get("series_file", f"{m_cfg['name']}_series.json"))
         if not series_file.exists():
-            console.print(f"[yellow]Skipping {m_cfg['name']}: series file {series_file} not found[/yellow]")
+            console.print(
+                f"[yellow]Skipping {m_cfg['name']}: series file {series_file} not found[/yellow]"
+            )
             continue
 
         raw = json.loads(series_file.read_text())
@@ -214,8 +214,8 @@ def run(config_path: str, metric: tuple[str, ...], output_dir: str, save: bool) 
 # helpers
 # ------------------------------------------------------------------
 
-def _display_report_summary(report: RootCauseReport) -> None:
 
+def _display_report_summary(report: RootCauseReport) -> None:
     pct = abs(report.degradation.relative_change * 100)
     panel = Panel(
         f"[bold]{report.degradation.metric_name}[/bold]  "

@@ -1,4 +1,5 @@
 """Per-stream watermark tracking."""
+
 from __future__ import annotations
 
 
@@ -20,8 +21,8 @@ class WatermarkTracker:
         if lateness_bound < 0:
             raise ValueError("lateness_bound must be >= 0")
         self.lateness_bound = lateness_bound
-        self._max_seen: int = -(2 ** 62)
-        self._watermark: int = -(2 ** 62)
+        self._max_seen: int = -(2**62)
+        self._watermark: int = -(2**62)
 
     def observe(self, event_time: int) -> None:
         """Update internal state based on a newly observed event timestamp."""

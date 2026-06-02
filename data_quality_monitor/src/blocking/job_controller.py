@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from datetime import datetime
 
 import redis.asyncio as aioredis
@@ -9,8 +10,8 @@ from ..models import ValidationResult, ValidationStatus
 
 log = structlog.get_logger(__name__)
 
-_BLOCK_PREFIX = settings.redis_block_key_prefix      # "dq:block:"
-_BLOCK_TTL    = settings.block_ttl_seconds           # 3600 s
+_BLOCK_PREFIX = settings.redis_block_key_prefix  # "dq:block:"
+_BLOCK_TTL = settings.block_ttl_seconds  # 3600 s
 
 
 class JobController:

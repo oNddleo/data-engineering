@@ -79,6 +79,5 @@ def products(category: str | None = None, limit: int = 50) -> list[dict[str, Any
         """,
         params,
     ).fetchall()
-    cols = ["product_id", "title", "brand", "category", "currency",
-            "price", "fetch_time", "source"]
+    cols = ["product_id", "title", "brand", "category", "currency", "price", "fetch_time", "source"]
     return [dict(zip(cols, r, strict=True)) for r in rows]

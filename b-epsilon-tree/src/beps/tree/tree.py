@@ -239,12 +239,13 @@ class BEpsilonTree:
             lo = node.pivots[idx - 1] if idx > 0 else None
             hi = node.pivots[idx] if idx < len(node.pivots) else None
             relevant = [
-                m for m in node.buffer
-                if (lo is None or m.key >= lo) and (hi is None or m.key < hi)
+                m for m in node.buffer if (lo is None or m.key >= lo) and (hi is None or m.key < hi)
             ]
             yield from self._items_with_overrides(child, relevant)
 
-    def _items_with_overrides(self, node: Node, overrides: list[Message]) -> Iterator[tuple[bytes, Any]]:
+    def _items_with_overrides(
+        self, node: Node, overrides: list[Message]
+    ) -> Iterator[tuple[bytes, Any]]:
         """Same as _items but the caller passes additional messages from
         ancestor buffers that target keys in this subtree."""
         if isinstance(node, LeafNode):
@@ -266,8 +267,7 @@ class BEpsilonTree:
             lo = node.pivots[idx - 1] if idx > 0 else None
             hi = node.pivots[idx] if idx < len(node.pivots) else None
             relevant = [
-                m for m in local
-                if (lo is None or m.key >= lo) and (hi is None or m.key < hi)
+                m for m in local if (lo is None or m.key >= lo) and (hi is None or m.key < hi)
             ]
             yield from self._items_with_overrides(child, relevant)
 

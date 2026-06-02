@@ -1,4 +1,5 @@
 """Cost model: selectivity estimation and plan cost computation."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -271,6 +272,7 @@ class CostModel:
         # Selectivity of pushed predicates (reduces IO)
         if pushed_preds:
             from dqp.predicate import AndPredicate as AP
+
             combined_pushed = AP(pushed_preds) if len(pushed_preds) > 1 else pushed_preds[0]
             pushed_sel = estimate_selectivity(combined_pushed, table_stats)
         else:
@@ -282,6 +284,7 @@ class CostModel:
         # CPU for evaluating residual predicates in Python
         if residual_preds:
             from dqp.predicate import AndPredicate as AP
+
             combined_residual = AP(residual_preds) if len(residual_preds) > 1 else residual_preds[0]
             residual_sel = estimate_selectivity(combined_residual, table_stats)
         else:

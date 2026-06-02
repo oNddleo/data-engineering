@@ -19,7 +19,9 @@ class PostgresSource(BaseSource):
             "password": params.get("password", settings.postgres_password),
         }
 
-    def fetch(self, query: str, query_params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    def fetch(
+        self, query: str, query_params: dict[str, Any] | None = None
+    ) -> list[dict[str, Any]]:
         logger.debug("PostgresSource: executing query")
         with psycopg2.connect(**self._conn_params) as conn:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:

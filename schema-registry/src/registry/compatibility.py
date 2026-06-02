@@ -116,7 +116,9 @@ class CompatibilityChecker:
         for field, new_field_schema in new_props.items():
             if field in old_props:
                 old_field_schema = old_props[field]
-                errs = self._check_type_compatible(field, old_field_schema, new_field_schema, direction="backward")
+                errs = self._check_type_compatible(
+                    field, old_field_schema, new_field_schema, direction="backward"
+                )
                 errors.extend(errs)
 
         return errors
@@ -151,7 +153,9 @@ class CompatibilityChecker:
         for field, old_field_schema in old_props.items():
             if field in new_props:
                 new_field_schema = new_props[field]
-                errs = self._check_type_compatible(field, old_field_schema, new_field_schema, direction="forward")
+                errs = self._check_type_compatible(
+                    field, old_field_schema, new_field_schema, direction="forward"
+                )
                 errors.extend(errs)
 
         return errors

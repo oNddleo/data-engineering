@@ -32,18 +32,22 @@ def get_registry(request: Request) -> SchemaRegistry:
 
 # ── Subjects ──────────────────────────────────────────────────────────────────
 
+
 @router.get("/subjects", tags=["subjects"])
 async def list_subjects(registry: SchemaRegistry = Depends(get_registry)) -> list[str]:
     return await registry.list_subjects()
 
 
 @router.delete("/subjects/{subject}", tags=["subjects"])
-async def delete_subject(subject: str, registry: SchemaRegistry = Depends(get_registry)) -> dict[str, Any]:
+async def delete_subject(
+    subject: str, registry: SchemaRegistry = Depends(get_registry)
+) -> dict[str, Any]:
     count = await registry.delete_subject(subject)
     return {"subject": subject, "versions_deleted": count}
 
 
 # ── Config ────────────────────────────────────────────────────────────────────
+
 
 @router.get("/config/{subject}", tags=["config"])
 async def get_config(subject: str, registry: SchemaRegistry = Depends(get_registry)) -> Any:
@@ -60,6 +64,7 @@ async def set_config(
 
 
 # ── Schema Versions ───────────────────────────────────────────────────────────
+
 
 @router.get("/subjects/{subject}/versions", tags=["schemas"])
 async def list_versions(subject: str, registry: SchemaRegistry = Depends(get_registry)) -> Any:
@@ -106,6 +111,7 @@ async def delete_version(
 
 # ── Compatibility ─────────────────────────────────────────────────────────────
 
+
 @router.post("/compatibility/subjects/{subject}/versions", tags=["compatibility"])
 async def check_compatibility(
     subject: str,
@@ -117,6 +123,7 @@ async def check_compatibility(
 
 
 # ── Migrations ────────────────────────────────────────────────────────────────
+
 
 @router.get("/subjects/{subject}/migrations", tags=["migrations"])
 async def list_migrations(subject: str, registry: SchemaRegistry = Depends(get_registry)) -> Any:
@@ -136,7 +143,9 @@ async def get_migration(
     return m
 
 
-@router.post("/subjects/{subject}/migrations/generate/{from_version}/{to_version}", tags=["migrations"])
+@router.post(
+    "/subjects/{subject}/migrations/generate/{from_version}/{to_version}", tags=["migrations"]
+)
 async def generate_migration(
     subject: str,
     from_version: int,
@@ -148,7 +157,9 @@ async def generate_migration(
     if sv_from is None or sv_to is None:
         raise HTTPException(status_code=404, detail="One or both schema versions not found")
     gen = MigrationGenerator()
-    script = gen.generate(subject, from_version, to_version, sv_from.schema_definition, sv_to.schema_definition)
+    script = gen.generate(
+        subject, from_version, to_version, sv_from.schema_definition, sv_to.schema_definition
+    )
     saved = await registry.save_migration(script)
     return saved
 
@@ -196,6 +207,7 @@ async def migrate_payload(
 
 
 # ── Replay ────────────────────────────────────────────────────────────────────
+
 
 @router.post("/subjects/{subject}/replay", tags=["replay"])
 async def replay_events(

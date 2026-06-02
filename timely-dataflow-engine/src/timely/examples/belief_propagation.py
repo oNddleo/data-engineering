@@ -18,7 +18,10 @@ from timely.timestamp.ts import Timestamp
 
 
 def belief_propagation(
-    n_nodes: int = 4, n_factors: int = 3, tol: float = 1e-3, max_iter: int = 30,
+    n_nodes: int = 4,
+    n_factors: int = 3,
+    tol: float = 1e-3,
+    max_iter: int = 30,
 ) -> tuple[list[float], int]:
     """Naive sum-product iteration until messages stop changing."""
     state = {

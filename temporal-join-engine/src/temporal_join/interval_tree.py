@@ -4,6 +4,7 @@ Augmented AVL BST keyed by integer timestamps.
 Supports O(log n) insert/delete/predecessor/successor and O(log n + k) range queries.
 Multiple values may share the same key (timestamp collisions).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -13,6 +14,7 @@ from typing import Any, List, Optional, Tuple
 # ---------------------------------------------------------------------------
 # Node and low-level tree operations
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class _Node:
@@ -153,7 +155,9 @@ def _succ(node: Optional[_Node], key: int) -> Optional[_Node]:
     return best
 
 
-def _range(node: Optional[_Node], lo: int, hi: int, out: list[Tuple[int, list[Any]]]) -> None:
+def _range(
+    node: Optional[_Node], lo: int, hi: int, out: list[Tuple[int, list[Any]]]
+) -> None:
     if node is None:
         return
     if node.key > lo:
@@ -167,6 +171,7 @@ def _range(node: Optional[_Node], lo: int, hi: int, out: list[Tuple[int, list[An
 # ---------------------------------------------------------------------------
 # Public class
 # ---------------------------------------------------------------------------
+
 
 class IntervalTree:
     """

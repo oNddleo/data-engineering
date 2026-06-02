@@ -36,7 +36,9 @@ class BigQueryConnector(BaseConnector):
         )
         rows = self._client.query(rendered).result()
         return [
-            MetricPoint(timestamp=datetime.combine(row[0], datetime.min.time()), value=float(row[1]))
+            MetricPoint(
+                timestamp=datetime.combine(row[0], datetime.min.time()), value=float(row[1])
+            )
             for row in rows
         ]
 

@@ -114,9 +114,7 @@ class ReplayEngine:
             if new_violations:
                 success = False
                 if self._stop_on_violation:
-                    raise RuntimeError(
-                        f"Exactly-once violation: {new_violations[0]}"
-                    )
+                    raise RuntimeError(f"Exactly-once violation: {new_violations[0]}")
 
             steps.append(
                 StepResult(

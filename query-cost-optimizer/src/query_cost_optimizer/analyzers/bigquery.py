@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 # On-demand pricing: $6.25 per TiB scanned (as of 2025)
 _BQ_COST_PER_TIB = 6.25
-_BYTES_PER_TIB = 1024 ** 4
+_BYTES_PER_TIB = 1024**4
 
 
 class BigQueryAnalyzer:
@@ -69,7 +69,9 @@ class BigQueryAnalyzer:
             tables = []
             if row.referenced_tables:
                 for t in row.referenced_tables:
-                    tables.append(f"{t.get('projectId','')}.{t.get('datasetId','')}.{t.get('tableId','')}")
+                    tables.append(
+                        f"{t.get('projectId','')}.{t.get('datasetId','')}.{t.get('tableId','')}"
+                    )
             cost = (row.total_bytes_billed or 0) / _BYTES_PER_TIB * _BQ_COST_PER_TIB
             records.append(
                 QueryRecord(
@@ -89,7 +91,9 @@ class BigQueryAnalyzer:
         logger.info("Fetched %d query records from BigQuery.", len(records))
         return records
 
-    def fetch_table_metadata(self, dataset_ids: list[str] | None = None) -> dict[str, dict[str, Any]]:
+    def fetch_table_metadata(
+        self, dataset_ids: list[str] | None = None
+    ) -> dict[str, dict[str, Any]]:
         """Return row count + size for tables in the project."""
         meta: dict[str, dict[str, Any]] = {}
         datasets = dataset_ids or self._list_datasets()
@@ -114,7 +118,11 @@ class BigQueryAnalyzer:
 
     def build_table_stats(self, records: list[QueryRecord]) -> list[TableStats]:
         """Aggregate per-table usage from query records."""
-        from ..sql_parser import extract_filter_columns, extract_join_columns, extract_group_by_columns
+        from ..sql_parser import (
+            extract_filter_columns,
+            extract_join_columns,
+            extract_group_by_columns,
+        )
 
         stats_map: dict[str, TableStats] = {}
         for rec in records:

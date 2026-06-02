@@ -18,8 +18,11 @@ class SnowflakeSource(BaseSource):
             "schema": params.get("schema", settings.snowflake_schema),
         }
 
-    def fetch(self, query: str, query_params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    def fetch(
+        self, query: str, query_params: dict[str, Any] | None = None
+    ) -> list[dict[str, Any]]:
         import snowflake.connector  # type: ignore[import-not-found]
+
         logger.debug("SnowflakeSource: executing query")
         with snowflake.connector.connect(**self._conn_params) as conn:
             cur = conn.cursor(snowflake.connector.DictCursor)

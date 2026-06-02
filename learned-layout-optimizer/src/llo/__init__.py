@@ -4,6 +4,7 @@ from __future__ import annotations
 
 __version__ = "0.1.0"
 
+
 def __getattr__(name: str) -> object:
     _LAZY = {
         "z_order_index": ("llo.curves.spacefill", "z_order_index"),
@@ -31,6 +32,7 @@ def __getattr__(name: str) -> object:
         module_name, attr = _LAZY[name]
         return getattr(import_module(module_name), attr)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = [
     "PAGE_ROWS",

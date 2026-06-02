@@ -1,8 +1,8 @@
 """Strategy controller with hysteresis.
 
-  alpha:  switch to full when ratio > alpha
-  beta:   switch to delta when ratio < beta
-  alpha > beta to avoid oscillation
+alpha:  switch to full when ratio > alpha
+beta:   switch to delta when ratio < beta
+alpha > beta to avoid oscillation
 """
 
 from __future__ import annotations

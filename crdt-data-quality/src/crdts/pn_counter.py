@@ -6,6 +6,7 @@ Value = P.value() - N.value()
 
 Supports both increment and decrement while preserving all CRDT properties.
 """
+
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any

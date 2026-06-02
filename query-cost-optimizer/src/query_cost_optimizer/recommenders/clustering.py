@@ -16,7 +16,7 @@ _BQ_CLUSTER_SAVINGS_PCT = 0.20
 _SF_CLUSTER_SAVINGS_PCT = 0.18
 
 # Minimum table size to bother recommending clustering (1 GiB)
-_MIN_SIZE_BYTES = 1024 ** 3
+_MIN_SIZE_BYTES = 1024**3
 # Minimum queries referencing the table
 _MIN_QUERY_COUNT = 5
 
@@ -24,7 +24,9 @@ _MIN_QUERY_COUNT = 5
 class ClusteringRecommender:
     """Analyse TableStats to surface clustering-key recommendations."""
 
-    def __init__(self, min_query_count: int = _MIN_QUERY_COUNT, min_size_bytes: int = _MIN_SIZE_BYTES) -> None:
+    def __init__(
+        self, min_query_count: int = _MIN_QUERY_COUNT, min_size_bytes: int = _MIN_SIZE_BYTES
+    ) -> None:
         self.min_query_count = min_query_count
         self.min_size_bytes = min_size_bytes
 
@@ -56,27 +58,27 @@ class ClusteringRecommender:
             return None
 
         savings_pct = (
-            _BQ_CLUSTER_SAVINGS_PCT if tbl.platform == Platform.BIGQUERY else _SF_CLUSTER_SAVINGS_PCT
+            _BQ_CLUSTER_SAVINGS_PCT
+            if tbl.platform == Platform.BIGQUERY
+            else _SF_CLUSTER_SAVINGS_PCT
         )
         monthly_savings = tbl.total_cost_usd * savings_pct
 
-        severity = Severity.HIGH if monthly_savings >= 50 else (Severity.MEDIUM if monthly_savings >= 10 else Severity.LOW)
+        severity = (
+            Severity.HIGH
+            if monthly_savings >= 50
+            else (Severity.MEDIUM if monthly_savings >= 10 else Severity.LOW)
+        )
 
         if tbl.platform == Platform.BIGQUERY:
-            action = (
-                f"ALTER TABLE `{tbl.table_id}` "
-                f"CLUSTER BY {', '.join(top_cols[:4])};"
-            )
+            action = f"ALTER TABLE `{tbl.table_id}` " f"CLUSTER BY {', '.join(top_cols[:4])};"
             description = (
                 f"Table `{tbl.table_id}` is scanned {tbl.query_count} times and costs "
                 f"${tbl.total_cost_usd:.2f} total. Adding clustering on "
                 f"({', '.join(top_cols)}) can reduce scan costs by ~{savings_pct*100:.0f}%."
             )
         else:
-            action = (
-                f"ALTER TABLE {tbl.table_id} "
-                f"CLUSTER BY ({', '.join(top_cols[:4])});"
-            )
+            action = f"ALTER TABLE {tbl.table_id} " f"CLUSTER BY ({', '.join(top_cols[:4])});"
             description = (
                 f"Table {tbl.table_id} is queried {tbl.query_count} times. "
                 f"Clustering on ({', '.join(top_cols)}) improves micro-partition pruning, "

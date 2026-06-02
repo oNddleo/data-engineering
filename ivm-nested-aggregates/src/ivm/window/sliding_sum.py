@@ -78,4 +78,5 @@ class SlidingSumIVM:
         n = idx + 1 - lo
         return s / n if n > 0 else None
 
+
 __all__ = ["SlidingSumIVM"]

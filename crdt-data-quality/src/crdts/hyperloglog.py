@@ -12,6 +12,7 @@ Standard error: 1.04 / sqrt(2^b)
   b=10 → ~1024 registers, ~1.6% error
   b=14 → ~16384 registers, ~0.81% error
 """
+
 from __future__ import annotations
 import hashlib
 import math
@@ -55,7 +56,7 @@ class HyperLogLogCRDT:
 
     def __post_init__(self) -> None:
         if not self.registers:
-            self.registers = [0] * (2 ** self.precision)
+            self.registers = [0] * (2**self.precision)
 
     @property
     def m(self) -> int:
@@ -75,7 +76,7 @@ class HyperLogLogCRDT:
         """Estimate of distinct elements with bias correction."""
         m = self.m
         alpha = _alpha(m)
-        raw = alpha * m * m / sum(2 ** -r for r in self.registers)
+        raw = alpha * m * m / sum(2**-r for r in self.registers)
 
         # small range correction
         if raw <= 2.5 * m:
@@ -84,8 +85,8 @@ class HyperLogLogCRDT:
                 return int(round(m * math.log(m / zeros)))
 
         # large range correction
-        if raw > (1 / 30) * (2 ** 32):
-            return int(round(-(2 ** 32) * math.log(1 - raw / (2 ** 32))))
+        if raw > (1 / 30) * (2**32):
+            return int(round(-(2**32) * math.log(1 - raw / (2**32))))
 
         return int(round(raw))
 

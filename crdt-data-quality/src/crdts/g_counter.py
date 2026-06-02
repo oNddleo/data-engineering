@@ -9,6 +9,7 @@ Invariants:
   - merge(a, b) >= a and merge(a, b) >= b (monotone join)
   - merge is commutative, associative, idempotent
 """
+
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict

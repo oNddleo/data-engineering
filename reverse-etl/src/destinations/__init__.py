@@ -14,6 +14,7 @@ class _LazyRegistry(dict[str, type[BaseDestination]]):
         if entry is None:
             return None
         import importlib
+
         module = importlib.import_module(entry[0])
         cls: type[BaseDestination] = getattr(module, entry[1])
         self[key] = cls

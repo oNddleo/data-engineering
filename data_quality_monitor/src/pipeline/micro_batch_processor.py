@@ -1,16 +1,17 @@
 from __future__ import annotations
+
 import asyncio
 
 import structlog
 
+from ..blocking.job_controller import JobController
 from ..config import settings
-from ..models import MicroBatch, ValidationResult, ValidationStatus
-from ..validators import BaseValidator, GreatExpectationsValidator, SodaValidator
-from ..stream.producer import KafkaResultProducer
-from ..storage.repository import ValidationRepository
 from ..metrics.collector import MetricsCollector
 from ..metrics.publisher import MetricsPublisher
-from ..blocking.job_controller import JobController
+from ..models import MicroBatch, ValidationResult, ValidationStatus
+from ..storage.repository import ValidationRepository
+from ..stream.producer import KafkaResultProducer
+from ..validators import BaseValidator, GreatExpectationsValidator, SodaValidator
 
 log = structlog.get_logger(__name__)
 
@@ -121,8 +122,10 @@ class MicroBatchProcessor:
 
         if not valid:
             # All backends failed — treat as ERROR
-            from ..models import ValidatorBackend
             import uuid
+
+            from ..models import ValidatorBackend
+
             return ValidationResult(
                 result_id=str(uuid.uuid4()),
                 batch_id=batch.batch_id,
@@ -155,6 +158,7 @@ class MicroBatchProcessor:
             merged_checks.extend(r.check_results)
 
         import uuid
+
         return ValidationResult(
             result_id=str(uuid.uuid4()),
             batch_id=batch.batch_id,

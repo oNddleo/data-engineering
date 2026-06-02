@@ -144,6 +144,7 @@ class LSMEngine:
                 k, v = tbl._read_record(i)  # noqa: SLF001
                 if k not in merged:
                     from .sstable import _TOMBSTONE_VALUE
+
                     merged[k] = None if v == _TOMBSTONE_VALUE else v
 
         seq = next(self._seq)

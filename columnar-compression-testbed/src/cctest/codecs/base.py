@@ -40,11 +40,19 @@ class BenchmarkResult:
 
     @property
     def ratio(self) -> float:
-        return self.original_bytes / self.compressed_bytes if self.compressed_bytes else 0.0
+        return (
+            self.original_bytes / self.compressed_bytes
+            if self.compressed_bytes
+            else 0.0
+        )
 
     @property
     def space_saving(self) -> float:
-        return 1.0 - self.compressed_bytes / self.original_bytes if self.original_bytes else 0.0
+        return (
+            1.0 - self.compressed_bytes / self.original_bytes
+            if self.original_bytes
+            else 0.0
+        )
 
     def __str__(self) -> str:
         status = "OK" if self.lossless else "LOSSY"
@@ -67,7 +75,9 @@ class Codec(ABC):
     def supports_dtype(self, dtype: np.dtype[Any]) -> bool:
         return True
 
-    def benchmark(self, data: np.ndarray[Any, np.dtype[Any]], rounds: int = 5) -> BenchmarkResult:
+    def benchmark(
+        self, data: np.ndarray[Any, np.dtype[Any]], rounds: int = 5
+    ) -> BenchmarkResult:
         original_bytes = data.nbytes
 
         encode_times = []

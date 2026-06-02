@@ -91,10 +91,12 @@ class TDigest:
                 <= max(1, int(4 * self._n / self.delta))
             ):
                 a, b = self._bins[i], self._bins[i + 1]
-                merged.append(_Bin(
-                    mean=(a.mean * a.count + b.mean * b.count) / (a.count + b.count),
-                    count=a.count + b.count,
-                ))
+                merged.append(
+                    _Bin(
+                        mean=(a.mean * a.count + b.mean * b.count) / (a.count + b.count),
+                        count=a.count + b.count,
+                    )
+                )
                 i += 2
             else:
                 merged.append(self._bins[i])
@@ -128,9 +130,7 @@ class TDigest:
                     if i + 1 < len(self._bins):
                         nxt = self._bins[i + 1]
                         next_centroid = next_cum + nxt.count / 2.0
-                        frac = (target - centroid_rank) / max(
-                            next_centroid - centroid_rank, 1e-12
-                        )
+                        frac = (target - centroid_rank) / max(next_centroid - centroid_rank, 1e-12)
                         return b.mean + frac * (nxt.mean - b.mean)
                     return b.mean
                 cum = next_cum

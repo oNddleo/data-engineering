@@ -91,9 +91,7 @@ class StreamProcessor:
             if self.watermark.is_late(event) and event.event_time < win.end:
                 # Event is late for this window
                 existing = list(self._buffer.get(buf_key, []))
-                r, late = self.late_policy.handle(
-                    event, win, existing, new_watermark
-                )
+                r, late = self.late_policy.handle(event, win, existing, new_watermark)
                 results.extend(r)
                 lates.extend(late)
             else:
@@ -156,15 +154,9 @@ class StreamProcessor:
 
     def stats(self) -> dict[str, Any]:
         total_late = len(self._late_events)
-        dropped = sum(
-            1 for le in self._late_events if le.policy_applied == "drop"
-        )
-        restated = sum(
-            1 for le in self._late_events if le.policy_applied == "restate"
-        )
-        side = sum(
-            1 for le in self._late_events if le.policy_applied == "side_output"
-        )
+        dropped = sum(1 for le in self._late_events if le.policy_applied == "drop")
+        restated = sum(1 for le in self._late_events if le.policy_applied == "restate")
+        side = sum(1 for le in self._late_events if le.policy_applied == "side_output")
         return {
             "processed": self._processed_count,
             "emitted_windows": len(self._emitted_results),
@@ -192,8 +184,11 @@ class StreamProcessor:
         self._session_windows[event.key] = merged
 
         # Return only the merged window(s) that contain this event
-        return [w for w in merged if w.contains(event.event_time) or
-                w.start <= event.event_time <= w.end]
+        return [
+            w
+            for w in merged
+            if w.contains(event.event_time) or w.start <= event.event_time <= w.end
+        ]
 
     def _close_windows(self, watermark: float) -> list[WindowResult]:
         results = []

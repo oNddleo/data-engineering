@@ -36,5 +36,4 @@ class LateDataPolicy(ABC):
 
     @property
     @abstractmethod
-    def name(self) -> str:
-        ...
+    def name(self) -> str: ...

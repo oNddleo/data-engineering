@@ -27,7 +27,9 @@ if TYPE_CHECKING:
 PAGE_ROWS = 64
 
 
-def apply_layout(data: NDArray[np.integer[Any]], cols: list[str], action: Action) -> NDArray[np.int64]:
+def apply_layout(
+    data: NDArray[np.integer[Any]], cols: list[str], action: Action
+) -> NDArray[np.int64]:
     """Return the row-permutation induced by ``action``.
 
     ``data`` is shape (n, n_cols). The returned permutation can be applied

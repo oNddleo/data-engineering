@@ -120,10 +120,14 @@ class Polynomial:
         return lhs == rhs
 
     def __hash__(self) -> int:
-        return hash(tuple(sorted(
-            ((m, c) for m, c in self.coeffs.items() if c != 0),
-            key=lambda kv: repr(kv[0]),
-        )))
+        return hash(
+            tuple(
+                sorted(
+                    ((m, c) for m, c in self.coeffs.items() if c != 0),
+                    key=lambda kv: repr(kv[0]),
+                )
+            )
+        )
 
 
 class HowProvenance(Semiring[Polynomial]):

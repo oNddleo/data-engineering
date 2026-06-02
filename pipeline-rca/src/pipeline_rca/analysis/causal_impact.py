@@ -62,9 +62,7 @@ class ITSAnalyzer:
         Minimum number of pre-intervention data points required.
     """
 
-    def __init__(
-        self, confidence_level: float = 0.95, min_pre_periods: int = 7
-    ) -> None:
+    def __init__(self, confidence_level: float = 0.95, min_pre_periods: int = 7) -> None:
         self.confidence_level = confidence_level
         self.min_pre_periods = min_pre_periods
         self._alpha = 1.0 - confidence_level
@@ -81,9 +79,13 @@ class ITSAnalyzer:
 
         Returns None if the series is too short for a meaningful analysis.
         """
-        df = pd.DataFrame(
-            {"ts": [p.timestamp for p in metric_series], "v": [p.value for p in metric_series]}
-        ).sort_values("ts").reset_index(drop=True)
+        df = (
+            pd.DataFrame(
+                {"ts": [p.timestamp for p in metric_series], "v": [p.value for p in metric_series]}
+            )
+            .sort_values("ts")
+            .reset_index(drop=True)
+        )
 
         # Find intervention index
         int_idx = int(df["ts"].searchsorted(intervention_at))

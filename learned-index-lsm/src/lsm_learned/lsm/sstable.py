@@ -25,12 +25,12 @@ from ..indexes.bloom import BloomFilter
 from ..indexes.rmi import RMI
 
 _MAGIC = b"LSMLRND1"
-_HEADER_FMT = ">8sQII"   # magic, num_entries, index_interval, reserved
+_HEADER_FMT = ">8sQII"  # magic, num_entries, index_interval, reserved
 _HEADER_SIZE = struct.calcsize(_HEADER_FMT)
-_RECORD_FMT = ">qq"      # key (int64), value (int64)
+_RECORD_FMT = ">qq"  # key (int64), value (int64)
 _RECORD_SIZE = struct.calcsize(_RECORD_FMT)
 _TOMBSTONE_VALUE = -(2**63)
-_INDEX_INTERVAL = 128    # one sparse-index entry per N records
+_INDEX_INTERVAL = 128  # one sparse-index entry per N records
 
 
 class SSTableBuilder:
@@ -63,7 +63,7 @@ class SSTableBuilder:
 
             # Write sparse index after data
             _index_start = f.tell()  # noqa: F841
-            for (ik, io_) in sparse_index:
+            for ik, io_ in sparse_index:
                 f.write(struct.pack(">qq", ik, io_))
 
             # Rewrite header with correct values
@@ -90,7 +90,9 @@ class SSTable:
         self._num_entries = 0
         self._index_interval = _INDEX_INTERVAL
         self._sparse_keys: np.ndarray[Any, np.dtype[Any]] = np.array([], dtype=np.int64)
-        self._sparse_offsets: np.ndarray[Any, np.dtype[Any]] = np.array([], dtype=np.int64)
+        self._sparse_offsets: np.ndarray[Any, np.dtype[Any]] = np.array(
+            [], dtype=np.int64
+        )
         self._bloom: BloomFilter | None = None
         self._rmi: RMI | None = None
         self._btree: BTreeIndex | None = None

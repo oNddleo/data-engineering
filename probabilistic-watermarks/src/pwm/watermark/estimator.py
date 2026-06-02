@@ -38,8 +38,8 @@ class _KeyState:
 class PerKeyDelayEstimator:
     """Online per-key (1-δ)-quantile of arrival delay, monotone non-decreasing."""
 
-    delta: float = 1e-3                                     # target lateness rate
-    source: QuantileSource = "tdigest"                      # which quantile estimator
+    delta: float = 1e-3  # target lateness rate
+    source: QuantileSource = "tdigest"  # which quantile estimator
     _keys: dict[object, _KeyState] = field(default_factory=dict)
     _lock: threading.RLock = field(default_factory=threading.RLock)
 

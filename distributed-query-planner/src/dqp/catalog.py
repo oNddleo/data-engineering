@@ -1,4 +1,5 @@
 """Catalog: registry of tables and their schemas."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

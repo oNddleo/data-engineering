@@ -15,6 +15,7 @@ from .base import BaseAdapter
 try:
     from google.cloud import bigquery
     from google.cloud.bigquery import QueryJobConfig  # noqa: F401
+
     _BQ_AVAILABLE = True
 except ImportError:
     _BQ_AVAILABLE = False
@@ -23,8 +24,7 @@ except ImportError:
 def _require_bq() -> None:
     if not _BQ_AVAILABLE:
         raise ImportError(
-            "google-cloud-bigquery is not installed. "
-            "Run: pip install google-cloud-bigquery"
+            "google-cloud-bigquery is not installed. " "Run: pip install google-cloud-bigquery"
         )
 
 
@@ -49,9 +49,7 @@ class BigQueryAdapter(BaseAdapter):
     @property
     def client(self) -> bigquery.Client:
         if self._client is None:
-            self._client = bigquery.Client(
-                project=self.project, location=self.location
-            )
+            self._client = bigquery.Client(project=self.project, location=self.location)
         return self._client
 
     # ------------------------------------------------------------------
@@ -125,19 +123,14 @@ class BigQueryAdapter(BaseAdapter):
 
     def refresh_view(self, view: MaterializedView) -> MaterializedView:
         # BigQuery MVs refresh automatically; manual refresh via a full rebuild
-        ddl = (
-            f"CREATE OR REPLACE MATERIALIZED VIEW `{view.fqn}` AS\n"
-            f"{view.candidate.sql}"
-        )
+        ddl = f"CREATE OR REPLACE MATERIALIZED VIEW `{view.fqn}` AS\n" f"{view.candidate.sql}"
         self.client.query(ddl).result()
         view.last_refreshed_at = datetime.now(UTC)
         view.refresh_count += 1
         return view
 
     def drop_view(self, view: MaterializedView) -> None:
-        self.client.query(
-            f"DROP MATERIALIZED VIEW IF EXISTS `{view.fqn}`"
-        ).result()
+        self.client.query(f"DROP MATERIALIZED VIEW IF EXISTS `{view.fqn}`").result()
         view.is_active = False
 
     # ------------------------------------------------------------------
@@ -162,8 +155,7 @@ class BigQueryAdapter(BaseAdapter):
 
         # Queries touching the same tables, after view creation
         table_filter = " OR ".join(
-            f"LOWER(query) LIKE '%{t.lower()}%'"
-            for t in view.candidate.referenced_tables
+            f"LOWER(query) LIKE '%{t.lower()}%'" for t in view.candidate.referenced_tables
         )
         sql = f"""
         WITH after AS (

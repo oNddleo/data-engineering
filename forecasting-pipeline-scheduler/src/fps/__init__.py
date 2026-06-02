@@ -4,6 +4,7 @@ from __future__ import annotations
 
 __version__ = "0.1.0"
 
+
 def __getattr__(name: str) -> object:
     _LAZY = {
         "Task": ("fps.dag", "Task"),
@@ -31,6 +32,7 @@ def __getattr__(name: str) -> object:
         module, attr = _LAZY[name]
         return getattr(import_module(module), attr)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = [
     "DAG",

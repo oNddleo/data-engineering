@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 try:
     import sqlglot
     import sqlglot.expressions as exp
+
     _SQLGLOT = True
 except ImportError:
     _SQLGLOT = False
@@ -31,9 +32,9 @@ from .models import CandidateView, QueryRecord
 # ---------------------------------------------------------------------------
 
 _LITERAL_RE = re.compile(
-    r"'[^']*'"           # single-quoted strings
-    r'|"[^"]*"'          # double-quoted strings
-    r"|\b\d+\.?\d*\b"   # numbers
+    r"'[^']*'"  # single-quoted strings
+    r'|"[^"]*"'  # double-quoted strings
+    r"|\b\d+\.?\d*\b"  # numbers
 )
 _WS_RE = re.compile(r"\s+")
 
@@ -53,6 +54,7 @@ def normalise_sql(sql: str) -> str:
 # Sub-query extraction
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class _Pattern:
     sql: str
@@ -64,12 +66,8 @@ class _Pattern:
 
 def _extract_tables_simple(sql: str) -> list[str]:
     """Regex-based fallback when sqlglot is not installed."""
-    from_re = re.compile(
-        r"\bFROM\s+([\w.`\[\]\"]+)", re.IGNORECASE
-    )
-    join_re = re.compile(
-        r"\bJOIN\s+([\w.`\[\]\"]+)", re.IGNORECASE
-    )
+    from_re = re.compile(r"\bFROM\s+([\w.`\[\]\"]+)", re.IGNORECASE)
+    join_re = re.compile(r"\bJOIN\s+([\w.`\[\]\"]+)", re.IGNORECASE)
     tables: list[str] = []
     for m in from_re.finditer(sql):
         tables.append(m.group(1).strip().strip('`"[]'))
@@ -142,9 +140,7 @@ class QueryAnalyzer:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _collect_patterns(
-        self, workload: list[QueryRecord]
-    ) -> dict[str, _Pattern]:
+    def _collect_patterns(self, workload: list[QueryRecord]) -> dict[str, _Pattern]:
         patterns: dict[str, _Pattern] = {}
 
         for record in workload:

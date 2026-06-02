@@ -23,7 +23,11 @@ class _LinearModel:
     slope: float = 0.0
     intercept: float = 0.0
 
-    def fit(self, keys: np.ndarray[Any, np.dtype[Any]], targets: np.ndarray[Any, np.dtype[Any]]) -> None:
+    def fit(
+        self,
+        keys: np.ndarray[Any, np.dtype[Any]],
+        targets: np.ndarray[Any, np.dtype[Any]],
+    ) -> None:
         n = len(keys)
         if n == 0:
             return

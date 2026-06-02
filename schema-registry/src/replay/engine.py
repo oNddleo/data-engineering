@@ -4,6 +4,7 @@ Event Replay Engine
 Re-processes a stream of historical events through a migration chain,
 producing events conforming to the target schema version.
 """
+
 from __future__ import annotations
 
 from typing import Any, AsyncIterator
@@ -164,7 +165,9 @@ class ReplayEngine:
             if sv_from is None or sv_to is None:
                 return []
 
-            script = gen.generate(subject, v_from, v_to, sv_from.schema_definition, sv_to.schema_definition)
+            script = gen.generate(
+                subject, v_from, v_to, sv_from.schema_definition, sv_to.schema_definition
+            )
             saved = await self.registry.save_migration(script)
             chain.append(saved)
 

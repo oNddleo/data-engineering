@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 # Record type used throughout
-Record = tuple[Any, Any, Any]    # (id, group, value)
+Record = tuple[Any, Any, Any]  # (id, group, value)
 
 
 @dataclass

@@ -3,6 +3,7 @@ Migration Executor
 ==================
 Applies a MigrationScript (list of steps) to a single event payload dict.
 """
+
 from __future__ import annotations
 
 from copy import deepcopy

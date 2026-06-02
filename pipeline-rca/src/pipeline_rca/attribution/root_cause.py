@@ -69,9 +69,7 @@ class RootCauseAttributor:
         self.look_back_days = look_back_days
         self.min_effect_size = min_effect_size
         self.top_k = top_k
-        self._its = ITSAnalyzer(
-            confidence_level=confidence_level, min_pre_periods=7
-        )
+        self._its = ITSAnalyzer(confidence_level=confidence_level, min_pre_periods=7)
 
     def attribute(self, degradation: MetricDegradation) -> RootCauseReport:
         """
@@ -85,9 +83,7 @@ class RootCauseAttributor:
         5. Return a ranked RootCauseReport.
         """
         incident_id = str(uuid.uuid4())[:8].upper()
-        logger.info(
-            "Starting RCA for %s (incident %s)", degradation.metric_name, incident_id
-        )
+        logger.info("Starting RCA for %s (incident %s)", degradation.metric_name, incident_id)
 
         upstream_tables = self.tracer.graph.upstream_tables(degradation.metric_name)
         logger.info("Upstream tables: %s", upstream_tables)
@@ -140,6 +136,7 @@ class RootCauseAttributor:
 # ------------------------------------------------------------------
 # Helpers
 # ------------------------------------------------------------------
+
 
 def _change_label(change: SchemaChange) -> str:
     if change.column:

@@ -28,6 +28,18 @@ src = ["src"]
 select = ["E", "F", "I", "UP", "B", "TCH", "ANN"]
 ignore = ["ANN101", "ANN102", "ANN401"]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN", "S101"]
+# Non-distributed application code — annotation rules relaxed
+"src/blocking/**" = ["ANN", "TCH"]
+"src/dashboard/**" = ["ANN", "TCH"]
+"src/metrics/**" = ["ANN", "TCH"]
+"src/models/**" = ["ANN", "TCH"]
+"src/pipeline/**" = ["ANN", "TCH"]
+"src/storage/**" = ["ANN", "TCH"]
+"src/stream/**" = ["ANN", "TCH"]
+"src/validators/**" = ["ANN", "TCH"]
+
 [tool.mypy]
 strict = true
 python_version = "3.11"

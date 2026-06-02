@@ -27,6 +27,7 @@ from .validator import ContractValidator
 # Helpers
 # ------------------------------------------------------------------ #
 
+
 def _load_data(path: str) -> pd.DataFrame:
     p = Path(path)
     if p.suffix == ".csv":
@@ -59,6 +60,7 @@ def _warn(text: str) -> str:
 # ------------------------------------------------------------------ #
 # Commands
 # ------------------------------------------------------------------ #
+
 
 def cmd_validate(args: argparse.Namespace) -> int:
     contract = load_contract(args.contract)
@@ -115,7 +117,11 @@ def cmd_score(args: argparse.Namespace) -> int:
     print("-" * len(header))
     for s in sorted(scores, key=lambda x: x.reliability_score):
         pct = f"{s.reliability_score:.1%}"
-        color_fn = _ok if s.reliability_score >= 0.95 else (_warn if s.reliability_score >= 0.80 else _fail)
+        color_fn = (
+            _ok
+            if s.reliability_score >= 0.95
+            else (_warn if s.reliability_score >= 0.80 else _fail)
+        )
         print(
             f"{s.producer:<30} {s.contract_id:<35} "
             f"{color_fn(pct):>7}  {s.total_runs:>5}  {s.last_validated_at[:19]}"
@@ -158,13 +164,16 @@ def cmd_list(args: argparse.Namespace) -> int:
     for cid in registry.ids():
         versions = registry.versions(cid)
         latest = registry.latest(cid)
-        print(f"  {cid:<40} versions: {', '.join(versions)}  producer: {latest.producer}")
+        print(
+            f"  {cid:<40} versions: {', '.join(versions)}  producer: {latest.producer}"
+        )
     return 0
 
 
 # ------------------------------------------------------------------ #
 # Arg parser
 # ------------------------------------------------------------------ #
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -177,20 +186,32 @@ def build_parser() -> argparse.ArgumentParser:
     p_val = sub.add_parser("validate", help="Validate a data file against a contract")
     p_val.add_argument("contract", help="Path to contract YAML file")
     p_val.add_argument("data", help="Path to data file (CSV / Parquet / JSON)")
-    p_val.add_argument("--db", default="reliability.db", help="Path to reliability SQLite DB")
+    p_val.add_argument(
+        "--db", default="reliability.db", help="Path to reliability SQLite DB"
+    )
     p_val.add_argument("--output", "-o", help="Write JSON report to file")
-    p_val.add_argument("--freshness", type=float, default=None,
-                       help="Data age in seconds (for freshness SLA checks)")
-    p_val.add_argument("--latency", type=float, default=None,
-                       help="Pipeline latency in seconds")
-    p_val.add_argument("--notify", nargs="*", metavar="URL",
-                       help="Webhook URLs to notify on failure")
+    p_val.add_argument(
+        "--freshness",
+        type=float,
+        default=None,
+        help="Data age in seconds (for freshness SLA checks)",
+    )
+    p_val.add_argument(
+        "--latency", type=float, default=None, help="Pipeline latency in seconds"
+    )
+    p_val.add_argument(
+        "--notify", nargs="*", metavar="URL", help="Webhook URLs to notify on failure"
+    )
 
     # --- score ---
     p_score = sub.add_parser("score", help="Show reliability scores per producer")
     p_score.add_argument("--db", default="reliability.db")
-    p_score.add_argument("--window", type=int, default=100,
-                         help="Rolling window size for score calculation")
+    p_score.add_argument(
+        "--window",
+        type=int,
+        default=100,
+        help="Rolling window size for score calculation",
+    )
 
     # --- diff ---
     p_diff = sub.add_parser("diff", help="Diff two contract versions")
@@ -201,7 +222,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_diff.add_argument("--markdown", help="Write Markdown report to file")
 
     # --- check-all ---
-    p_ca = sub.add_parser("check-all", help="CI: detect breaking changes across all contracts")
+    p_ca = sub.add_parser(
+        "check-all", help="CI: detect breaking changes across all contracts"
+    )
     p_ca.add_argument("contracts_dir", help="Path to contracts directory")
 
     # --- list ---

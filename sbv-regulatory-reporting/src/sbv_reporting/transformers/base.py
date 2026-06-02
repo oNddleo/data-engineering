@@ -1,4 +1,5 @@
 """Base transformer — loads raw CSV and normalises to canonical DataFrame."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -17,16 +18,28 @@ class RawTransactionLoader:
 
     def load(self, path: str | Path) -> tuple[pd.DataFrame, list[str]]:
         """Return (df, warnings).  Raises ValidationError on fatal issues."""
-        df = pd.read_csv(path, dtype={"debit_account": str, "credit_account": str,
-                                       "counterparty_account": str})
+        df = pd.read_csv(
+            path,
+            dtype={
+                "debit_account": str,
+                "credit_account": str,
+                "counterparty_account": str,
+            },
+        )
 
-        df["transaction_date"] = pd.to_datetime(df["transaction_date"], format="%Y-%m-%d")
+        df["transaction_date"] = pd.to_datetime(
+            df["transaction_date"], format="%Y-%m-%d"
+        )
         df["transaction_datetime"] = pd.to_datetime(
-            df["transaction_date"].dt.strftime("%Y-%m-%d") + " " + df["transaction_time"]
+            df["transaction_date"].dt.strftime("%Y-%m-%d")
+            + " "
+            + df["transaction_time"]
         )
 
         df["amount"] = pd.to_numeric(df["amount"], errors="coerce").fillna(0.0)
-        df["vnd_equivalent"] = pd.to_numeric(df["vnd_equivalent"], errors="coerce").fillna(0.0)
+        df["vnd_equivalent"] = pd.to_numeric(
+            df["vnd_equivalent"], errors="coerce"
+        ).fillna(0.0)
 
         df["currency"] = df["currency"].str.upper().str.strip()
         df["status"] = df["status"].str.upper().str.strip()
@@ -34,6 +47,8 @@ class RawTransactionLoader:
         df["branch_code"] = df["branch_code"].str.upper().str.strip()
 
         warnings = validate_dataframe(df)
-        warnings += validate_vnd_equivalent(df, self.cfg["thresholds"]["reconciliation_tolerance"])
+        warnings += validate_vnd_equivalent(
+            df, self.cfg["thresholds"]["reconciliation_tolerance"]
+        )
 
         return df, warnings

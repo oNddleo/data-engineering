@@ -3,6 +3,7 @@ Auto-Migration Generator
 ========================
 Diffs two JSON schemas and produces a best-effort MigrationScript.
 """
+
 from __future__ import annotations
 
 from typing import Any

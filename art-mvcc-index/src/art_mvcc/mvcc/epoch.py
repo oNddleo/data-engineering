@@ -66,6 +66,7 @@ class EpochManager:
             for retire_epoch, fn in self._garbage:
                 if retire_epoch < threshold:
                     import contextlib
+
                     with contextlib.suppress(Exception):  # pragma: no cover
                         fn()
                     reclaimed += 1

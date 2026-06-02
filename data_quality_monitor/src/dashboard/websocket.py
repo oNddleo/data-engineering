@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import asyncio
 import json
 
@@ -58,9 +59,7 @@ async def redis_subscription_loop(redis_client: aioredis.Redis) -> None:
         await manager.broadcast(data)
 
 
-async def websocket_endpoint(
-    ws: WebSocket, redis_client: aioredis.Redis
-) -> None:
+async def websocket_endpoint(ws: WebSocket, redis_client: aioredis.Redis) -> None:
     """
     Handle a single WebSocket connection.
 
@@ -72,9 +71,7 @@ async def websocket_endpoint(
         # Send the latest cached snapshot immediately
         latest = await redis_client.get("dq:snapshot:latest")
         if latest:
-            await ws.send_text(
-                latest.decode() if isinstance(latest, bytes) else latest
-            )
+            await ws.send_text(latest.decode() if isinstance(latest, bytes) else latest)
 
         # Keep connection alive; actual data arrives via broadcast
         while True:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 __version__ = "0.1.0"
 
+
 def __getattr__(name: str) -> object:
     _LAZY = {
         "CDR": ("cdrpipe.schema", "CDR"),
@@ -55,6 +56,7 @@ def __getattr__(name: str) -> object:
         m, attr = _LAZY[name]
         return getattr(import_module(m), attr)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = [
     "CDR",

@@ -26,8 +26,10 @@ def cmd_bench(args: argparse.Namespace) -> int:
             n_keys=args.keys,
             duration_s=args.duration,
         )
-        print(f"reads/s={r['read_qps']:,.0f}  writes/s={r['write_qps']:,.0f}  "
-              f"conflict%={r['conflict_rate']*100:.2f}")
+        print(
+            f"reads/s={r['read_qps']:,.0f}  writes/s={r['write_qps']:,.0f}  "
+            f"conflict%={r['conflict_rate']*100:.2f}"
+        )
     else:
         print(f"unknown bench target: {args.what}", file=sys.stderr)
         return 2

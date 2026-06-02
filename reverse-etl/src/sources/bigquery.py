@@ -10,7 +10,9 @@ class BigQuerySource(BaseSource):
     def __init__(self, params: dict[str, Any]) -> None:
         super().__init__(params)
         self._project = params.get("project", settings.bigquery_project)
-        self._credentials_file = params.get("credentials_file", settings.bigquery_credentials_file)
+        self._credentials_file = params.get(
+            "credentials_file", settings.bigquery_credentials_file
+        )
 
     def _get_client(self) -> Any:
         from google.cloud import bigquery  # type: ignore[import-untyped]
@@ -25,7 +27,9 @@ class BigQuerySource(BaseSource):
         # falls back to application default credentials
         return bigquery.Client(project=self._project)
 
-    def fetch(self, query: str, query_params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    def fetch(
+        self, query: str, query_params: dict[str, Any] | None = None
+    ) -> list[dict[str, Any]]:
         logger.debug("BigQuerySource: executing query")
         client = self._get_client()
         job = client.query(query)

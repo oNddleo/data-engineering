@@ -40,7 +40,7 @@ class WatermarkAdvancer:
     """Streaming watermark with monotone non-decreasing invariant."""
 
     delay_estimator: PerKeyDelayEstimator
-    lambda_min: float = 0.0                # ignore keys with rate < λ_min
+    lambda_min: float = 0.0  # ignore keys with rate < λ_min
     _w: float = 0.0
     _late_handler: Callable[[object, float, float], None] | None = None
     _lock: threading.RLock = field(default_factory=threading.RLock)

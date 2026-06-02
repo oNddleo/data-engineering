@@ -58,9 +58,7 @@ class CoherenceDirectory:
             entry.holders.add(client_id)
             entry.version = max(entry.version, version)
 
-    def register_writer(
-        self, page_id: PageId, client_id: int, new_version: int
-    ) -> list[int]:
+    def register_writer(self, page_id: PageId, client_id: int, new_version: int) -> list[int]:
         """Returns the list of OTHER clients that should invalidate."""
         sh = self._shard(page_id)
         with sh.lock:

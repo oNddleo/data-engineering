@@ -27,24 +27,24 @@ def healthy_stream(n_records: int = 5, seed: int = 0) -> list[dict[str, Any]]:
     events: list[dict[str, Any]] = []
     records = [_record(i, rng.choice(["A", "B"])) for i in range(n_records)]
     for r in records:
-        events.append({"action": "pg_insert",        "record": r})
+        events.append({"action": "pg_insert", "record": r})
         events.append({"action": "debezium_publish", "record": r})
         events.append({"action": "flink_consume"})
-        events.append({"action": "warehouse_load",   "record": r})
-        events.append({"action": "reverse_etl",      "record": r})
+        events.append({"action": "warehouse_load", "record": r})
+        events.append({"action": "reverse_etl", "record": r})
     return events
 
 
 def buggy_stream(bug: str, n_records: int = 5) -> list[dict[str, Any]]:
     """Various injected-bug scenarios. Bugs:
 
-      - "kafka_lag":           publish n records without any Flink consumes
-      - "orphan_warehouse":    warehouse_load without prior consume (caught by
-                               warehouse_load precondition); resulting state
-                               still satisfies subset invariants — so we
-                               inject by direct manipulation below in tests
-      - "lost_publish":        pg_insert without subsequent publish
-      - "double_publish":      publish same record twice (caught by precondition)
+    - "kafka_lag":           publish n records without any Flink consumes
+    - "orphan_warehouse":    warehouse_load without prior consume (caught by
+                             warehouse_load precondition); resulting state
+                             still satisfies subset invariants — so we
+                             inject by direct manipulation below in tests
+    - "lost_publish":        pg_insert without subsequent publish
+    - "double_publish":      publish same record twice (caught by precondition)
     """
     records = [_record(i) for i in range(n_records)]
     if bug == "kafka_lag":
@@ -63,6 +63,6 @@ def buggy_stream(bug: str, n_records: int = 5) -> list[dict[str, Any]]:
         r = records[0]
         events.append({"action": "pg_insert", "record": r})
         events.append({"action": "debezium_publish", "record": r})
-        events.append({"action": "debezium_publish", "record": r})   # no-op (precondition)
+        events.append({"action": "debezium_publish", "record": r})  # no-op (precondition)
         return events
     raise ValueError(f"unknown bug: {bug}")

@@ -16,20 +16,23 @@ from .validator import ValidationResult
 # Breaking-change report
 # ------------------------------------------------------------------ #
 
+
 def breaking_change_report(
     old: DataContract,
     new: DataContract,
 ) -> dict[str, Any]:
     """Produce a structured diff report between two contract versions."""
-    breaking = new.is_breaking_change_from(old) if old.semver < new.semver else old.is_breaking_change_from(new)
+    breaking = (
+        new.is_breaking_change_from(old)
+        if old.semver < new.semver
+        else old.is_breaking_change_from(new)
+    )
 
     added_fields = [
-        f.name for f in new.fields
-        if f.name not in {x.name for x in old.fields}
+        f.name for f in new.fields if f.name not in {x.name for x in old.fields}
     ]
     removed_fields = [
-        f.name for f in old.fields
-        if f.name not in {x.name for x in new.fields}
+        f.name for f in old.fields if f.name not in {x.name for x in new.fields}
     ]
 
     return {
@@ -67,6 +70,7 @@ def contracts_dir_breaking_changes(contracts_dir: Path | str) -> list[dict[str, 
 # Validation summary report
 # ------------------------------------------------------------------ #
 
+
 def validation_summary_report(
     results: list[ValidationResult],
     scores: list[ProducerScore],
@@ -85,15 +89,17 @@ def validation_summary_report(
         for run in runs:
             key = (run.producer, run.contract_id)
             s = score_map.get(key)
-            producers_detail.append({
-                "producer": producer,
-                "contract_id": run.contract_id,
-                "latest_run_passed": run.passed,
-                "latest_error_count": len(run.errors()),
-                "latest_warning_count": len(run.warnings()),
-                "reliability_score": s.reliability_score if s else None,
-                "total_runs": s.total_runs if s else 1,
-            })
+            producers_detail.append(
+                {
+                    "producer": producer,
+                    "contract_id": run.contract_id,
+                    "latest_run_passed": run.passed,
+                    "latest_error_count": len(run.errors()),
+                    "latest_warning_count": len(run.warnings()),
+                    "reliability_score": s.reliability_score if s else None,
+                    "total_runs": s.total_runs if s else 1,
+                }
+            )
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -109,13 +115,16 @@ def validation_summary_report(
 # Consumer notification payload
 # ------------------------------------------------------------------ #
 
+
 def consumer_notification(
     result: ValidationResult,
     breaking_report: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the structured payload sent to downstream consumers."""
     payload: dict[str, Any] = {
-        "notification_type": "validation_failure" if not result.passed else "validation_ok",
+        "notification_type": "validation_failure"
+        if not result.passed
+        else "validation_ok",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "contract_id": result.contract_id,
         "contract_version": result.contract_version,
@@ -142,7 +151,10 @@ def consumer_notification(
 # File output helpers
 # ------------------------------------------------------------------ #
 
-def write_report(report: dict[str, Any], output_path: Path | str, *, indent: int = 2) -> None:
+
+def write_report(
+    report: dict[str, Any], output_path: Path | str, *, indent: int = 2
+) -> None:
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w") as fh:

@@ -40,7 +40,9 @@ class WhatIfComparator:
         best = report.best_by("completeness")
     """
 
-    def __init__(self, events: list[Event], sort_by_processing_time: bool = True) -> None:
+    def __init__(
+        self, events: list[Event], sort_by_processing_time: bool = True
+    ) -> None:
         self._replay = StreamReplay(events, sort_by_processing_time)
         self._configs: list[ReplayConfig] = []
 

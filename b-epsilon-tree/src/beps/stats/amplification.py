@@ -59,7 +59,9 @@ class WriteAmpStats:
         with self._lock:
             if self.leaf_applies == 0:
                 return 0.0
-            return (self.buffer_inserts + self.flushed_messages + self.leaf_applies) / self.leaf_applies
+            return (
+                self.buffer_inserts + self.flushed_messages + self.leaf_applies
+            ) / self.leaf_applies
 
     def snapshot(self) -> dict[str, int | float]:
         with self._lock:

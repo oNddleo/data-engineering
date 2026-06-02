@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 try:
     import sqlglot
     import sqlglot.expressions as exp
+
     _SQLGLOT_AVAILABLE = True
 except ImportError:
     _SQLGLOT_AVAILABLE = False
@@ -136,7 +137,9 @@ def detect_expensive_patterns(sql: str) -> list[str]:
 # Fallback (no sqlglot)
 # ---------------------------------------------------------------------------
 
+
 def _regex_fallback_where(sql: str) -> list[str]:
     import re
+
     matches = re.findall(r"WHERE\s+(\w+)\s*[=<>!]", sql, re.IGNORECASE)
     return list(set(matches))
