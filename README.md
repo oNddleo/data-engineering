@@ -1,8 +1,84 @@
-# Data Engineering
+<div align="center">
 
-A curated monorepo aggregating my data engineering work — pipelines, storage engines, query engines, governance tooling, and distributed-systems primitives. Each subdirectory is an independent project with its own README and runtime.
+# 🛠️ Data Engineering — 100+ Production-Grade Projects
 
-**93 projects** total: **78 built** across 6 categories, plus **15 research MVPs** across 7 categories — each with a working core algorithm, passing test suite, and runnable demo (**106 tests, all green**).
+**The most comprehensive open-source data-engineering portfolio on GitHub.**
+From-scratch implementations of the systems behind every modern data platform —
+Kafka • Iceberg • Delta Lake • Hudi • Parquet • CDC • Vector Clocks • CRDTs • LSM Trees • Differential Privacy • Causal Consistency • Bayesian DQ.
+
+[![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776ab?logo=python&logoColor=white)](#)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/sophie-nguyenthuthuy/data-engineering?style=social)](https://github.com/sophie-nguyenthuthuy/data-engineering/stargazers)
+[![Forks](https://img.shields.io/github/forks/sophie-nguyenthuthuy/data-engineering?style=social)](https://github.com/sophie-nguyenthuthuy/data-engineering/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/sophie-nguyenthuthuy/data-engineering)](https://github.com/sophie-nguyenthuthuy/data-engineering/commits/main)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+[![Type checked: mypy --strict](https://img.shields.io/badge/types-mypy%20strict-blue.svg)](https://mypy.readthedocs.io/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+#### ⭐ **If this repo is useful, please [give it a star](../../stargazers)** — it's how I know what to build next.
+
+</div>
+
+---
+
+> [!TIP]
+> **TL;DR** — 100+ self-contained data-engineering projects. Real algorithms, **2 500+ passing tests**, `mypy --strict`, multi-stage Dockerfiles, GitHub Actions matrix on Python 3.10/3.11/3.12, MIT-licensed. Zero or minimal runtime dependencies. Browse the [directory](#directory) ↓.
+
+A curated monorepo of data-engineering work — pipelines, storage engines, query engines, table formats, streaming, governance, and distributed-systems primitives. **Each subdirectory is an independent project** with its own README, tests, Docker image, and CI workflow.
+
+## ✨ Why this repo
+
+- 🧱 **Production-grade**, not toy examples. Every project ships with strict type-checking, ruff lint, hand-written tests, Docker images, and GHA CI.
+- 🧬 **From-scratch implementations** of the algorithms that power Kafka / Iceberg / Delta / Hudi / Parquet / CDC / Postgres WAL — read the code, learn how they actually work.
+- 🐍 **Zero or minimal runtime dependencies** — most projects use only the Python stdlib. The wire formats are real; the code is auditable.
+- ⚡ **One-command local runs** — `cd <project> && pip install -e ".[dev]" && pytest` works for every project. No external Kafka / Postgres / cluster required.
+- 📚 **Pedagogical clarity** — every module has a top-of-file docstring explaining the algorithm, the trade-off, and the failure modes.
+
+## 🌟 Featured Projects
+
+If you only look at five, look at these:
+
+| Project | What it is |
+|---|---|
+| [**log-based-cdc-from-scratch**](./log-based-cdc-from-scratch/) | Hand-written **MySQL binlog v4 parser** + **Postgres pgoutput** decoder. No Debezium, no driver dependencies. Real wire format, real tests. |
+| [**minio-iceberg-lakehouse**](./minio-iceberg-lakehouse/) | A complete **Apache Iceberg-style** table format from scratch: schemas with stable field ids, manifests, snapshots, atomic-CAS metadata commit, time travel, schema evolution. |
+| [**delta-vs-iceberg-vs-hudi**](./delta-vs-iceberg-vs-hudi/) | Mini implementations of all three table formats sharing one CDC workload harness so you can **see** the trade-offs in commits / write-amp / read-files. |
+| [**streaming-ingestion-replay-engine**](./streaming-ingestion-replay-engine/) | A **Kafka-style append-only log** with offset & timestamp seek, on-the-fly transforms, persistent offset store, time-travel replay. |
+| [**multi-source-collector**](./multi-source-collector/) | Multi-source ingestion (HTTP / CSV / Excel / FTP / Google Sheets) with **manifest-based idempotency** and slug-normalised naming. |
+
+## 🚀 Quick start
+
+```bash
+# Pick a project, install, run its tests, see the demo:
+git clone https://github.com/sophie-nguyenthuthuy/data-engineering.git
+cd data-engineering/log-based-cdc-from-scratch
+pip install -e ".[dev]"
+pytest -q
+lcdcctl info
+```
+
+That same recipe works for every project in the monorepo. Each one has a `Makefile` with `install`, `dev`, `test`, `lint`, `type`, `docker` targets.
+
+## 📊 Stats
+
+- **100+ projects** across ingestion, storage, processing, governance, and platform.
+- **78 production-grade builds** + **15 research MVPs** + **the active build series** ([CHANGELOG](CHANGELOG.md)).
+- **2 500+ tests** (each project ships its own suite — see per-project README).
+- **mypy `--strict`** clean on every project.
+- **Python 3.10 / 3.11 / 3.12** CI matrix per project.
+
+## 🤝 Contributing
+
+PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Good first issues:
+- Add a new edge case to any project's test suite.
+- Wire a project up to a real backend (Kafka / Postgres / S3) behind its existing injectable adapter.
+- Add benchmarks comparing against pyarrow / fastavro / etc.
+
+## 🔍 Keywords
+
+<sub>data engineering • lakehouse • apache iceberg • delta lake • apache hudi • parquet • orc • avro • change data capture • CDC • Postgres WAL • MySQL binlog • pgoutput • Kafka • Kafka Streams • Flink • streaming • event sourcing • exactly-once • watermarks • feature store • differential privacy • DBT • Airflow • Dagster • Prefect • semantic layer • cube • metric store • B-epsilon tree • LSM tree • ART • MVCC • Raft • Paxos • CRDT • vector clocks • HLC • hybrid logical clocks • TLA+ • Jepsen • linearizability • causal consistency • property-based testing • Hypothesis • approximate query processing • coresets • KLL sketch • Bayesian data quality • shuffle DP • k-anonymity • data mesh • data contracts • OpenLineage • schema registry • Iceberg time travel • Delta time travel • predicate pushdown • Z-order • Hilbert curve • Bloom filter • Cuckoo filter • IVM • differential dataflow • timely dataflow • Naiad • Volcano • Cascades query optimizer • cost-based optimizer • cardinality estimation • TPC-H • TPC-DS • MinIO • Trino • Presto • ClickHouse • DuckDB • Polars • Spark • Python 3.12 • mypy strict • ruff • from scratch • production-grade • monorepo</sub>
+
+---
 
 ## Directory
 
