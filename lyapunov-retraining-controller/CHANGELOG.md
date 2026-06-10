@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.2.0] — 2026-06-10
+
+### Added
+- KL-regularization knob beta: `fit_regularized` treats the previous
+  model as beta pseudo-samples (MAP with a conjugate prior); plumbed
+  through `RetrainAction`, the simulator, and the one-step map.
+- Noise-aware `expected_v`: certainty-equivalent KL plus the two
+  leading noise terms (Var[mu_hat]/(2*sigma_r^2),
+  Var[sigma2_hat]/(4*sigma_ce^4)). At calibration they sum to ~1/n,
+  independently confirming the v0.1 slack default c = 2/n. Without
+  this map a controller would never rationally choose beta > 0.
+- `DriftPlusPenaltyController` (Neely-style): per-step argmin of
+  [E[V_next] - V_hat] + lam * real-samples over an (alpha, beta)
+  grid. lam sweeps the cost-stability Pareto frontier; every fixed
+  cadence is strictly dominated by the dpp curve, and the deadbeat
+  Lyapunov controller sits on it (~ the lam = 2e-4 point).
+- `FixedCadenceController` gained a beta parameter for the ablation.
+- CLI `lrcctl frontier` (lam sweep) plus `--lam` / `--beta` flags on
+  run and benchmark; dpp row in the benchmark table.
+- 27 new tests (97 total, 5 Hypothesis properties).
+
+### Findings
+- beta rescues the naive dense dilute cadence when static (mean V
+  0.0239 -> 0.0074) and cripples it after a shock (recovery 20 -> 59
+  steps): damping is regime-dependent, not a free win.
+- The dpp optimizer discovers that boundary itself: at lam = 2e-4
+  (rare decisive retrains) it never uses beta; at lam = 1e-5
+  (frequent small corrections) almost every retrain is damped.
+  Pinned as a test.
+- dpp(lam=2e-4) ties or beats the deadbeat law in all three regimes
+  and recovers from a shock in ~1 step.
+
 ## [0.1.0] — 2026-06-10
 
 ### Added

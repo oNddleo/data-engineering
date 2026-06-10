@@ -136,3 +136,79 @@ def test_format_table_lists_all_controllers() -> None:
     assert "never" in table
     assert "lyapunov" in table
     assert "mean V" in table
+
+
+def test_dpp_budget_monotone_in_lam() -> None:
+    """Higher data price -> less data bought. The frontier's x-axis."""
+    from lrc.controller import DriftPlusPenaltyController
+
+    env = EnvironmentConfig(drift="linear", drift_rate=0.02)
+    cheap = DriftPlusPenaltyController(n_fit=N_FIT, lam=5e-5)
+    pricey = DriftPlusPenaltyController(n_fit=N_FIT, lam=1e-3)
+    results = run_benchmark([cheap, pricey], env, steps=100, n_fit=N_FIT, probe_size=PROBE, seeds=3)
+    by_name = {r.controller: r for r in results}
+    assert by_name[cheap.name].mean_real_samples > by_name[pricey.name].mean_real_samples
+    assert by_name[cheap.name].mean_v < by_name[pricey.name].mean_v
+
+
+def test_dpp_never_retrains_when_static_and_lam_high() -> None:
+    """The implicit band: near the noise floor no retrain pays for itself."""
+    from lrc.controller import DriftPlusPenaltyController
+
+    c = DriftPlusPenaltyController(n_fit=N_FIT, lam=1e-3)
+    r = run_episode(c, EnvironmentConfig(), steps=200, n_fit=N_FIT, probe_size=PROBE, seed=0)
+    assert r.retrains == 0
+
+
+def test_beta_rescues_dense_dilute_cadence_when_static() -> None:
+    """KL-regularization damps the per-step fit-noise tax of naive dense retraining."""
+    plain = FixedCadenceController(period=1, alpha=0.1)
+    damped = FixedCadenceController(period=1, alpha=0.1, beta=2.0 * N_FIT)
+    env = EnvironmentConfig()
+    results = run_benchmark([plain, damped], env, steps=200, n_fit=N_FIT, probe_size=PROBE, seeds=5)
+    by_name = {r.controller: r for r in results}
+    assert by_name[damped.name].mean_v < by_name[plain.name].mean_v / 2.0
+
+
+def test_beta_slows_shock_recovery() -> None:
+    """The flip side: damping cripples responsiveness after a step change."""
+    plain = FixedCadenceController(period=1, alpha=0.1)
+    damped = FixedCadenceController(period=1, alpha=0.1, beta=2.0 * N_FIT)
+    env = EnvironmentConfig(drift="shock", shock_at=50, shock_size=2.0)
+    r_plain = run_episode(plain, env, 200, N_FIT, PROBE, seed=1)
+    r_damped = run_episode(damped, env, 200, N_FIT, PROBE, seed=1)
+    assert r_plain.recovery_steps is not None
+    assert r_damped.recovery_steps is not None
+    assert r_damped.recovery_steps > r_plain.recovery_steps
+
+
+def test_dpp_uses_beta_only_in_frequent_retrain_regime() -> None:
+    """lam large -> rare decisive retrains, beta = 0; lam tiny -> damped corrections."""
+    import random as _random
+    from collections import deque
+
+    from lrc.controller import DriftPlusPenaltyController
+    from lrc.distributions import fit_unbiased
+    from lrc.simulator import Simulator
+
+    def beta_counts(lam: float) -> tuple[int, int]:
+        c = DriftPlusPenaltyController(n_fit=N_FIT, lam=lam)
+        sim = Simulator(env=EnvironmentConfig(), n_fit=N_FIT, rng=_random.Random(0))
+        window: deque[list[float]] = deque(maxlen=4)
+        with_beta = without_beta = 0
+        for t in range(200):
+            window.append(sim.probe(PROBE))
+            ref = fit_unbiased([x for p in window for x in p])
+            action = c.decide(sim.model, ref, t)
+            if action.retrain:
+                if action.beta > 0:
+                    with_beta += 1
+                else:
+                    without_beta += 1
+            sim.step(action)
+        return with_beta, without_beta
+
+    with_beta_rare, _ = beta_counts(2e-4)
+    with_beta_freq, without_beta_freq = beta_counts(1e-5)
+    assert with_beta_rare == 0
+    assert with_beta_freq > without_beta_freq

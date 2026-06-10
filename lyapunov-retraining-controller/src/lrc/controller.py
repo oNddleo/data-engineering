@@ -30,7 +30,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol
 
-from .lyapunov import lyapunov_value, predicted_v
+from .lyapunov import expected_v, lyapunov_value, predicted_v
 from .simulator import SKIP, RetrainAction
 
 if TYPE_CHECKING:
@@ -60,24 +60,33 @@ class NeverRetrainController:
 
 @dataclass(frozen=True)
 class FixedCadenceController:
-    """The naive baseline: retrain every ``period`` steps at a fixed real fraction."""
+    """The naive baseline: retrain every ``period`` steps at a fixed real fraction.
+
+    beta > 0 adds KL-regularization toward the previous model on every
+    retrain — the ablation knob that rescues dense dilute cadences from
+    their own fit noise.
+    """
 
     period: int
     alpha: float
+    beta: float = 0.0
 
     def __post_init__(self) -> None:
         if self.period < 1:
             raise ValueError(f"period must be >= 1, got {self.period}")
         if not 0.0 <= self.alpha <= 1.0:
             raise ValueError(f"alpha must be in [0, 1], got {self.alpha}")
+        if self.beta < 0.0:
+            raise ValueError(f"beta must be non-negative, got {self.beta}")
 
     @property
     def name(self) -> str:
-        return f"fixed(k={self.period},a={self.alpha:g})"
+        suffix = f",b={self.beta:g}" if self.beta > 0.0 else ""
+        return f"fixed(k={self.period},a={self.alpha:g}{suffix})"
 
     def decide(self, model: Gaussian, reference_estimate: Gaussian, t: int) -> RetrainAction:
         if t % self.period == 0:
-            return RetrainAction(retrain=True, alpha=self.alpha)
+            return RetrainAction(retrain=True, alpha=self.alpha, beta=self.beta)
         return SKIP
 
 
@@ -125,3 +134,61 @@ class LyapunovController:
                 return RetrainAction(retrain=True, alpha=alpha)
         # Unreachable in practice (alpha=1 maps V to ~1/(2n)); fail safe loud.
         return RetrainAction(retrain=True, alpha=1.0)
+
+
+@dataclass(frozen=True)
+class DriftPlusPenaltyController:
+    """Neely-style drift-plus-penalty: per-step argmin of E[dV] + lam * real samples.
+
+    Each step it evaluates every (alpha, beta) candidate on the noise-aware
+    expected-V map and picks the action minimising
+
+        [E[V_next] - V_hat] + lam * round(alpha * n_fit)
+
+    against the skip baseline of 0. There is no trigger band — lam creates
+    one implicitly: near the noise floor no retrain can buy enough V
+    reduction to pay its data cost. Sweeping lam traces the cost-stability
+    Pareto frontier (lam -> 0: stability at any cost; lam large: stingy).
+
+    beta candidates cost nothing in real samples, so the optimizer uses
+    KL-regularization whenever the noise it saves beats the correction it
+    dilutes — this is the only controller that exercises the second knob.
+    """
+
+    n_fit: int
+    lam: float  # nats per real sample
+    beta_fracs: tuple[float, ...] = (0.0, 0.25, 1.0)  # beta = frac * n_fit
+    grid: int = 64  # alpha search resolution
+
+    def __post_init__(self) -> None:
+        if self.lam <= 0.0:
+            raise ValueError(f"lam must be positive, got {self.lam}")
+        if self.n_fit < 2:
+            raise ValueError(f"n_fit must be >= 2, got {self.n_fit}")
+        if self.grid < 2:
+            raise ValueError(f"grid must be >= 2, got {self.grid}")
+        if any(f < 0.0 for f in self.beta_fracs) or not self.beta_fracs:
+            raise ValueError(
+                f"beta_fracs must be non-empty and non-negative, got {self.beta_fracs}"
+            )
+
+    @property
+    def name(self) -> str:
+        return f"dpp(lam={self.lam:g})"
+
+    def decide(self, model: Gaussian, reference_estimate: Gaussian, t: int) -> RetrainAction:
+        v_hat = lyapunov_value(model, reference_estimate)
+        best_objective = 0.0  # skip: V unchanged, no cost
+        best_action = SKIP
+        for i in range(1, self.grid + 1):
+            alpha = i / self.grid
+            cost = self.lam * round(alpha * self.n_fit)
+            for frac in self.beta_fracs:
+                beta = frac * self.n_fit
+                objective = (
+                    expected_v(model, reference_estimate, alpha, self.n_fit, beta) - v_hat + cost
+                )
+                if objective < best_objective:
+                    best_objective = objective
+                    best_action = RetrainAction(retrain=True, alpha=alpha, beta=beta)
+        return best_action

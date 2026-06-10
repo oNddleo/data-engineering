@@ -1,7 +1,8 @@
-"""CLI: lrcctl info | run | benchmark.
+"""CLI: lrcctl info | run | benchmark | frontier.
 
-``run`` prints a single closed-loop trajectory (V per step plus the actions a
-Lyapunov controller took); ``benchmark`` reproduces the README results table.
+``run`` prints a single closed-loop trajectory; ``benchmark`` reproduces the
+README results tables; ``frontier`` sweeps the drift-plus-penalty weight lam
+to trace the cost-stability Pareto frontier.
 """
 
 from __future__ import annotations
@@ -14,6 +15,7 @@ from . import __version__
 from .benchmark import format_table, run_benchmark, run_episode
 from .controller import (
     Controller,
+    DriftPlusPenaltyController,
     FixedCadenceController,
     LyapunovController,
     NeverRetrainController,
@@ -44,9 +46,11 @@ def _env_from_args(args: argparse.Namespace) -> EnvironmentConfig:
 def _controller_from_args(args: argparse.Namespace) -> Controller:
     if args.controller == "lyapunov":
         return LyapunovController(n_fit=args.n_fit, eta=args.eta)
+    if args.controller == "dpp":
+        return DriftPlusPenaltyController(n_fit=args.n_fit, lam=args.lam)
     if args.controller == "never":
         return NeverRetrainController()
-    return FixedCadenceController(period=args.period, alpha=args.alpha)
+    return FixedCadenceController(period=args.period, alpha=args.alpha, beta=args.beta)
 
 
 def _add_env_args(p: argparse.ArgumentParser) -> None:
@@ -98,11 +102,32 @@ def cmd_benchmark(args: argparse.Namespace) -> int:
         FixedCadenceController(period=5, alpha=0.5),
         FixedCadenceController(period=20, alpha=1.0),
         LyapunovController(n_fit=args.n_fit, eta=args.eta),
+        DriftPlusPenaltyController(n_fit=args.n_fit, lam=args.lam),
     ]
     results = run_benchmark(controllers, env, args.steps, args.n_fit, args.probe_size, args.seeds)
     print(
         f"environment: drift={env.drift}  steps={args.steps}  n_fit={args.n_fit}  seeds={args.seeds}"
     )
+    print(format_table(results))
+    return 0
+
+
+def cmd_frontier(args: argparse.Namespace) -> int:
+    env = _env_from_args(args)
+    lams = [float(x) for x in args.lams.split(",")]
+    controllers: list[Controller] = [
+        FixedCadenceController(period=1, alpha=0.1),
+        FixedCadenceController(period=5, alpha=0.5),
+        FixedCadenceController(period=20, alpha=1.0),
+        LyapunovController(n_fit=args.n_fit),
+    ]
+    controllers += [DriftPlusPenaltyController(n_fit=args.n_fit, lam=lam) for lam in lams]
+    results = run_benchmark(controllers, env, args.steps, args.n_fit, args.probe_size, args.seeds)
+    results.sort(key=lambda r: r.mean_real_samples)
+    print(
+        f"environment: drift={env.drift}  steps={args.steps}  n_fit={args.n_fit}  seeds={args.seeds}"
+    )
+    print("sorted by real-data budget (a frontier: mean V should fall as budget rises)")
     print(format_table(results))
     return 0
 
@@ -115,18 +140,29 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_run = sub.add_parser("run", help="run one closed-loop episode")
     _add_env_args(p_run)
-    p_run.add_argument("--controller", choices=["lyapunov", "fixed", "never"], default="lyapunov")
+    p_run.add_argument(
+        "--controller", choices=["lyapunov", "dpp", "fixed", "never"], default="lyapunov"
+    )
     p_run.add_argument("--eta", type=float, default=0.3)
+    p_run.add_argument("--lam", type=float, default=2e-4)
     p_run.add_argument("--period", type=int, default=5)
     p_run.add_argument("--alpha", type=float, default=0.5)
+    p_run.add_argument("--beta", type=float, default=0.0)
     p_run.add_argument("--seed", type=int, default=0)
     p_run.set_defaults(func=cmd_run)
 
-    p_bench = sub.add_parser("benchmark", help="controller vs fixed-cadence baselines")
+    p_bench = sub.add_parser("benchmark", help="controllers vs fixed-cadence baselines")
     _add_env_args(p_bench)
     p_bench.add_argument("--eta", type=float, default=0.3)
+    p_bench.add_argument("--lam", type=float, default=2e-4)
     p_bench.add_argument("--seeds", type=int, default=20)
     p_bench.set_defaults(func=cmd_benchmark)
+
+    p_front = sub.add_parser("frontier", help="lam sweep: cost-stability Pareto frontier")
+    _add_env_args(p_front)
+    p_front.add_argument("--lams", default="1e-3,5e-4,2e-4,1e-4,5e-5")
+    p_front.add_argument("--seeds", type=int, default=10)
+    p_front.set_defaults(func=cmd_frontier)
     return parser
 
 

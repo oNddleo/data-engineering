@@ -75,6 +75,24 @@ def fit_unbiased(xs: Sequence[float]) -> Gaussian:
     return Gaussian(mu, max(sigma2, SIGMA2_FLOOR))
 
 
+def fit_regularized(xs: Sequence[float], prior: Gaussian, beta: float) -> Gaussian:
+    """KL-regularized fit: the prior acts as ``beta`` pseudo-samples.
+
+    mu' = (n*mu_mle + beta*mu_prior) / (n + beta), same for the variance.
+    Equivalent to MAP estimation with a conjugate prior centred on the
+    previous model; beta = 0 reduces exactly to ``fit_mle``. Shrinks the
+    fit-noise variance by (n / (n + beta))^2 at the price of biasing the
+    update toward the prior — the second control knob.
+    """
+    if beta < 0.0:
+        raise ValueError(f"beta must be non-negative, got {beta}")
+    base = fit_mle(xs)
+    n = len(xs)
+    mu = (n * base.mu + beta * prior.mu) / (n + beta)
+    sigma2 = (n * base.sigma2 + beta * prior.sigma2) / (n + beta)
+    return Gaussian(mu, max(sigma2, SIGMA2_FLOOR))
+
+
 def mixture_moments(real: Gaussian, model: Gaussian, w: float) -> Gaussian:
     """Moment-matched Gaussian of the mixture w*real + (1-w)*model.
 

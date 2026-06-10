@@ -106,3 +106,18 @@ def test_never_retraining_under_drift_diverges() -> None:
 def test_simulator_rejects_tiny_n_fit() -> None:
     with pytest.raises(ValueError):
         make_sim(n_fit=1)
+
+
+def test_action_rejects_negative_beta() -> None:
+    with pytest.raises(ValueError):
+        RetrainAction(retrain=True, alpha=0.5, beta=-1.0)
+
+
+def test_retrain_with_huge_beta_barely_moves_model() -> None:
+    from lrc.distributions import Gaussian
+
+    sim = make_sim(seed=5, n_fit=100)
+    sim.model = Gaussian(3.0, 0.5)  # force a drifted model
+    sim.step(RetrainAction(retrain=True, alpha=1.0, beta=1e6))
+    assert sim.model.mu == pytest.approx(3.0, abs=0.01)
+    assert sim.model.sigma2 == pytest.approx(0.5, abs=0.01)

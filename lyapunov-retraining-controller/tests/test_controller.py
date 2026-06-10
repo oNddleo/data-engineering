@@ -103,3 +103,57 @@ def test_controller_names_are_descriptive() -> None:
     assert "lyapunov" in LyapunovController(n_fit=100).name
     assert "fixed" in FixedCadenceController(period=5, alpha=0.5).name
     assert NeverRetrainController().name == "never"
+
+
+def test_dpp_validates_params() -> None:
+    from lrc.controller import DriftPlusPenaltyController
+
+    with pytest.raises(ValueError):
+        DriftPlusPenaltyController(n_fit=100, lam=0.0)
+    with pytest.raises(ValueError):
+        DriftPlusPenaltyController(n_fit=100, lam=1e-4, beta_fracs=())
+    with pytest.raises(ValueError):
+        DriftPlusPenaltyController(n_fit=100, lam=1e-4, beta_fracs=(-0.5,))
+
+
+def test_dpp_skips_at_calibration() -> None:
+    from lrc.controller import DriftPlusPenaltyController
+
+    c = DriftPlusPenaltyController(n_fit=200, lam=2e-4)
+    assert not c.decide(REF, REF, t=0).retrain
+
+
+def test_dpp_acts_on_large_v_and_skips_when_lam_huge() -> None:
+    from lrc.controller import DriftPlusPenaltyController
+
+    drifted = Gaussian(1.0, 1.0)  # V = 0.5
+    assert DriftPlusPenaltyController(n_fit=200, lam=2e-4).decide(drifted, REF, t=0).retrain
+    assert not DriftPlusPenaltyController(n_fit=200, lam=1.0).decide(drifted, REF, t=0).retrain
+
+
+def test_dpp_name_and_fixed_beta_name() -> None:
+    from lrc.controller import DriftPlusPenaltyController
+
+    assert DriftPlusPenaltyController(n_fit=100, lam=0.0002).name == "dpp(lam=0.0002)"
+    assert FixedCadenceController(period=1, alpha=0.1, beta=400.0).name == "fixed(k=1,a=0.1,b=400)"
+    assert FixedCadenceController(period=1, alpha=0.1).name == "fixed(k=1,a=0.1)"
+
+
+def test_fixed_cadence_passes_beta_to_action() -> None:
+    c = FixedCadenceController(period=1, alpha=0.5, beta=100.0)
+    action = c.decide(REF, REF, t=0)
+    assert action.retrain
+    assert action.beta == pytest.approx(100.0)
+
+
+@given(
+    st.floats(min_value=-5, max_value=5),
+    st.floats(min_value=0.01, max_value=5),
+)
+def test_dpp_action_always_valid(mu: float, sigma2: float) -> None:
+    from lrc.controller import DriftPlusPenaltyController
+
+    c = DriftPlusPenaltyController(n_fit=100, lam=2e-4)
+    action = c.decide(Gaussian(mu, sigma2), REF, t=0)
+    assert 0.0 <= action.alpha <= 1.0
+    assert action.beta >= 0.0

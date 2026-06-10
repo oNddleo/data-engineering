@@ -91,3 +91,57 @@ def test_predicted_state_always_valid(mu_m: float, s2_m: float, alpha: float) ->
     ref = Gaussian(0.0, 1.0)
     nxt = predicted_next_state(Gaussian(mu_m, s2_m), ref, alpha, n_fit=100)
     assert nxt.sigma2 > 0.0
+
+
+def test_predicted_next_state_beta_zero_is_default() -> None:
+    model, ref = Gaussian(1.0, 0.5), Gaussian(0.0, 1.0)
+    assert predicted_next_state(model, ref, 0.5, 100) == predicted_next_state(
+        model, ref, 0.5, 100, beta=0.0
+    )
+
+
+def test_predicted_next_state_beta_shrinks_toward_model() -> None:
+    model, ref = Gaussian(2.0, 0.5), Gaussian(0.0, 1.0)
+    plain = predicted_next_state(model, ref, 1.0, 100)
+    damped = predicted_next_state(model, ref, 1.0, 100, beta=100.0)
+    # With beta = n the update is halved: midway between plain and the old model.
+    assert damped.mu == pytest.approx((plain.mu + model.mu) / 2)
+    assert damped.sigma2 == pytest.approx((plain.sigma2 + model.sigma2) / 2)
+
+
+def test_predicted_next_state_rejects_negative_beta() -> None:
+    with pytest.raises(ValueError):
+        predicted_next_state(Gaussian(0.0, 1.0), Gaussian(0.0, 1.0), 0.5, 100, beta=-1.0)
+
+
+def test_expected_v_exceeds_certainty_equivalent() -> None:
+    from lrc.lyapunov import expected_v, predicted_v
+
+    model, ref = Gaussian(1.0, 0.8), Gaussian(0.0, 1.0)
+    assert expected_v(model, ref, 0.5, 200) > predicted_v(model, ref, 0.5, 200)
+
+
+def test_expected_v_noise_floor_is_order_one_over_n() -> None:
+    """At full real data and perfect calibration the floor is ~1/n."""
+    from lrc.lyapunov import expected_v
+
+    ref = Gaussian(0.0, 1.0)
+    n = 200
+    floor = expected_v(ref, ref, alpha=1.0, n_fit=n)
+    assert 0.5 / n < floor < 2.0 / n
+
+
+def test_expected_v_beta_damps_noise_when_calibrated() -> None:
+    """With no correction needed, KL-regularization is pure noise reduction."""
+    from lrc.lyapunov import expected_v
+
+    ref = Gaussian(0.0, 1.0)
+    assert expected_v(ref, ref, 1.0, 200, beta=200.0) < expected_v(ref, ref, 1.0, 200, beta=0.0)
+
+
+def test_expected_v_beta_dilutes_large_corrections() -> None:
+    """When the model is far off, damping the update costs more than it saves."""
+    from lrc.lyapunov import expected_v
+
+    model, ref = Gaussian(2.0, 1.0), Gaussian(0.0, 1.0)
+    assert expected_v(model, ref, 1.0, 200, beta=200.0) > expected_v(model, ref, 1.0, 200, beta=0.0)

@@ -17,7 +17,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from .distributions import Gaussian, fit_mle
+from .distributions import Gaussian, fit_regularized
 from .lyapunov import lyapunov_value
 
 if TYPE_CHECKING:
@@ -56,14 +56,21 @@ class EnvironmentConfig:
 
 @dataclass(frozen=True)
 class RetrainAction:
-    """One control decision: retrain or skip; alpha is the real-data fraction."""
+    """One control decision: retrain or skip.
+
+    alpha is the real-data fraction; beta is the KL-regularization weight
+    (the previous model counts as beta pseudo-samples in the fit).
+    """
 
     retrain: bool
     alpha: float = 0.0
+    beta: float = 0.0
 
     def __post_init__(self) -> None:
         if not 0.0 <= self.alpha <= 1.0:
             raise ValueError(f"alpha must be in [0, 1], got {self.alpha}")
+        if self.beta < 0.0:
+            raise ValueError(f"beta must be non-negative, got {self.beta}")
 
 
 SKIP = RetrainAction(retrain=False)
@@ -109,5 +116,5 @@ class Simulator:
             data += self.model.sample(self.rng, self.n_fit - k)
             self.real_samples_used += k
             self.retrain_count += 1
-            self.model = fit_mle(data)
+            self.model = fit_regularized(data, self.model, action.beta)
         self.t += 1

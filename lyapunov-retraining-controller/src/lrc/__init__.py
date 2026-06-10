@@ -16,20 +16,29 @@ from .benchmark import (
 )
 from .controller import (
     Controller,
+    DriftPlusPenaltyController,
     FixedCadenceController,
     LyapunovController,
     NeverRetrainController,
 )
-from .distributions import Gaussian, fit_mle, fit_unbiased, kl_divergence, mixture_moments
-from .lyapunov import lyapunov_value, predicted_next_state, predicted_v
+from .distributions import (
+    Gaussian,
+    fit_mle,
+    fit_regularized,
+    fit_unbiased,
+    kl_divergence,
+    mixture_moments,
+)
+from .lyapunov import expected_v, lyapunov_value, predicted_next_state, predicted_v
 from .simulator import SKIP, EnvironmentConfig, RetrainAction, Simulator
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "SKIP",
     "AggregateResult",
     "Controller",
+    "DriftPlusPenaltyController",
     "EnvironmentConfig",
     "EpisodeResult",
     "FixedCadenceController",
@@ -39,7 +48,9 @@ __all__ = [
     "RetrainAction",
     "Simulator",
     "__version__",
+    "expected_v",
     "fit_mle",
+    "fit_regularized",
     "fit_unbiased",
     "format_table",
     "kl_divergence",
