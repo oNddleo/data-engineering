@@ -121,7 +121,10 @@ function buildDoc(p) {
 }
 
 (async () => {
+  // node gen_docs.js [file.docx ...] — no args regenerates every post.
+  const only = process.argv.slice(2);
   for (const p of posts) {
+    if (only.length && !only.includes(p.file)) continue;
     const doc = buildDoc(p);
     const buf = await Packer.toBuffer(doc);
     fs.writeFileSync(path.join(OUT_DIR, p.file), buf);

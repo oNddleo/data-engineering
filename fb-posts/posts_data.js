@@ -1201,4 +1201,57 @@ module.exports = [
   tags: "#reliability #devops #selfhealing"
 },
 
+// ============================================================
+// 19 - Lyapunov retraining controller (Project)
+// ============================================================
+{
+  file: "19_lyapunov_controller.docx",
+  img: "19_lyapunov_controller.png",
+  category: "Project (MLOps / Control Theory)",
+  title: "Khi nào nên retrain model? Đừng đoán — để Lyapunov quyết",
+  audience: "ML engineer, MLOps engineer, data engineer vận hành pipeline có model",
+  intro: "Hầu hết các team vận hành model trong production đều retrain theo lịch cố định: mỗi đêm, mỗi tuần, hoặc mỗi khi có người nhớ ra. Tỉ lệ trộn dữ liệu thật với dữ liệu synthetic cũng được chọn theo cảm tính. Vấn đề là hệ thống model + data + retrain tạo thành một vòng lặp kín — model sinh ra output, output lẫn vào dữ liệu huấn luyện thế hệ sau — và vòng lặp kín thì có thể mất ổn định. Đây chính xác là bài toán mà control theory đã giải từ thập niên 60 cho tên lửa và nhà máy điện. Project này áp nguyên văn khung đó cho retraining: định nghĩa một hàm Lyapunov đo độ lệch của model, rồi xây luật điều khiển ép nó phải giảm. Kết quả: một controller duy nhất, không cần tune theo từng tình huống, thắng hoặc hoà mọi lịch retrain cố định trên cả ba chế độ thử nghiệm — trong khi tốn ít dữ liệu thật nhất.",
+  sections: [
+    {
+      heading: "Retrain theo lịch cố định là đoán mò",
+      paragraphs: [
+        "Lịch retrain cố định có một điểm yếu cấu trúc: nó không nhìn vào trạng thái của hệ thống. Khi môi trường đứng yên, retrain mỗi đêm là đốt tiền vô ích — mỗi lần fit lại trên mẫu hữu hạn còn tiêm thêm nhiễu vào model đang tốt. Khi môi trường drift nhanh hoặc có cú sốc đột ngột — chính sách giá thay đổi, hành vi người dùng đổi chiều sau một sự kiện — thì lịch thưa lại để model phơi mặt chịu trận suốt nhiều ngày trước lần retrain kế tiếp.",
+        "Tệ hơn, khi dữ liệu huấn luyện lẫn output của chính model (điều đang xảy ra ở quy mô internet với nội dung do LLM sinh ra), retrain dày trên dữ liệu loãng dẫn tới model collapse: variance co lại theo cấp số nhân, mean trôi dạt như random walk. Trong mô phỏng của project, một model Gaussian được retrain liên tục trên 100% dữ liệu synthetic sụp đổ hoàn toàn sau vài trăm thế hệ — variance tiến về 0, KL divergence so với phân phối thật phình ra vô hạn. Đây không phải là lỗi code, mà là tính chất toán học của vòng lặp."
+      ]
+    },
+    {
+      heading: "Hàm Lyapunov cho data drift",
+      paragraphs: [
+        "Control theory ổn định một hệ thống bằng cách tìm một hàm V đo độ lệch khỏi trạng thái mong muốn, rồi chứng minh mọi hành động của controller làm V giảm. Với retraining, ứng viên tự nhiên là V = KL(model ‖ reference) — khoảng cách giữa phân phối model đang tin và phân phối dữ liệu thật hiện tại. V bằng 0 nghĩa là model khớp hoàn hảo; V lớn hơn 1 nat nghĩa là model gần như vô dụng.",
+        "Điểm mấu chốt làm bài toán giải được: với vòng lặp Gaussian, có thể tính chính xác bằng công thức đóng kỳ vọng của trạng thái model sau một lần retrain với tỉ lệ dữ liệu thật alpha bất kỳ. Nghĩa là controller không cần thử — nó tính trước được V sẽ đi đâu với từng lựa chọn alpha, rồi chọn alpha nhỏ nhất (rẻ nhất, vì dữ liệu thật là thứ đắt) thoả điều kiện V phải co lại. Từ đó suy ra được cận ổn định kiểu Foster–Lyapunov: V trung bình dài hạn bị chặn trên bởi mức nhiễu chia cho hệ số co — một bảo đảm toán học, không phải một quan sát thực nghiệm."
+      ]
+    },
+    {
+      heading: "Luật điều khiển: im lặng trong vùng an toàn, ra tay thì dứt khoát",
+      paragraphs: [
+        "Bản nháp đầu tiên của controller co V mỗi bước một ít theo đúng sách giáo khoa — và thua lịch cố định. Lý do nằm ở một chi tiết ít ai để ý: mỗi lần retrain, dù trộn bao nhiêu dữ liệu thật, đều phải trả một khoản thuế nhiễu cỡ 1/n do fit trên mẫu hữu hạn. Retrain 130 lần trong 200 bước nghĩa là nộp thuế 130 lần. Nhiều cú chỉnh nhỏ thua xa vài cú chỉnh dứt khoát.",
+        "Luật cuối cùng là trigger + deadbeat: khi V còn nằm trong dải an toàn thì không làm gì cả — không retrain, không tốn một sample dữ liệu thật nào ngoài chi phí monitoring. Khi V vượt ngưỡng, chọn lượng dữ liệu thật nhỏ nhất đủ để đưa V về thẳng đáy nhiễu trong một lần. Tần suất retrain từ đó tự điều chỉnh theo tốc độ drift của môi trường: môi trường yên thì controller im lặng, drift nhanh thì nó ra tay thường xuyên hơn — không ai phải chỉnh cron job."
+      ]
+    },
+    {
+      heading: "Benchmark: một setting thắng cả ba chế độ",
+      paragraphs: [
+        "Thử nghiệm chạy 200 bước, 20 seed, so với ba lịch cố định đại diện: dày-loãng (mỗi bước, 10% dữ liệu thật), vừa (mỗi 5 bước, 50%), thưa-đậm (mỗi 20 bước, 100%). Ba chế độ môi trường: đứng yên, drift tuyến tính, và sốc đột ngột.",
+        "Môi trường đứng yên: controller gần như không retrain (10 lần trong 200 bước), giữ độ lệch trung bình thấp nhất bảng trong khi tốn ít dữ liệu thật nhất. Drift tuyến tính: thắng mọi lịch cố định về độ lệch trung bình, vẫn tốn ít hơn lịch được tune tốt nhất. Sốc: đây là khác biệt lớn nhất — controller phục hồi trong 2.7 bước, trong khi các lịch cố định mất 10 tới 20 bước phơi model hỏng ra production. Điểm cần nhấn: mỗi lịch cố định chỉ tốt ở đúng một chế độ và phải biết trước chế độ đó để tune. Controller dùng một setting duy nhất cho cả ba.",
+        "Phiên bản 0.2 đẩy thêm một bước: luật drift-plus-penalty của Neely gắn thẳng một mức giá lambda cho mỗi sample dữ liệu thật, rồi mỗi bước giải bài toán tối ưu nhỏ: giảm V được bao nhiêu, trả giá bao nhiêu. Quét lambda vẽ ra nguyên đường biên Pareto chi phí–ổn định, và mọi lịch retrain cố định đều nằm trên đường biên đó — tức là bị dominate: cùng mức chi phí luôn có controller ổn định hơn, cùng mức ổn định luôn có controller rẻ hơn."
+      ]
+    },
+    {
+      heading: "Phát hiện phụ: regularization không phải bữa trưa miễn phí",
+      paragraphs: [
+        "Project còn thử knob thứ hai: KL-regularization — mỗi lần retrain, kéo model mới về phía model cũ với trọng số beta, tương đương coi model cũ là beta mẫu giả. Trực giác nói rằng damping kiểu này luôn tốt vì nó giảm nhiễu. Thực nghiệm nói khác: với lịch dày-loãng, beta cứu được mean V gấp 3 lần khi môi trường đứng yên, nhưng làm thời gian phục hồi sau sốc tệ đi gấp 3 lần — từ 20 bước lên 59 bước. Damping là con dao hai lưỡi phụ thuộc chế độ.",
+        "Thú vị nhất là khi để controller drift-plus-penalty tự chọn beta: ở mức giá dữ liệu cao (retrain hiếm, mỗi lần chỉnh mạnh) nó không bao giờ dùng regularization; ở mức giá thấp (retrain dày, mỗi lần chỉnh nhẹ) gần như lần retrain nào cũng được damp. Optimizer tự khám phá ra ranh giới chế độ mà lý thuyết dự đoán — và điều đó được ghim lại thành một test case trong repo."
+      ]
+    }
+  ],
+  conclusion: "Bài học lớn nhất của project không nằm ở Gaussian hay KL, mà ở cách đặt vấn đề: retraining là một hệ điều khiển vòng kín, và một khi đã có hàm Lyapunov đo được cùng một bộ dự đoán một bước, thì câu hỏi 'khi nào retrain, trộn bao nhiêu dữ liệu thật' không còn là chuyện cảm tính nữa — nó thành một bài toán tối ưu có lời giải và có bảo đảm ổn định. Toàn bộ mô phỏng chỉ dùng Python stdlib, không dependency, 97 test, chạy được bằng một lệnh pip install. Repo có sẵn lệnh benchmark và frontier để bạn tự tái tạo mọi con số trong bài.",
+  link: `${REPO}/lyapunov-retraining-controller`,
+  tags: "#mlops #controltheory #modelcollapse #datadrift #dataengineering"
+},
+
 ];

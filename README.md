@@ -61,8 +61,8 @@ That same recipe works for every project in the monorepo. Each one has a `Makefi
 
 ## 📊 Stats
 
-- **100+ projects** across ingestion, storage, processing, governance, and platform.
-- **78 production-grade builds** + **15 research MVPs** + **the active build series** ([CHANGELOG](CHANGELOG.md)).
+- **159 self-contained projects** across ingestion, storage, processing, governance, and platform — 105 curated in the [directory](#directory) below, the rest in the active build series ([CHANGELOG](CHANGELOG.md)).
+- **79 production-grade builds** + **21 research MVPs** in the curated directory.
 - **2 500+ tests** (each project ships its own suite — see per-project README).
 - **mypy `--strict`** clean on every project.
 - **Python 3.10 / 3.11 / 3.12** CI matrix per project.
@@ -82,15 +82,15 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Good first issues:
 
 ## Directory
 
-**Built (78):**
+**Built (79):**
 - [Streaming & Real-time](#streaming--real-time) (15)
-- [Batch, ETL & Orchestration](#batch-etl--orchestration) (15)
-- [Data Quality & Governance](#data-quality--governance) (10)
+- [Batch, ETL & Orchestration](#batch-etl--orchestration) (18)
+- [Data Quality & Governance](#data-quality--governance) (11)
 - [Query & Storage Engines](#query--storage-engines) (17)
 - [Data Warehouse & Lakehouse](#data-warehouse--lakehouse) (8)
 - [Distributed Systems & Infrastructure](#distributed-systems--infrastructure) (10)
 
-**Research MVPs (15):**
+**Research MVPs (21):**
 - [Query Processing & Compilation](#query-processing--compilation)
 - [Distributed Systems Theory](#distributed-systems-theory)
 - [Storage Engine Internals](#storage-engine-internals)
