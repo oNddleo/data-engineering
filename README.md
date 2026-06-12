@@ -2,7 +2,7 @@
 
 # 🛠️ Data Engineering — 100+ Production-Grade Projects
 
-**The most comprehensive open-source data-engineering portfolio on GitHub.**
+**One of the most comprehensive open-source data-engineering portfolios on GitHub.**
 From-scratch implementations of the systems behind every modern data platform —
 Kafka • Iceberg • Delta Lake • Hudi • Parquet • CDC • Vector Clocks • CRDTs • LSM Trees • Differential Privacy • Causal Consistency • Bayesian DQ.
 
