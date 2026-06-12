@@ -77,3 +77,4 @@ credentials.json
 # ---- Misc ----
 .cache/
 .ipynb_checkpoints/
+.claude/worktrees/
