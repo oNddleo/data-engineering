@@ -1,0 +1,266 @@
+# ─────────────────────────────────────────────────────────────
+# POC: Rust-Accelerated End-to-End Lakehouse
+# Phase 1 — Infrastructure Foundation
+#
+# Services on ONE explicit bridge network. Always reach peers by service
+# DNS name (minio:9000, lakekeeper:8181) — never localhost (top failure mode).
+# ─────────────────────────────────────────────────────────────
+
+name: lakehouse-poc
+
+services:
+  # --- Shared metadata Postgres: hosts lakekeeper (+ airflow, superset later) ---
+  meta-db:
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_USER: ${META_DB_USER}
+      POSTGRES_PASSWORD: ${META_DB_PASSWORD}
+      POSTGRES_DB: ${META_DB_NAME}
+    volumes:
+      - meta_db_data:/var/lib/postgresql/data
+      # creates the `lakekeeper` logical DB on first init
+      - ./infra/meta-db/init-databases.sql:/docker-entrypoint-initdb.d/10-init-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${META_DB_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [lakehouse]
+
+  # --- Source OLTP Postgres (synthetic e-commerce data lands here in Phase 2) ---
+  source-db:
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_USER: ${SOURCE_DB_USER}
+      POSTGRES_PASSWORD: ${SOURCE_DB_PASSWORD}
+      POSTGRES_DB: ${SOURCE_DB_NAME}
+    ports:
+      - "5432:5432"            # exposed so the seed script can connect from host
+    volumes:
+      - source_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SOURCE_DB_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [lakehouse]
+
+  # --- MinIO: S3-compatible object store ---
+  minio:
+    image: ${MINIO_IMAGE}
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"            # S3 API
+      - "9001:9001"            # web console
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [lakehouse]
+
+  # --- One-shot: create the warehouse bucket (Iceberg REST will NOT auto-create) ---
+  minio-bootstrap:
+    image: ${MC_IMAGE}
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/bootstrap.sh"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${S3_BUCKET}
+    volumes:
+      - ./infra/minio/bootstrap.sh:/bootstrap.sh:ro
+    networks: [lakehouse]
+    restart: "no"
+
+  # --- One-shot: run Lakekeeper DB migrations against the shared meta-db ---
+  lakekeeper-migrate:
+    image: ${LAKEKEEPER_IMAGE}
+    depends_on:
+      meta-db:
+        condition: service_healthy
+    command: ["migrate"]
+    environment:
+      LAKEKEEPER__PG_ENCRYPTION_KEY: ${LAKEKEEPER_PG_ENCRYPTION_KEY}
+      LAKEKEEPER__PG_DATABASE_URL_READ: postgresql://${META_DB_USER}:${META_DB_PASSWORD}@meta-db:5432/${LAKEKEEPER_DB}
+      LAKEKEEPER__PG_DATABASE_URL_WRITE: postgresql://${META_DB_USER}:${META_DB_PASSWORD}@meta-db:5432/${LAKEKEEPER_DB}
+      RUST_LOG: info
+    networks: [lakehouse]
+    restart: "no"
+
+  # --- Lakekeeper: Iceberg REST catalog (Rust) ---
+  lakekeeper:
+    image: ${LAKEKEEPER_IMAGE}
+    depends_on:
+      lakekeeper-migrate:
+        condition: service_completed_successfully
+      minio-bootstrap:
+        condition: service_completed_successfully
+    command: ["serve"]
+    environment:
+      LAKEKEEPER__PG_ENCRYPTION_KEY: ${LAKEKEEPER_PG_ENCRYPTION_KEY}
+      LAKEKEEPER__PG_DATABASE_URL_READ: postgresql://${META_DB_USER}:${META_DB_PASSWORD}@meta-db:5432/${LAKEKEEPER_DB}
+      LAKEKEEPER__PG_DATABASE_URL_WRITE: postgresql://${META_DB_USER}:${META_DB_PASSWORD}@meta-db:5432/${LAKEKEEPER_DB}
+      # POC ONLY: open authz so we can bootstrap + create the warehouse without OIDC.
+      LAKEKEEPER__AUTHZ_BACKEND: allow-all
+      RUST_LOG: info
+    ports:
+      - "8181:8181"
+    # The lakekeeper image is distroless (no shell, no curl) — use the binary's
+    # built-in healthcheck subcommand instead of a curl-based shell probe.
+    healthcheck:
+      test: ["CMD", "/home/nonroot/lakekeeper", "healthcheck"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [lakehouse]
+
+  # --- One-shot: bootstrap Lakekeeper + register the `warehouse` (S3->MinIO) ---
+  lakekeeper-bootstrap:
+    image: curlimages/curl:latest
+    depends_on:
+      lakekeeper:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/bootstrap.sh"]
+    environment:
+      LAKEKEEPER_URL: http://lakekeeper:8181
+      S3_BUCKET: ${S3_BUCKET}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_REGION: ${S3_REGION}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      LAKEKEEPER_WAREHOUSE: ${LAKEKEEPER_WAREHOUSE}
+    volumes:
+      - ./infra/lakekeeper/bootstrap.sh:/bootstrap.sh:ro
+    networks: [lakehouse]
+    restart: "no"
+
+  # --- Trino: federated query engine (Iceberg connector -> Lakekeeper REST) ---
+  trino:
+    image: ${TRINO_IMAGE}
+    depends_on:
+      lakekeeper:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./infra/trino/etc:/etc/trino:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/v1/info | grep -q '\"starting\":false' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [lakehouse]
+
+  # ═══════════════════════════════════════════════════════════
+  # FULL profile only (Phase 5-6). MVP `docker compose up` skips these.
+  # Enable with: docker compose --profile full up -d   (make up-full)
+  # ═══════════════════════════════════════════════════════════
+
+  # --- Airflow (LocalExecutor) orchestrating the ELT chain ---
+  airflow-init:
+    profiles: [full]
+    build: { context: ., dockerfile: orchestration/Dockerfile }
+    image: lakehouse-airflow:local
+    depends_on:
+      meta-db:
+        condition: service_healthy
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - >
+        airflow db migrate &&
+        airflow users create --username admin --password admin
+        --firstname Admin --lastname User --role Admin --email admin@example.com
+    environment: &airflow-env
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${META_DB_USER}:${META_DB_PASSWORD}@meta-db:5432/airflow
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "True"
+      # service-DNS hostnames so DAG tasks reach the stack (shared with manual runs)
+      SOURCE_DB_HOST: source-db
+      SOURCE_DB_USER: ${SOURCE_DB_USER}
+      SOURCE_DB_PASSWORD: ${SOURCE_DB_PASSWORD}
+      SOURCE_DB_NAME: ${SOURCE_DB_NAME}
+      ICEBERG_CATALOG_URI: http://lakekeeper:8181/catalog
+      ICEBERG_WAREHOUSE: ${LAKEKEEPER_WAREHOUSE}
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: ${S3_REGION}
+      S3_BUCKET: ${S3_BUCKET}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    networks: [lakehouse]
+    restart: "no"
+
+  airflow-scheduler:
+    profiles: [full]
+    image: lakehouse-airflow:local
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    command: ["scheduler"]
+    environment: *airflow-env
+    volumes:
+      - ./orchestration/dags:/opt/airflow/dags:ro
+    networks: [lakehouse]
+
+  airflow-webserver:
+    profiles: [full]
+    image: lakehouse-airflow:local
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    command: ["webserver"]
+    environment: *airflow-env
+    ports:
+      - "8082:8080"            # 8080 is taken by Trino; Airflow UI on host:8082
+    volumes:
+      - ./orchestration/dags:/opt/airflow/dags:ro
+    networks: [lakehouse]
+
+  # --- Superset BI (Trino driver baked in) ---
+  superset-init:
+    profiles: [full]
+    build: { context: ., dockerfile: bi/superset/Dockerfile }
+    image: lakehouse-superset:local
+    depends_on:
+      meta-db:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "/bootstrap.sh"]
+    environment: &superset-env
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
+      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://${META_DB_USER}:${META_DB_PASSWORD}@meta-db:5432/superset
+      SUPERSET_ADMIN: admin
+      SUPERSET_ADMIN_PASSWORD: admin
+    volumes:
+      - ./bi/superset/bootstrap.sh:/bootstrap.sh:ro
+    networks: [lakehouse]
+    restart: "no"
+
+  superset:
+    profiles: [full]
+    image: lakehouse-superset:local
+    depends_on:
+      superset-init:
+        condition: service_completed_successfully
+    environment: *superset-env
+    ports:
+      - "8088:8088"
+    networks: [lakehouse]
+
+volumes:
+  meta_db_data:
+  source_db_data:
+  minio_data:
+
+networks:
+  lakehouse:
+    driver: bridge

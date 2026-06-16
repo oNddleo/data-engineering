@@ -1,0 +1,3 @@
+# Phase 2 — synthetic data seeder
+faker>=30,<40
+psycopg2-binary>=2.9,<3
