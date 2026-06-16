@@ -64,32 +64,34 @@ seed-append: ## Append a delta (new orders + updated rows) to prove incremental 
 	.venv-seed/bin/python source/seed_source_data.py --mode append
 
 # ── Phase 3-4: pipeline (ingest + transform) ─────────────────
-.PHONY: pipe-deps
-pipe-deps: ## Install Python deps for the pipeline (polars, pyiceberg, ...)
-	python3 -m venv .venv && .venv/bin/pip install -q -r pipeline/requirements.txt
+# The pipeline runs INSIDE the lakehouse network (see the `pipeline` service), so
+# it reaches the stack by service DNS — no host-vs-container endpoint mismatch.
+.PHONY: pipe-build
+pipe-build: ## Build the in-network pipeline runner image (run once / after dep changes)
+	$(COMPOSE) build pipeline
 
-PY := .venv/bin/python
-PIPE := cd pipeline &&
+# `run --rm` auto-enables the `pipeline` profile and waits on its healthy deps.
+RUN_PIPE := $(COMPOSE) run --rm pipeline python
 
 .PHONY: ingest-bronze
 ingest-bronze: ## Extract source delta -> Iceberg bronze (append-only)
-	$(PIPE) ../$(PY) extract_load_bronze.py $(ARGS)
+	$(RUN_PIPE) extract_load_bronze.py $(ARGS)
 
 .PHONY: ingest-bronze-full
 ingest-bronze-full: ## Reset bronze and reload everything
-	$(PIPE) ../$(PY) extract_load_bronze.py --full
+	$(RUN_PIPE) extract_load_bronze.py --full
 
 .PHONY: transform-silver
 transform-silver: ## Bronze -> silver (dedup latest-per-PK + clean)
-	$(PIPE) ../$(PY) transform_silver.py
+	$(RUN_PIPE) transform_silver.py
 
 .PHONY: transform-gold
 transform-gold: ## Silver -> gold marts
-	$(PIPE) ../$(PY) transform_gold.py
+	$(RUN_PIPE) transform_gold.py
 
 .PHONY: test
-test: ## Run transform unit tests (no stack needed)
-	$(PY) -m pytest tests/ -q
+test: ## Run transform unit tests in the runner image (no stack needed)
+	$(COMPOSE) run --rm --no-deps -v "$(CURDIR)/tests:/app/tests" pipeline python -m pytest tests/ -q
 
 .PHONY: pipeline
 pipeline: ingest-bronze transform-silver transform-gold ## Full ELT: bronze -> silver -> gold

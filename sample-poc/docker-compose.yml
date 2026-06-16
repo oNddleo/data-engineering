@@ -159,6 +159,35 @@ services:
       retries: 20
     networks: [lakehouse]
 
+  # --- Phase 3/4 pipeline runner: ingest + transform, ON the lakehouse network ---
+  # Not started by `up` (own profile). Invoked on demand via `docker compose run`,
+  # which auto-enables the profile. Running in-network means it reaches the stack by
+  # service DNS — the same endpoints Lakekeeper vends — so there is no host-vs-
+  # container endpoint mismatch. The command is supplied per run (e.g. the Makefile).
+  pipeline:
+    profiles: [pipeline]
+    build: { context: ., dockerfile: pipeline/Dockerfile }
+    image: lakehouse-pipeline:local
+    depends_on:
+      source-db:
+        condition: service_healthy
+      lakekeeper:
+        condition: service_healthy
+    environment:
+      SOURCE_DB_HOST: source-db
+      SOURCE_DB_USER: ${SOURCE_DB_USER}
+      SOURCE_DB_PASSWORD: ${SOURCE_DB_PASSWORD}
+      SOURCE_DB_NAME: ${SOURCE_DB_NAME}
+      ICEBERG_CATALOG_URI: http://lakekeeper:8181/catalog
+      ICEBERG_WAREHOUSE: ${LAKEKEEPER_WAREHOUSE}
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: ${S3_REGION}
+      S3_BUCKET: ${S3_BUCKET}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    networks: [lakehouse]
+    restart: "no"
+
   # ═══════════════════════════════════════════════════════════
   # FULL profile only (Phase 5-6). MVP `docker compose up` skips these.
   # Enable with: docker compose --profile full up -d   (make up-full)
