@@ -1,0 +1,9 @@
+{
+  "bronze_table": "bronze.iot_events",
+  "target_table": "silver.iot_readings",
+  "anomalies_table": "silver.iot_anomalies",
+  "target_path": "s3a://lakehouse/silver/iot_readings",
+  "anomalies_path": "s3a://lakehouse/silver/iot_anomalies",
+  "incremental_days": 7,
+  "create_tables_if_missing": true
+}

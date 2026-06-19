@@ -9,7 +9,8 @@ COMPOSE := docker compose --env-file $(ENV_FILE)
         bootstrap-uc smoke-hybrid kafka-topics trino-cli psql-meta psql-oltp \
         kafka-id config-check source-deps seed-iot seed-media seed-oltp seed-all \
         lint-source lint-pipeline stream-iot-bronze stop-stream-iot stream-status \
-        batch-media-bronze
+        batch-media-bronze build-silver-iot build-silver-media build-silver \
+        maintenance reset-warehouse
 
 # Path used by all source/*.py runners; falls back to system python3.
 PYTHON ?= python3
@@ -44,6 +45,22 @@ down-hybrid:    ## Stop & remove containers (keep volumes)
 
 clean-hybrid:   ## Stop & remove containers + volumes (DESTRUCTIVE)
 	$(COMPOSE) --profile full --profile uc down -v
+
+reset-warehouse: ## Drop bronze/silver/gold from HMS + wipe Delta + checkpoints in MinIO
+	@echo "Dropping HMS schemas..."
+	-$(COMPOSE) exec spark-master /opt/bitnami/spark/bin/spark-sql -e \
+	  "DROP SCHEMA IF EXISTS bronze CASCADE; \
+	   DROP SCHEMA IF EXISTS silver CASCADE; \
+	   DROP SCHEMA IF EXISTS gold   CASCADE; \
+	   DROP SCHEMA IF EXISTS smoke  CASCADE;"
+	@echo "Wiping MinIO prefixes..."
+	-$(COMPOSE) run --rm minio-bootstrap sh -c '\
+	  mc alias set local http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD} && \
+	  mc rm --recursive --force local/$${S3_BUCKET}/bronze/        || true; \
+	  mc rm --recursive --force local/$${S3_BUCKET}/silver/        || true; \
+	  mc rm --recursive --force local/$${S3_BUCKET}/gold/          || true; \
+	  mc rm --recursive --force local/$${S3_BUCKET}/_checkpoints/  || true'
+	@echo "reset-warehouse done. raw-media/ and thumbnails/ untouched."
 
 logs:           ## Tail logs for all services
 	$(COMPOSE) logs -f --tail=200
@@ -140,3 +157,27 @@ batch-media-bronze: ## Run the media bronze batch (EXIF/ffprobe + thumbnails →
 	  --master spark://spark-master:7077 \
 	  /opt/hybrid/pipeline/spark_jobs/batch-media-bronze.py \
 	  --config /opt/hybrid/pipeline/conf/batch-media-bronze.yaml
+
+# --- Phase 5: silver + maintenance -----------------------------------
+
+build-silver-iot:    ## Build silver.iot_readings + silver.iot_anomalies (incremental 7d)
+	$(COMPOSE) exec spark-master /opt/bitnami/spark/bin/spark-submit \
+	  --name silver-iot-build --master spark://spark-master:7077 \
+	  /opt/hybrid/pipeline/spark_jobs/build-silver-iot.py \
+	  --config /opt/hybrid/pipeline/conf/build-silver-iot.yaml
+
+build-silver-media:  ## Build silver.media_catalog (MERGE INTO from bronze.media_objects)
+	$(COMPOSE) exec spark-master /opt/bitnami/spark/bin/spark-submit \
+	  --name silver-media-build --master spark://spark-master:7077 \
+	  /opt/hybrid/pipeline/spark_jobs/build-silver-media.py \
+	  --config /opt/hybrid/pipeline/conf/build-silver-media.yaml
+
+build-silver:        ## Run both silver builds sequentially
+	$(MAKE) build-silver-iot
+	$(MAKE) build-silver-media
+
+maintenance:         ## OPTIMIZE (+ZORDER) + VACUUM all medallion tables
+	$(COMPOSE) exec spark-master /opt/bitnami/spark/bin/spark-submit \
+	  --name delta-maintenance --master spark://spark-master:7077 \
+	  /opt/hybrid/pipeline/spark_jobs/maintenance-optimize.py \
+	  --config /opt/hybrid/pipeline/conf/maintenance-optimize.yaml

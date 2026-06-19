@@ -1,0 +1,9 @@
+{
+  "tables": [
+    {"table": "bronze.iot_events",     "zorder_by": ["device_id"],              "retention_hours": 168},
+    {"table": "bronze.media_objects",  "zorder_by": ["device_id"],              "retention_hours": 168},
+    {"table": "silver.iot_readings",   "zorder_by": ["device_id", "event_ts"],  "retention_hours": 168},
+    {"table": "silver.iot_anomalies",  "zorder_by": ["device_id", "event_ts"],  "retention_hours": 168},
+    {"table": "silver.media_catalog",  "zorder_by": ["device_id", "taken_at"],  "retention_hours": 168}
+  ]
+}

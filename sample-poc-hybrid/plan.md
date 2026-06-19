@@ -64,7 +64,7 @@ POC chứng minh kiến trúc 7 tầng (`knowledge/architecture-layer-diagram.md
 | 2 | [IoT & Media Data Generators](./phase-02-iot-media-data-generators.md) | Completed |
 | 3 | [Bronze - Spark Structured Streaming IoT](./phase-03-bronze-spark-structured-streaming-iot.md) | Completed |
 | 4 | [Bronze - Spark Batch Image/Video Metadata](./phase-04-bronze-spark-batch-image-video-metadata.md) | Completed |
-| 5 | [Silver - Cleansing & Standardization](./phase-05-silver-cleansing-standardization.md) | Pending |
+| 5 | [Silver - Cleansing & Standardization](./phase-05-silver-cleansing-standardization.md) | Completed |
 | 6 | [Gold - Marts & Cross-Domain Aggregates](./phase-06-gold-marts-cross-domain-aggregates.md) | Pending |
 | 7 | [Orchestration with Airflow](./phase-07-orchestration-with-airflow.md) | Pending |
 | 8 | [Query & BI (Trino + Superset)](./phase-08-query-bi-trino-superset.md) | Pending |

@@ -6,6 +6,7 @@ ARG SCALA_BINARY=2.13
 ARG HADOOP_AWS_VERSION=3.4.1
 ARG AWS_SDK_BUNDLE_VERSION=1.12.770
 ARG UC_VERSION=0.3.0
+ARG POSTGRES_JDBC_VERSION=42.7.4
 
 USER root
 
@@ -40,6 +41,8 @@ RUN set -eux; \
     # Unity Catalog Spark client
     curl -fsSL ${MAVEN}/io/unitycatalog/unitycatalog-spark_${SCALA_BINARY}/${UC_VERSION}/unitycatalog-spark_${SCALA_BINARY}-${UC_VERSION}.jar -o ${JAR_DIR}/unitycatalog-spark_${SCALA_BINARY}-${UC_VERSION}.jar; \
     curl -fsSL ${MAVEN}/io/unitycatalog/unitycatalog-client/${UC_VERSION}/unitycatalog-client-${UC_VERSION}.jar                          -o ${JAR_DIR}/unitycatalog-client-${UC_VERSION}.jar; \
+    # PostgreSQL JDBC driver for silver enrichment from postgres-oltp
+    curl -fsSL ${MAVEN}/org/postgresql/postgresql/${POSTGRES_JDBC_VERSION}/postgresql-${POSTGRES_JDBC_VERSION}.jar -o ${JAR_DIR}/postgresql-${POSTGRES_JDBC_VERSION}.jar; \
     chmod 644 ${JAR_DIR}/*.jar
 
 # Smoke test script — used by `make smoke-hybrid`

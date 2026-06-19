@@ -1,0 +1,6 @@
+{
+  "bronze_table": "bronze.media_objects",
+  "target_table": "silver.media_catalog",
+  "target_path": "s3a://lakehouse/silver/media_catalog",
+  "create_tables_if_missing": true
+}
