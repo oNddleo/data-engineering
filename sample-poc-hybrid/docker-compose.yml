@@ -1,0 +1,331 @@
+name: ${COMPOSE_PROJECT_NAME:-hybrid}
+
+x-spark-common: &spark-common
+  build:
+    context: ./infra/spark
+    args:
+      SPARK_IMAGE_TAG: ${SPARK_IMAGE_TAG}
+      DELTA_VERSION: ${DELTA_VERSION}
+      SCALA_BINARY: ${SCALA_BINARY}
+      HADOOP_AWS_VERSION: ${HADOOP_AWS_VERSION}
+      AWS_SDK_BUNDLE_VERSION: ${AWS_SDK_BUNDLE_VERSION}
+  image: hybrid/spark:${SPARK_IMAGE_TAG}
+  environment:
+    SPARK_NO_DAEMONIZE: "true"
+    AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+    AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+    AWS_REGION: us-east-1
+  volumes:
+    - ./infra/spark/spark-defaults.conf:/opt/bitnami/spark/conf/spark-defaults.conf:ro
+    - ./infra/spark/log4j2.properties:/opt/bitnami/spark/conf/log4j2.properties:ro
+    - spark-work:/opt/bitnami/spark/work
+  networks: [hybrid-net]
+
+services:
+
+  # ──────────────────────────────────────────────────────────────────
+  # MinIO — S3 object store
+  # ──────────────────────────────────────────────────────────────────
+  minio:
+    image: ${MINIO_IMAGE}
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${PORT_MINIO_API}:9000"
+      - "${PORT_MINIO_CONSOLE}:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks: [hybrid-net]
+
+  minio-bootstrap:
+    image: ${MINIO_MC_IMAGE}
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/scripts/bootstrap.sh"]
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${S3_BUCKET}
+    volumes:
+      - ./infra/minio/bootstrap.sh:/scripts/bootstrap.sh:ro
+    restart: "no"
+    networks: [hybrid-net]
+
+  # ──────────────────────────────────────────────────────────────────
+  # Postgres — metastore + Airflow + Unity Catalog backend
+  # ──────────────────────────────────────────────────────────────────
+  postgres-meta:
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_USER: ${PG_META_USER}
+      POSTGRES_PASSWORD: ${PG_META_PASSWORD}
+      POSTGRES_DB: ${PG_META_DB}
+    ports:
+      - "${PORT_PG_META}:5432"
+    volumes:
+      - pg-meta-data:/var/lib/postgresql/data
+      - ./infra/postgres/init-meta.sql:/docker-entrypoint-initdb.d/init-meta.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_META_USER} -d ${PG_META_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [hybrid-net]
+
+  postgres-oltp:
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_USER: ${PG_OLTP_USER}
+      POSTGRES_PASSWORD: ${PG_OLTP_PASSWORD}
+      POSTGRES_DB: ${PG_OLTP_DB}
+    ports:
+      - "${PORT_PG_OLTP}:5432"
+    volumes:
+      - pg-oltp-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_OLTP_USER} -d ${PG_OLTP_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [hybrid-net]
+
+  # ──────────────────────────────────────────────────────────────────
+  # Kafka 4.0 KRaft — image handles format on first boot from CLUSTER_ID env
+  # ──────────────────────────────────────────────────────────────────
+  kafka:
+    image: ${KAFKA_IMAGE}
+    environment:
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: controller,broker
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+    ports:
+      - "${PORT_KAFKA_CLIENT}:9092"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+    networks: [hybrid-net]
+
+  kafka-init:
+    image: ${KAFKA_IMAGE}
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "/scripts/create-topics.sh"]
+    volumes:
+      - ./infra/kafka/create-topics.sh:/scripts/create-topics.sh:ro
+    restart: "no"
+    networks: [hybrid-net]
+
+  kafka-ui:
+    image: ${KAFKA_UI_IMAGE}
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_CLUSTERS_0_NAME: hybrid-kraft
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      DYNAMIC_CONFIG_ENABLED: "true"
+    ports:
+      - "${PORT_KAFKA_UI}:8080"
+    profiles: [full, kafka-ui]
+    networks: [hybrid-net]
+
+  # ──────────────────────────────────────────────────────────────────
+  # Hive Metastore 4.0 — PRIMARY catalog
+  # (Trino 470's Delta connector only supports HMS or Glue, not UC OSS.
+  #  We default to HMS until UC support reaches the OSS Trino build.)
+  # ──────────────────────────────────────────────────────────────────
+  hive-metastore:
+    build:
+      context: ./infra/hive-metastore
+    image: hybrid/hive-metastore:4.0.0
+    depends_on:
+      postgres-meta:
+        condition: service_healthy
+      minio-bootstrap:
+        condition: service_completed_successfully
+    environment:
+      SERVICE_NAME: metastore
+      DB_DRIVER: postgres
+      HIVE_CUSTOM_CONF_DIR: /opt/hive/conf
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${PORT_HMS}:9083"
+    volumes:
+      - ./infra/hive-metastore/metastore-site.xml:/opt/hive/conf/metastore-site.xml:ro
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9083 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
+    networks: [hybrid-net]
+
+  # ──────────────────────────────────────────────────────────────────
+  # Unity Catalog OSS — EXPERIMENTAL (profile: uc)
+  # Enabled for Spark-only experiments; not usable from Trino 470.
+  # ──────────────────────────────────────────────────────────────────
+  unity-catalog:
+    image: ${UC_IMAGE}
+    depends_on:
+      postgres-meta:
+        condition: service_healthy
+      minio-bootstrap:
+        condition: service_completed_successfully
+    environment:
+      UC_SERVER_PORT: "8087"
+    ports:
+      - "${PORT_UC}:8087"
+    volumes:
+      - ./infra/unity-catalog/server.properties:/home/unitycatalog/etc/conf/server.properties:ro
+      - uc-data:/home/unitycatalog/etc/data
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8087' >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+    profiles: [uc]
+    networks: [hybrid-net]
+
+  unity-catalog-bootstrap:
+    image: ${UC_IMAGE}
+    depends_on:
+      unity-catalog:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "/scripts/bootstrap-catalogs.sh"]
+    environment:
+      UC_URI: http://unity-catalog:8087
+      S3_BUCKET: ${S3_BUCKET}
+    volumes:
+      - ./infra/unity-catalog/bootstrap-catalogs.sh:/scripts/bootstrap-catalogs.sh:ro
+    restart: "no"
+    profiles: [uc]
+    networks: [hybrid-net]
+
+  # ──────────────────────────────────────────────────────────────────
+  # Spark 4.0 cluster — uses default Bitnami ENTRYPOINT (no command:)
+  # ──────────────────────────────────────────────────────────────────
+  spark-master:
+    <<: *spark-common
+    environment:
+      SPARK_MODE: master
+      SPARK_NO_DAEMONIZE: "true"
+      SPARK_MASTER_HOST: spark-master
+      SPARK_MASTER_PORT: "7077"
+      SPARK_MASTER_WEBUI_PORT: "8080"
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${PORT_SPARK_MASTER_UI}:8080"
+      - "${PORT_SPARK_MASTER}:7077"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    depends_on:
+      minio-bootstrap:
+        condition: service_completed_successfully
+      hive-metastore:
+        condition: service_healthy
+
+  spark-worker-1:
+    <<: *spark-common
+    environment:
+      SPARK_MODE: worker
+      SPARK_NO_DAEMONIZE: "true"
+      SPARK_MASTER_URL: spark://spark-master:7077
+      SPARK_WORKER_MEMORY: ${SPARK_WORKER_MEMORY}
+      SPARK_WORKER_CORES: ${SPARK_WORKER_CORES}
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    depends_on:
+      spark-master:
+        condition: service_healthy
+
+  spark-worker-2:
+    <<: *spark-common
+    environment:
+      SPARK_MODE: worker
+      SPARK_NO_DAEMONIZE: "true"
+      SPARK_MASTER_URL: spark://spark-master:7077
+      SPARK_WORKER_MEMORY: ${SPARK_WORKER_MEMORY}
+      SPARK_WORKER_CORES: ${SPARK_WORKER_CORES}
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+    profiles: [full]
+    depends_on:
+      spark-master:
+        condition: service_healthy
+
+  # ──────────────────────────────────────────────────────────────────
+  # Trino 470 — Delta connector backed by Hive Metastore
+  # ──────────────────────────────────────────────────────────────────
+  trino:
+    image: ${TRINO_IMAGE}
+    depends_on:
+      hive-metastore:
+        condition: service_healthy
+      minio-bootstrap:
+        condition: service_completed_successfully
+    ports:
+      - "${PORT_TRINO}:8080"
+    volumes:
+      - ./infra/trino/etc:/etc/trino:ro
+    healthcheck:
+      test: ["CMD-SHELL", "/usr/lib/trino/bin/health-check || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+    networks: [hybrid-net]
+
+# ──────────────────────────────────────────────────────────────────
+networks:
+  hybrid-net:
+    driver: bridge
+    name: hybrid-net
+
+volumes:
+  minio-data:
+  pg-meta-data:
+  pg-oltp-data:
+  kafka-data:
+  uc-data:
+  spark-work:

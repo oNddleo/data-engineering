@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<configuration>
+  <!-- =============================================================
+       Hive Metastore 4.0 — Postgres backend, S3a (MinIO) warehouse
+       Activated only with the `hms` compose profile (fallback path).
+       ============================================================= -->
+
+  <property>
+    <name>javax.jdo.option.ConnectionURL</name>
+    <value>jdbc:postgresql://postgres-meta:5432/metastore</value>
+  </property>
+  <property>
+    <name>javax.jdo.option.ConnectionDriverName</name>
+    <value>org.postgresql.Driver</value>
+  </property>
+  <property>
+    <name>javax.jdo.option.ConnectionUserName</name>
+    <value>metauser</value>
+  </property>
+  <property>
+    <name>javax.jdo.option.ConnectionPassword</name>
+    <value>metapass</value>
+  </property>
+
+  <property>
+    <name>metastore.warehouse.dir</name>
+    <value>s3a://lakehouse/warehouse</value>
+  </property>
+  <property>
+    <name>metastore.thrift.port</name>
+    <value>9083</value>
+  </property>
+  <property>
+    <name>metastore.task.threads.always</name>
+    <value>org.apache.hadoop.hive.metastore.events.EventCleanerTask</value>
+  </property>
+
+  <!-- S3a → MinIO -->
+  <property>
+    <name>fs.s3a.endpoint</name>
+    <value>http://minio:9000</value>
+  </property>
+  <property>
+    <name>fs.s3a.path.style.access</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>fs.s3a.access.key</name>
+    <value>minioadmin</value>
+  </property>
+  <property>
+    <name>fs.s3a.secret.key</name>
+    <value>minioadmin</value>
+  </property>
+  <property>
+    <name>fs.s3a.connection.ssl.enabled</name>
+    <value>false</value>
+  </property>
+
+  <!-- Auto-init schema on first boot (idempotent in HMS 4.0) -->
+  <property>
+    <name>metastore.schema.auto.create</name>
+    <value>true</value>
+  </property>
+</configuration>
