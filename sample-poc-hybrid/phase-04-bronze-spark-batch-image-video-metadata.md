@@ -1,10 +1,12 @@
 ---
 phase: 4
-title: "Bronze - Spark Batch Image/Video Metadata"
-status: pending
+title: Bronze - Spark Batch Image/Video Metadata
+status: completed
 priority: P1
-effort: "1.5d"
-dependencies: [1, 2]
+effort: 1.5d
+dependencies:
+  - 1
+  - 2
 ---
 
 # Phase 4: Bronze - Spark Batch Image/Video Metadata

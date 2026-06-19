@@ -12,6 +12,14 @@ USER root
 # ffmpeg for Phase 4 video metadata extraction; curl already present
 RUN install_packages ffmpeg curl
 
+# Python deps needed by pandas/Python UDFs that run on executors:
+# - pillow + piexif: image metadata + thumbnails (Phase 4)
+# - boto3: thumbnail upload back to MinIO from worker (Phase 4)
+RUN pip install --no-cache-dir \
+        "pillow==10.4.0" \
+        "piexif==1.1.3" \
+        "boto3==1.34.162"
+
 ENV SPARK_HOME=/opt/bitnami/spark
 ENV JAR_DIR=${SPARK_HOME}/jars
 

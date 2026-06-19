@@ -8,7 +8,8 @@ COMPOSE := docker compose --env-file $(ENV_FILE)
 .PHONY: help env up-hybrid up-uc up-full down-hybrid clean-hybrid logs ps healthcheck \
         bootstrap-uc smoke-hybrid kafka-topics trino-cli psql-meta psql-oltp \
         kafka-id config-check source-deps seed-iot seed-media seed-oltp seed-all \
-        lint-source lint-pipeline stream-iot-bronze stop-stream-iot stream-status
+        lint-source lint-pipeline stream-iot-bronze stop-stream-iot stream-status \
+        batch-media-bronze
 
 # Path used by all source/*.py runners; falls back to system python3.
 PYTHON ?= python3
@@ -130,3 +131,12 @@ stop-stream-iot: ## SIGTERM the IoT bronze stream JVM driver (graceful — drain
 
 stream-status:  ## Show running spark-submit driver processes inside spark-master
 	$(COMPOSE) exec spark-master bash -c 'pgrep -fa spark-submit || echo "no spark-submit running"'
+
+# --- Phase 4: media batch bronze -------------------------------------
+
+batch-media-bronze: ## Run the media bronze batch (EXIF/ffprobe + thumbnails → Delta)
+	$(COMPOSE) exec spark-master /opt/bitnami/spark/bin/spark-submit \
+	  --name media-bronze-batch \
+	  --master spark://spark-master:7077 \
+	  /opt/hybrid/pipeline/spark_jobs/batch-media-bronze.py \
+	  --config /opt/hybrid/pipeline/conf/batch-media-bronze.yaml
