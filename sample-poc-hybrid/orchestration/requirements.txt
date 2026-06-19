@@ -1,0 +1,5 @@
+# Airflow 3.0 providers used by our DAGs.
+# Airflow itself is pinned via the base image tag in orchestration/Dockerfile.
+apache-airflow-providers-apache-spark>=5.0.0
+apache-airflow-providers-docker>=4.0.0
+apache-airflow-providers-postgres>=6.0.0

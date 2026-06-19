@@ -5,14 +5,14 @@ SHELL := /bin/bash
 ENV_FILE ?= .env
 COMPOSE := docker compose --env-file $(ENV_FILE)
 
-.PHONY: help env up-hybrid up-uc up-full down-hybrid clean-hybrid logs ps healthcheck \
-        bootstrap-uc smoke-hybrid kafka-topics trino-cli psql-meta psql-oltp \
-        kafka-id config-check source-deps seed-iot seed-media seed-oltp seed-all \
-        lint-source lint-pipeline stream-iot-bronze stop-stream-iot stream-status \
-        batch-media-bronze build-silver-iot build-silver-media build-silver \
-        maintenance reset-warehouse \
+.PHONY: help env up-hybrid up-uc up-full up-airflow down-hybrid clean-hybrid \
+        logs ps healthcheck bootstrap-uc smoke-hybrid kafka-topics trino-cli \
+        psql-meta psql-oltp kafka-id config-check source-deps seed-iot seed-media \
+        seed-oltp seed-all lint-source lint-pipeline lint-dags stream-iot-bronze \
+        stop-stream-iot stream-status batch-media-bronze build-silver-iot \
+        build-silver-media build-silver maintenance reset-warehouse \
         build-gold-iot-hourly build-gold-device-health build-gold-media-storage \
-        build-gold-correlation build-gold
+        build-gold-correlation build-gold airflow-ui airflow-trigger
 
 # Path used by all source/*.py runners; falls back to system python3.
 PYTHON ?= python3
@@ -39,8 +39,11 @@ up-hybrid: env  ## Bring up MVP stack (HMS primary catalog, single worker)
 up-uc: env      ## Bring up stack + Unity Catalog OSS (Spark-only; experimental)
 	$(COMPOSE) --profile uc up -d --build
 
-up-full: env    ## Bring up full stack (HMS + kafka-ui + 2 spark workers)
+up-full: env    ## Bring up full stack (HMS + kafka-ui + 2 spark workers + Airflow)
 	$(COMPOSE) --profile full up -d --build
+
+up-airflow: env ## Add Airflow (api-server + scheduler + dag-processor) to running stack
+	$(COMPOSE) --profile airflow up -d --build
 
 down-hybrid:    ## Stop & remove containers (keep volumes)
 	$(COMPOSE) --profile full --profile uc down
@@ -215,3 +218,15 @@ build-gold:          ## Run all 4 gold jobs sequentially
 	$(MAKE) build-gold-device-health
 	$(MAKE) build-gold-media-storage
 	$(MAKE) build-gold-correlation
+
+# --- Phase 7: Airflow orchestration ----------------------------------
+
+lint-dags:           ## Byte-compile all orchestration/dags Python for syntax check
+	$(PYTHON) -m compileall -q orchestration/dags
+
+airflow-ui:          ## Open Airflow UI URL
+	@echo "Airflow UI → http://localhost:$${PORT_AIRFLOW:-8086}"
+	@echo "Login → $${AIRFLOW_ADMIN_USER:-admin} / $${AIRFLOW_ADMIN_PASSWORD:-admin}"
+
+airflow-trigger:     ## Trigger an Airflow DAG: make airflow-trigger DAG=hybrid_batch_pipeline
+	$(COMPOSE) exec airflow-scheduler airflow dags trigger $(DAG)

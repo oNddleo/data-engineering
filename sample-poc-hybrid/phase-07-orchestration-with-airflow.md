@@ -1,10 +1,14 @@
 ---
 phase: 7
-title: "Orchestration with Airflow"
-status: pending
+title: Orchestration with Airflow
+status: completed
 priority: P2
-effort: "1d"
-dependencies: [3, 4, 5, 6]
+effort: 1d
+dependencies:
+  - 3
+  - 4
+  - 5
+  - 6
 ---
 
 # Phase 7: Orchestration with Airflow

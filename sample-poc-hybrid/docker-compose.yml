@@ -1,5 +1,26 @@
 name: ${COMPOSE_PROJECT_NAME:-hybrid}
 
+x-airflow-common: &airflow-common
+  build:
+    context: ./orchestration
+    args:
+      AIRFLOW_IMAGE_TAG: ${AIRFLOW_IMAGE_TAG}
+  image: hybrid/airflow:${AIRFLOW_IMAGE_TAG}
+  environment:
+    AIRFLOW__CORE__EXECUTOR: ${AIRFLOW__CORE__EXECUTOR:-LocalExecutor}
+    AIRFLOW__CORE__LOAD_EXAMPLES: ${AIRFLOW__CORE__LOAD_EXAMPLES:-false}
+    AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: "postgresql+psycopg2://${PG_META_USER}:${PG_META_PASSWORD}@postgres-meta:5432/${PG_AIRFLOW_DB}"
+    AIRFLOW__API__BASE_URL: "http://localhost:${PORT_AIRFLOW}"
+    AIRFLOW__WEBSERVER__SECRET_KEY: "${SUPERSET_SECRET_KEY}"
+    AIRFLOW__API_AUTH__JWT_SECRET: "${SUPERSET_SECRET_KEY}"
+    SPARK_MASTER_CONTAINER: "${COMPOSE_PROJECT_NAME:-hybrid}-spark-master-1"
+    PYTHONPATH: /opt/airflow/dags
+  volumes:
+    - ./orchestration/dags:/opt/airflow/dags:ro
+    - /var/run/docker.sock:/var/run/docker.sock
+  networks: [hybrid-net]
+
 x-spark-common: &spark-common
   build:
     context: ./infra/spark
@@ -303,6 +324,63 @@ services:
   # ──────────────────────────────────────────────────────────────────
   # Trino 470 — Delta connector backed by Hive Metastore
   # ──────────────────────────────────────────────────────────────────
+  # ──────────────────────────────────────────────────────────────────
+  # Airflow 3.0 — LocalExecutor, Postgres backend
+  # ──────────────────────────────────────────────────────────────────
+  airflow-init:
+    <<: *airflow-common
+    depends_on:
+      postgres-meta:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        airflow db migrate &&
+        airflow users create --role Admin \
+          --username "$$AIRFLOW_ADMIN_USER" \
+          --password "$$AIRFLOW_ADMIN_PASSWORD" \
+          --firstname admin --lastname admin \
+          --email admin@example.com || true
+    environment:
+      AIRFLOW__CORE__EXECUTOR: ${AIRFLOW__CORE__EXECUTOR:-LocalExecutor}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: "postgresql+psycopg2://${PG_META_USER}:${PG_META_PASSWORD}@postgres-meta:5432/${PG_AIRFLOW_DB}"
+      AIRFLOW_ADMIN_USER: ${AIRFLOW_ADMIN_USER}
+      AIRFLOW_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
+    restart: "no"
+    profiles: [airflow, full]
+
+  airflow-apiserver:
+    <<: *airflow-common
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    command: ["api-server"]
+    ports:
+      - "${PORT_AIRFLOW}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/api/v2/version >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    profiles: [airflow, full]
+
+  airflow-scheduler:
+    <<: *airflow-common
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    command: ["scheduler"]
+    profiles: [airflow, full]
+
+  airflow-dag-processor:
+    <<: *airflow-common
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    command: ["dag-processor"]
+    profiles: [airflow, full]
+
   trino:
     image: ${TRINO_IMAGE}
     depends_on:
