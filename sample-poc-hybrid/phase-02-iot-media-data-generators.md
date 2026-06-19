@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: IoT & Media Data Generators
-status: pending
+status: completed
 priority: P1
 effort: 1d
 dependencies:

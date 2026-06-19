@@ -61,7 +61,7 @@ POC chứng minh kiến trúc 7 tầng (`knowledge/architecture-layer-diagram.md
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | [Infrastructure & Docker Compose](./phase-01-infrastructure-docker-compose.md) | Completed |
-| 2 | [IoT & Media Data Generators](./phase-02-iot-media-data-generators.md) | Pending |
+| 2 | [IoT & Media Data Generators](./phase-02-iot-media-data-generators.md) | Completed |
 | 3 | [Bronze - Spark Structured Streaming IoT](./phase-03-bronze-spark-structured-streaming-iot.md) | Pending |
 | 4 | [Bronze - Spark Batch Image/Video Metadata](./phase-04-bronze-spark-batch-image-video-metadata.md) | Pending |
 | 5 | [Silver - Cleansing & Standardization](./phase-05-silver-cleansing-standardization.md) | Pending |

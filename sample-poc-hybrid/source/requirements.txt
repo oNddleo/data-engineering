@@ -1,0 +1,15 @@
+# Python 3.12 — synthetic data generators for the hybrid POC.
+# Pinned to be reproducible; bump in lockstep with the rest of the stack.
+
+confluent-kafka==2.5.3
+boto3==1.34.162
+botocore==1.34.162
+faker==30.0.0
+pillow==10.4.0
+piexif==1.1.3
+psycopg2-binary==2.9.9
+python-ulid==2.7.0
+
+# ffmpeg binary is required at runtime for media-uploader.py video generation
+# (we shell out via subprocess; no Python wrapper needed). The Spark image
+# already bakes ffmpeg in; on host, install via your package manager.

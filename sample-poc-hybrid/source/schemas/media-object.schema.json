@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hybrid-poc.local/schemas/media-object.json",
+  "title": "MediaObjectDescriptor",
+  "description": "Reference contract for objects uploaded to MinIO under raw-media/. The bronze batch job extracts EXIF / ffprobe metadata independently; this file documents the path + name convention only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["object_key", "media_type", "device_id", "uploaded_at"],
+  "properties": {
+    "object_key":  {
+      "type": "string",
+      "pattern": "^raw-media/(image|video)/[0-9]{4}/[0-9]{2}/[0-9]{2}/dev-[0-9]{4}-[0-9A-HJKMNP-TV-Z]{26}\\.(png|jpg|jpeg|mp4)$",
+      "description": "raw-media/{type}/{yyyy}/{mm}/{dd}/{device_id}-{ulid}.{ext}"
+    },
+    "media_type":  { "type": "string", "enum": ["image", "video"] },
+    "device_id":   { "type": "string", "pattern": "^dev-[0-9]{4}$" },
+    "uploaded_at": { "type": "string", "format": "date-time" },
+    "ext":         { "type": "string", "enum": ["png", "jpg", "jpeg", "mp4"] },
+    "size_bytes":  { "type": "integer", "minimum": 0 }
+  }
+}

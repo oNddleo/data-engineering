@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hybrid-poc.local/schemas/iot-event.json",
+  "title": "IoTSensorEvent",
+  "description": "Sensor reading published to Kafka topic iot.sensors. Used as the contract the bronze stream parses with PERMISSIVE mode.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "device_id", "sensor_type", "value", "unit", "ts"],
+  "properties": {
+    "event_id":    { "type": "string", "description": "ULID; deduplication key in silver." },
+    "device_id":   { "type": "string", "pattern": "^dev-[0-9]{4}$" },
+    "sensor_type": { "type": "string", "enum": ["temperature", "humidity", "pm25", "vibration"] },
+    "value":       { "type": "number" },
+    "unit":        { "type": "string", "enum": ["C", "%", "ug/m3", "mm/s"] },
+    "lat":         { "type": "number", "minimum": -90, "maximum": 90 },
+    "lon":         { "type": "number", "minimum": -180, "maximum": 180 },
+    "ts":          { "type": "string", "format": "date-time", "description": "ISO 8601 UTC event timestamp." },
+    "fw_version":  { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+  }
+}
