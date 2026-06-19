@@ -13,7 +13,8 @@ COMPOSE := docker compose --env-file $(ENV_FILE)
         build-silver-media build-silver maintenance reset-warehouse \
         build-gold-iot-hourly build-gold-device-health build-gold-media-storage \
         build-gold-correlation build-gold airflow-ui airflow-trigger \
-        superset-ui superset-bootstrap trino-validate
+        superset-ui superset-bootstrap trino-validate \
+        test-deps test test-slow demo-hybrid
 
 # Path used by all source/*.py runners; falls back to system python3.
 PYTHON ?= python3
@@ -246,3 +247,33 @@ superset-bootstrap: ## Initialise Superset DB, admin user, Trino connection
 superset-ui:    ## Show Superset UI URL
 	@echo "Superset UI → http://localhost:$${PORT_SUPERSET:-8089}"
 	@echo "Login → $${SUPERSET_ADMIN_USER:-admin} / $${SUPERSET_ADMIN_PASSWORD:-admin}"
+
+# --- Phase 9: tests + demo -------------------------------------------
+
+test-deps:      ## Install test deps (pytest, pyspark, delta-spark, etc.)
+	$(PYTHON) -m pip install -r tests/requirements.txt
+
+test:           ## Run unit tests (no Docker required)
+	$(PYTHON) -m pytest tests/unit
+
+test-slow:      ## Run integration smoke tests (needs Docker)
+	$(PYTHON) -m pytest -m slow tests/integration
+
+demo-hybrid:    ## End-to-end demo: boot full stack + seed + medallion + BI
+	$(MAKE) up-full
+	@echo "Waiting 60s for services to settle..."
+	@sleep 60
+	$(MAKE) seed-all
+	$(MAKE) stream-iot-bronze
+	@echo "Streaming for 30s..."
+	@sleep 30
+	$(MAKE) stop-stream-iot
+	$(MAKE) batch-media-bronze
+	$(MAKE) build-silver
+	$(MAKE) build-gold
+	$(MAKE) superset-bootstrap
+	@echo
+	@echo "=== Demo ready ==="
+	$(MAKE) airflow-ui
+	$(MAKE) superset-ui
+	@echo "Trino → http://localhost:$${PORT_TRINO:-8085}"

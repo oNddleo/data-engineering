@@ -19,33 +19,68 @@ POC mở rộng kiến trúc 7 tầng (xem [`../knowledge/architecture-layer-dia
 | PostgreSQL | 17 |
 | MinIO | RELEASE.2025-04-22 |
 
-## Phase 1 status (current)
+## What's in the stack
 
-Infrastructure docker-compose stack:
-- 1 Spark master + 1 worker (2 workers in `full` profile)
-- Kafka 4.0 KRaft, single combined controller+broker node (image auto-formats from `CLUSTER_ID` env var)
-- MinIO with `lakehouse` bucket and medallion prefixes
-- 2 Postgres instances (metastore/UC/airflow, OLTP)
-- Hive Metastore 4.0 (primary catalog)
-- Trino 470 with Delta connector backed by HMS
-- Unity Catalog OSS (profile `uc`, experimental Spark-only)
+| Tier | Component |
+|------|-----------|
+| Sources | Python IoT simulator, Pillow + ffmpeg media uploader, Postgres OLTP |
+| Integration | Kafka 4.0 KRaft single node, MinIO S3 |
+| Compute | Spark 4.0 master + worker (Delta + Kafka + UC + Postgres-JDBC jars baked in) |
+| Catalog | Hive Metastore 4.0 (primary); Unity Catalog OSS 0.3 via `uc` profile |
+| Query | Trino 470 with Delta connector |
+| Orchestration | Airflow 3.0 — 3 DAGs (streaming supervisor, hourly batch, daily maintenance) |
+| BI | Superset 4.1 with the `trino[sqlalchemy]` dialect |
+| Tests | pytest + Delta-aware Spark fixture + testcontainers (slow marker) |
 
 ## Quick start
 
 ```bash
 make env                 # one-time .env copy
-make up-hybrid           # bring stack up (UC primary)
-make ps                  # status of containers
+make kafka-id            # paste into .env KAFKA_CLUSTER_ID
+make up-hybrid           # bring stack up
 make smoke-hybrid        # spark-submit writes & reads 1 Delta row
-make trino-cli           # SHOW CATALOGS / SHOW SCHEMAS FROM delta
+make seed-oltp           # 100 devices + 20 districts
+make seed-iot RATE=100 DUR=60 &
+make stream-iot-bronze
+make stop-stream-iot     # SIGTERM the JVM driver, drains current batch
+make seed-media COUNT=60
+make batch-media-bronze
+make build-silver
+make build-gold
+make trino-validate      # runs bi/trino_validation_queries.sql
 make down-hybrid         # stop, keep volumes
 make clean-hybrid        # destructive: remove volumes too
 ```
 
-Experimental UC OSS (Spark only, not queryable from Trino 470):
+One-shot:
+```bash
+make demo-hybrid         # boots full stack, seeds, runs medallion, opens BI URLs
+```
+
+Experimental UC OSS (Spark-only — Trino 470 won't read it):
 ```bash
 make up-uc               # adds unity-catalog + bootstrap services
 ```
+
+## Tests
+
+```bash
+make test-deps           # pytest, pyspark, delta-spark, pillow
+make test                # unit tests (no Docker required)
+make test-slow           # integration smoke with testcontainers
+```
+
+## Documentation
+
+| Doc | Purpose |
+|-----|---------|
+| [`docs/poc-architecture.md`](docs/poc-architecture.md) | What this POC is + diagram + comparison vs `sample-poc` |
+| [`docs/demo-runbook.md`](docs/demo-runbook.md) | Step-by-step end-to-end demo with expected durations |
+| [`docs/7-layer-mapping.md`](docs/7-layer-mapping.md) | How each POC component maps to the 7-tier reference |
+| [`docs/troubleshooting.md`](docs/troubleshooting.md) | First-run gotchas + recovery procedures |
+| [`docs/decisions/`](docs/decisions/) | 4 short ADRs: Delta vs Iceberg, OSS vs Databricks, no ML, streaming-on-Airflow |
+| [`plan.md`](plan.md) | 9-phase implementation plan + Validation Log + code-review history |
+| [`plans/reports/`](plans/reports/) | Per-phase adversarial code-review reports |
 
 ## Repository layout
 
@@ -66,16 +101,4 @@ plan.md + phase-*.md       # implementation roadmap (9 phases)
 
 ## Roadmap
 
-| Phase | Status |
-|-------|--------|
-| 1 — Infrastructure & Docker Compose | In Progress (this commit) |
-| 2 — IoT & Media data generators | Pending |
-| 3 — Bronze (Spark Streaming IoT) | Pending |
-| 4 — Bronze (Spark batch media metadata) | Pending |
-| 5 — Silver (cleansing/standardization) | Pending |
-| 6 — Gold (marts + cross-domain) | Pending |
-| 7 — Airflow 3.0 orchestration | Pending |
-| 8 — Trino + Superset BI | Pending |
-| 9 — Tests + docs | Pending |
-
-See [`plan.md`](./plan.md) for the full plan + Validation Log.
+All 9 phases shipped. See [`plan.md`](./plan.md) for the full plan, Validation Log, and code-review history.

@@ -4,7 +4,7 @@ description: >-
   Extend the 7-layer architecture with Apache Spark + Delta Lake
   (Databricks-style) to ingest IoT streams via Kafka and image/video metadata
   from MinIO. Reproducible on a laptop via docker-compose.
-status: pending
+status: completed
 priority: P2
 branch: feat/databricks
 tags:
@@ -68,7 +68,7 @@ POC chứng minh kiến trúc 7 tầng (`knowledge/architecture-layer-diagram.md
 | 6 | [Gold - Marts & Cross-Domain Aggregates](./phase-06-gold-marts-cross-domain-aggregates.md) | Completed |
 | 7 | [Orchestration with Airflow](./phase-07-orchestration-with-airflow.md) | Completed |
 | 8 | [Query & BI (Trino + Superset)](./phase-08-query-bi-trino-superset.md) | Completed |
-| 9 | [Tests & Documentation](./phase-09-tests-documentation.md) | Pending |
+| 9 | [Tests & Documentation](./phase-09-tests-documentation.md) | Completed |
 
 ## Architecture Mapping (sang 7-layer)
 
