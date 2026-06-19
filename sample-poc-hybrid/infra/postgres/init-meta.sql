@@ -7,8 +7,10 @@
 
 CREATE DATABASE ucatalog;
 CREATE DATABASE airflow;
+CREATE DATABASE superset;
 
--- Grant the bootstrap user full access to all three DBs.
+-- Grant the bootstrap user full access to all DBs.
 GRANT ALL PRIVILEGES ON DATABASE metastore TO metauser;
 GRANT ALL PRIVILEGES ON DATABASE ucatalog  TO metauser;
 GRANT ALL PRIVILEGES ON DATABASE airflow   TO metauser;
+GRANT ALL PRIVILEGES ON DATABASE superset  TO metauser;

@@ -1,10 +1,11 @@
 ---
 phase: 8
-title: "Query & BI (Trino + Superset)"
-status: pending
+title: Query & BI (Trino + Superset)
+status: completed
 priority: P2
-effort: "0.5d"
-dependencies: [6]
+effort: 0.5d
+dependencies:
+  - 6
 ---
 
 # Phase 8: Query & BI (Trino + Superset)

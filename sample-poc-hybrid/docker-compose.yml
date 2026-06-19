@@ -381,6 +381,48 @@ services:
     command: ["dag-processor"]
     profiles: [airflow, full]
 
+  # ──────────────────────────────────────────────────────────────────
+  # Superset 4.1 — BI on top of Trino (profile: bi / full)
+  # ──────────────────────────────────────────────────────────────────
+  superset:
+    build:
+      context: ./infra/superset
+      args:
+        SUPERSET_IMAGE_TAG: 4.1.2
+    image: hybrid/superset:4.1.2
+    depends_on:
+      postgres-meta:
+        condition: service_healthy
+      trino:
+        condition: service_healthy
+    environment:
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
+      DATABASE_DIALECT: postgresql
+      DATABASE_USER: ${PG_META_USER}
+      DATABASE_PASSWORD: ${PG_META_PASSWORD}
+      DATABASE_HOST: postgres-meta
+      DATABASE_PORT: "5432"
+      DATABASE_DB: superset
+      SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://${PG_META_USER}:${PG_META_PASSWORD}@postgres-meta:5432/superset"
+      SUPERSET_ADMIN_USER: ${SUPERSET_ADMIN_USER}
+      SUPERSET_ADMIN_PASSWORD: ${SUPERSET_ADMIN_PASSWORD}
+      TRINO_HOST: trino
+      TRINO_PORT: "8080"
+      TRINO_USER: trino
+      TRINO_CATALOG: delta
+    volumes:
+      - ./bi/superset/bootstrap.sh:/opt/superset-bootstrap.sh:ro
+    ports:
+      - "${PORT_SUPERSET}:8088"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8088/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
+    profiles: [bi, full]
+    networks: [hybrid-net]
+
   trino:
     image: ${TRINO_IMAGE}
     depends_on:

@@ -5,14 +5,15 @@ SHELL := /bin/bash
 ENV_FILE ?= .env
 COMPOSE := docker compose --env-file $(ENV_FILE)
 
-.PHONY: help env up-hybrid up-uc up-full up-airflow down-hybrid clean-hybrid \
+.PHONY: help env up-hybrid up-uc up-full up-airflow up-bi down-hybrid clean-hybrid \
         logs ps healthcheck bootstrap-uc smoke-hybrid kafka-topics trino-cli \
         psql-meta psql-oltp kafka-id config-check source-deps seed-iot seed-media \
         seed-oltp seed-all lint-source lint-pipeline lint-dags stream-iot-bronze \
         stop-stream-iot stream-status batch-media-bronze build-silver-iot \
         build-silver-media build-silver maintenance reset-warehouse \
         build-gold-iot-hourly build-gold-device-health build-gold-media-storage \
-        build-gold-correlation build-gold airflow-ui airflow-trigger
+        build-gold-correlation build-gold airflow-ui airflow-trigger \
+        superset-ui superset-bootstrap trino-validate
 
 # Path used by all source/*.py runners; falls back to system python3.
 PYTHON ?= python3
@@ -44,6 +45,9 @@ up-full: env    ## Bring up full stack (HMS + kafka-ui + 2 spark workers + Airfl
 
 up-airflow: env ## Add Airflow (api-server + scheduler + dag-processor) to running stack
 	$(COMPOSE) --profile airflow up -d --build
+
+up-bi: env      ## Add Superset (Trino-backed BI) to the running stack
+	$(COMPOSE) --profile bi up -d --build
 
 down-hybrid:    ## Stop & remove containers (keep volumes)
 	$(COMPOSE) --profile full --profile uc down
@@ -230,3 +234,15 @@ airflow-ui:          ## Open Airflow UI URL
 
 airflow-trigger:     ## Trigger an Airflow DAG: make airflow-trigger DAG=hybrid_batch_pipeline
 	$(COMPOSE) exec airflow-scheduler airflow dags trigger $(DAG)
+
+# --- Phase 8: BI (Trino + Superset) ----------------------------------
+
+trino-validate: ## Run bi/trino_validation_queries.sql through Trino CLI
+	$(COMPOSE) exec -T trino trino --catalog delta < bi/trino_validation_queries.sql
+
+superset-bootstrap: ## Initialise Superset DB, admin user, Trino connection
+	$(COMPOSE) exec superset bash /opt/superset-bootstrap.sh
+
+superset-ui:    ## Show Superset UI URL
+	@echo "Superset UI → http://localhost:$${PORT_SUPERSET:-8089}"
+	@echo "Login → $${SUPERSET_ADMIN_USER:-admin} / $${SUPERSET_ADMIN_PASSWORD:-admin}"

@@ -67,7 +67,7 @@ POC chứng minh kiến trúc 7 tầng (`knowledge/architecture-layer-diagram.md
 | 5 | [Silver - Cleansing & Standardization](./phase-05-silver-cleansing-standardization.md) | Completed |
 | 6 | [Gold - Marts & Cross-Domain Aggregates](./phase-06-gold-marts-cross-domain-aggregates.md) | Completed |
 | 7 | [Orchestration with Airflow](./phase-07-orchestration-with-airflow.md) | Completed |
-| 8 | [Query & BI (Trino + Superset)](./phase-08-query-bi-trino-superset.md) | Pending |
+| 8 | [Query & BI (Trino + Superset)](./phase-08-query-bi-trino-superset.md) | Completed |
 | 9 | [Tests & Documentation](./phase-09-tests-documentation.md) | Pending |
 
 ## Architecture Mapping (sang 7-layer)
