@@ -10,7 +10,9 @@ COMPOSE := docker compose --env-file $(ENV_FILE)
         kafka-id config-check source-deps seed-iot seed-media seed-oltp seed-all \
         lint-source lint-pipeline stream-iot-bronze stop-stream-iot stream-status \
         batch-media-bronze build-silver-iot build-silver-media build-silver \
-        maintenance reset-warehouse
+        maintenance reset-warehouse \
+        build-gold-iot-hourly build-gold-device-health build-gold-media-storage \
+        build-gold-correlation build-gold
 
 # Path used by all source/*.py runners; falls back to system python3.
 PYTHON ?= python3
@@ -181,3 +183,35 @@ maintenance:         ## OPTIMIZE (+ZORDER) + VACUUM all medallion tables
 	  --name delta-maintenance --master spark://spark-master:7077 \
 	  /opt/hybrid/pipeline/spark_jobs/maintenance-optimize.py \
 	  --config /opt/hybrid/pipeline/conf/maintenance-optimize.yaml
+
+# --- Phase 6: gold marts ---------------------------------------------
+
+build-gold-iot-hourly: ## Hourly IoT metrics per device + sensor
+	$(COMPOSE) exec spark-master /opt/bitnami/spark/bin/spark-submit \
+	  --name gold-iot-hourly --master spark://spark-master:7077 \
+	  /opt/hybrid/pipeline/spark_jobs/build-gold-iot-hourly.py \
+	  --config /opt/hybrid/pipeline/conf/build-gold-iot-hourly.yaml
+
+build-gold-device-health: ## Device health summary (last_seen, lag, anomaly rate)
+	$(COMPOSE) exec spark-master /opt/bitnami/spark/bin/spark-submit \
+	  --name gold-device-health --master spark://spark-master:7077 \
+	  /opt/hybrid/pipeline/spark_jobs/build-gold-device-health.py \
+	  --config /opt/hybrid/pipeline/conf/build-gold-device-health.yaml
+
+build-gold-media-storage: ## Daily media storage rollup by media_type
+	$(COMPOSE) exec spark-master /opt/bitnami/spark/bin/spark-submit \
+	  --name gold-media-storage --master spark://spark-master:7077 \
+	  /opt/hybrid/pipeline/spark_jobs/build-gold-media-storage.py \
+	  --config /opt/hybrid/pipeline/conf/build-gold-media-storage.yaml
+
+build-gold-correlation: ## Cross-domain IoT⇄media nearest-event as-of join
+	$(COMPOSE) exec spark-master /opt/bitnami/spark/bin/spark-submit \
+	  --name gold-iot-media-correlation --master spark://spark-master:7077 \
+	  /opt/hybrid/pipeline/spark_jobs/build-gold-iot-media-correlation.py \
+	  --config /opt/hybrid/pipeline/conf/build-gold-iot-media-correlation.yaml
+
+build-gold:          ## Run all 4 gold jobs sequentially
+	$(MAKE) build-gold-iot-hourly
+	$(MAKE) build-gold-device-health
+	$(MAKE) build-gold-media-storage
+	$(MAKE) build-gold-correlation

@@ -1,0 +1,7 @@
+{
+  "media_table": "silver.media_catalog",
+  "iot_table": "silver.iot_readings",
+  "target_table": "gold.iot_media_correlation",
+  "target_path": "s3a://lakehouse/gold/iot_media_correlation",
+  "window_seconds": 300
+}

@@ -1,10 +1,11 @@
 ---
 phase: 6
-title: "Gold - Marts & Cross-Domain Aggregates"
-status: pending
+title: Gold - Marts & Cross-Domain Aggregates
+status: completed
 priority: P2
-effort: "1d"
-dependencies: [5]
+effort: 1d
+dependencies:
+  - 5
 ---
 
 # Phase 6: Gold - Marts & Cross-Domain Aggregates

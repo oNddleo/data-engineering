@@ -1,0 +1,6 @@
+{
+  "silver_table": "silver.iot_readings",
+  "target_table": "gold.iot_hourly_metrics",
+  "target_path": "s3a://lakehouse/gold/iot_hourly_metrics",
+  "incremental_days": 7
+}

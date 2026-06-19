@@ -1,0 +1,5 @@
+{
+  "silver_table": "silver.iot_readings",
+  "target_table": "gold.device_health",
+  "target_path": "s3a://lakehouse/gold/device_health"
+}

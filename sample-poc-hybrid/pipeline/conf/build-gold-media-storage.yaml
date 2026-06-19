@@ -1,0 +1,5 @@
+{
+  "silver_table": "silver.media_catalog",
+  "target_table": "gold.media_storage_daily",
+  "target_path": "s3a://lakehouse/gold/media_storage_daily"
+}
