@@ -18,6 +18,7 @@ x-spark-common: &spark-common
   volumes:
     - ./infra/spark/spark-defaults.conf:/opt/bitnami/spark/conf/spark-defaults.conf:ro
     - ./infra/spark/log4j2.properties:/opt/bitnami/spark/conf/log4j2.properties:ro
+    - ./pipeline:/opt/hybrid/pipeline:ro
     - spark-work:/opt/bitnami/spark/work
   networks: [hybrid-net]
 

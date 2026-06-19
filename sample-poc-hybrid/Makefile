@@ -8,7 +8,7 @@ COMPOSE := docker compose --env-file $(ENV_FILE)
 .PHONY: help env up-hybrid up-uc up-full down-hybrid clean-hybrid logs ps healthcheck \
         bootstrap-uc smoke-hybrid kafka-topics trino-cli psql-meta psql-oltp \
         kafka-id config-check source-deps seed-iot seed-media seed-oltp seed-all \
-        lint-source
+        lint-source lint-pipeline stream-iot-bronze stop-stream-iot stream-status
 
 # Path used by all source/*.py runners; falls back to system python3.
 PYTHON ?= python3
@@ -100,3 +100,33 @@ seed-all:       ## Run seed-oltp + seed-iot (60s) + seed-media (60 objects)
 	$(MAKE) seed-oltp
 	$(MAKE) seed-iot DUR=30
 	$(MAKE) seed-media COUNT=60
+
+# --- Phase 3: streaming IoT bronze -----------------------------------
+
+lint-pipeline:  ## Byte-compile all pipeline/spark_jobs Python for syntax check
+	$(PYTHON) -m compileall -q pipeline/spark_jobs
+
+stream-iot-bronze: ## Start the IoT bronze stream inside spark-master (foreground in container, detached from host)
+	$(COMPOSE) exec -d spark-master /opt/bitnami/spark/bin/spark-submit \
+	  --name iot-bronze-stream \
+	  --master spark://spark-master:7077 \
+	  /opt/hybrid/pipeline/spark_jobs/streaming-iot-bronze.py \
+	  --config /opt/hybrid/pipeline/conf/streaming-iot-bronze.yaml
+
+stop-stream-iot: ## SIGTERM the IoT bronze stream JVM driver (graceful — drains last batch)
+	$(COMPOSE) exec spark-master bash -c '\
+	    pid=$$(pgrep -f "org.apache.spark.deploy.SparkSubmit.*streaming-iot-bronze" | head -n1); \
+	    if [ -n "$$pid" ]; then \
+	      echo "sending SIGTERM to JVM driver pid=$$pid"; \
+	      kill -TERM "$$pid"; \
+	      for i in 1 2 3 4 5 6 7 8 9 10; do \
+	        kill -0 "$$pid" 2>/dev/null || { echo "driver exited"; exit 0; }; \
+	        sleep 1; \
+	      done; \
+	      echo "driver still running after 10s — escalate manually"; \
+	    else \
+	      echo "no streaming driver found"; \
+	    fi'
+
+stream-status:  ## Show running spark-submit driver processes inside spark-master
+	$(COMPOSE) exec spark-master bash -c 'pgrep -fa spark-submit || echo "no spark-submit running"'

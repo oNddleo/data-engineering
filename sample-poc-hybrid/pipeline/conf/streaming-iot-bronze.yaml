@@ -1,0 +1,12 @@
+{
+  "bootstrap_servers": "kafka:9092",
+  "source_topic": "iot.sensors",
+  "dlq_topic": "iot.sensors.dlq",
+  "delta_path": "s3a://lakehouse/bronze/iot_events",
+  "checkpoint_path": "s3a://lakehouse/_checkpoints/bronze_iot_events",
+  "catalog_table": "bronze.iot_events",
+  "starting_offsets": "earliest",
+  "max_offsets_per_trigger": 10000,
+  "trigger_interval": "10 seconds",
+  "create_table_if_missing": true
+}

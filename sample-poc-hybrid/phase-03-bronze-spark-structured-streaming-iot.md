@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: Bronze - Spark Structured Streaming IoT
-status: pending
+status: completed
 priority: P1
 effort: 1.5d
 dependencies:
@@ -53,14 +53,14 @@ writeStream → Delta s3a://lakehouse/bronze/iot_events
 
 ## Implementation Steps
 
-1. `spark_session.py` build SparkSession có `spark.jars.packages=io.delta:delta-spark_2.13:4.0.0,org.apache.spark:spark-sql-kafka-0-10_2.13:4.0.0,io.unitycatalog:unitycatalog-spark_2.13:0.3.0`, S3a creds từ env, `spark.sql.catalog.unity=io.unitycatalog.spark.UCSingleCatalog`, `spark.sql.catalog.unity.uri=http://unity-catalog:8087`, `spark.sql.defaultCatalog=unity`.
+1. `spark_session.py` build SparkSession dùng `enableHiveSupport()` — toàn bộ Delta/Kafka/S3a/Hive config đã nằm trong `infra/spark/spark-defaults.conf` (mặc định mount vào image). Sau Session 2 validation: catalog là **HMS** (`spark.sql.catalogImplementation=hive`, `spark.hadoop.hive.metastore.uris=thrift://hive-metastore:9083`), không phải UC.
 2. `streaming_iot_bronze.py`:
    - `readStream.format("kafka")` với `startingOffsets="earliest"`, `maxOffsetsPerTrigger=10000`.
    - `from_json(col("value").cast("string"), iot_schema, options={"mode": "PERMISSIVE", "columnNameOfCorruptRecord": "_rescued_data"})`.
    - Tách 2 nhánh: valid (rescued IS NULL) → Delta; invalid → `foreachBatch` đẩy về DLQ topic.
    - Withcolumn `ingestion_ts = current_timestamp()`, `ingest_date = to_date(ingestion_ts)`.
 3. `writeStream.format("delta").outputMode("append").option("checkpointLocation", ...).trigger(processingTime="10 seconds").partitionBy("ingest_date").start(table_path)`.
-4. Tạo bảng external trong Unity Catalog (hoặc HMS fallback): `CREATE TABLE unity.hybrid.bronze_iot_events USING DELTA LOCATION 's3a://lakehouse/bronze/iot_events'`. Bật `delta.enableChangeDataFeed=true`, `delta.columnMapping.mode=name`, `delta.minReaderVersion=3`, `delta.minWriterVersion=7` (deletion vectors).
+4. Tạo bảng external trong Hive Metastore: `CREATE SCHEMA IF NOT EXISTS bronze; CREATE TABLE IF NOT EXISTS bronze.iot_events ... USING DELTA LOCATION 's3a://lakehouse/bronze/iot_events'`. Bật `delta.enableChangeDataFeed=true`, `delta.columnMapping.mode=name`, `delta.minReaderVersion=3`, `delta.minWriterVersion=7` (deletion vectors). `ensure_bronze_table()` trong script chạy mỗi lần khởi động, idempotent.
 5. CLI: `spark-submit --conf spark.streaming.stopGracefullyOnShutdown=true streaming_iot_bronze.py --config conf/...`.
 6. Makefile `make stream-iot-bronze` và `make stop-stream-iot` (SIGTERM → graceful).
 
