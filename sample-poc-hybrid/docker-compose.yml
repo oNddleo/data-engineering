@@ -209,7 +209,8 @@ services:
     volumes:
       - ./infra/hive-metastore/metastore-site.xml:/opt/hive/conf/metastore-site.xml:ro
     healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 9083 || exit 1"]
+      # apache/hive image has no nc; use bash's /dev/tcp to probe the metastore port.
+      test: ["CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/9083' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 18

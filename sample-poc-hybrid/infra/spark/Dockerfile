@@ -1,5 +1,6 @@
 ARG SPARK_IMAGE_TAG=4.0.0
-FROM bitnami/spark:${SPARK_IMAGE_TAG}
+# Bitnami pruned versioned tags from bitnami/spark; the same images remain under bitnamilegacy/*.
+FROM bitnamilegacy/spark:${SPARK_IMAGE_TAG}
 
 ARG DELTA_VERSION=4.0.0
 ARG SCALA_BINARY=2.13
